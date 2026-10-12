@@ -99,3 +99,41 @@ are recorded.
 
 Report `docs/report-dll-0-MMDD.md`: layout, what came from V2DLL (a list),
 the U-4 log and the comparison with the pie chart.
+
+---
+
+## Handoff (2026-10-12, first session on the card)
+
+Nothing built yet. What was established, so the next session starts coding:
+
+- **Toolchain:** VS 2022 Community 17.13.6 (`C:\Program Files\Microsoft
+  Visual Studio\2022\Community`) and Build Tools 2019 16.11.47 (vswhere).
+  The original `lua51.dll` in `E:\Victoria.II.v3.04.Inclu.ALL.DLC` is
+  11 264 bytes (2013-05-29): step 4's size check holds.
+- **Export forwarding needs no code:** V2DLL's `lua51_exports.h` (134 lines,
+  `#pragma comment(linker, "/export:X=lua51_real.X,@n")`) makes the loader
+  load `lua51_real.dll` by itself. Step 2.1's "load and resolve" reduces to
+  copying this header (marked R8). Check its ordinals against the original
+  with `dumpbin /exports` before trusting it.
+- **No MinHook in DLL-0:** the tick hook is a rel32 retarget of one `CALL`,
+  as V2DLL's `PatchFramePumpCall` (`V2TechButton.cpp` ~1890) and
+  `FramePumpThunk` (~1556: `pushad; call OnFramePump; popad; jmp [orig]`).
+  The site is now in `tools/check_exe.py` (RVA `0x285727`, `E8 84 9B 35
+  00`, verified on the reference exe): ALL OK expected.
+- **Do not copy V2DLL's `PinFpu()`** (it sets the FPU precision and
+  flush-to-zero for the whole game: a simulation change, R5). Print the
+  shares with integer math (`v * 10000 / 32768`), no floating point.
+- **Offsets for step 3** (`Symbols/structs.csv`, all **C**): `g_world` and
+  `g_countryManager` are **pointers** (`*(char**)(base + 0xE588E8)`,
+  `*(char**)(base + 0xE587E4)`); World `+0xB60` player index and `+0xB5C`
+  player tag are simpler than the humans vector `+0xAEC/+0xAF0` (log both
+  and cross-check); CCountry `+0x1C` tag, `+0x20` index; date `+0xB0C` in
+  hours: year = hours / 8760 − 5000, 365-day years.
+- **Logs folder:** V2DLL writes `<exe folder>\Logs\` (`InitLogDir`, ~280);
+  use the same, file `tgcx.log`.
+- **Still to do, in order:** `tools/gen_signatures.py` (→
+  `dll\tgcx\signatures.h` from `check_exe.SIGNATURES`), the vcxproj (Win32,
+  v143, /MT, `lua51.dll`), `dllmain.cpp` (log, signatures, call patch,
+  10-second upper-house line inside `__try`), `tools/install_dll.py`, build,
+  then U-4.
+

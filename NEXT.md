@@ -49,7 +49,8 @@ It blocks nothing until publishing; renaming later is a text replace.
    all works"; veto, pass, 25-seat lots and a broken promise in game;
    P22, P23). **LAW-0 done.** The normal build (5-year debts) is installed
    again.
-3. **DLL-0** — our own proxy that logs signatures and the upper house, and
+3. **DLL-0** (started 2026-10-12: research only, handoff at the end of
+   `docs/instructions-dll-0.md`) — our own proxy that logs signatures and the upper house, and
    **U-4** (the user installs it and sends the log): confirms GH-2.
 4. In parallel, when there is time: **GOV-0** (data, no RE),
    **GH-1 step 5**. (COMPAT-0 deferred by D1.)

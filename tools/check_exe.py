@@ -34,6 +34,8 @@ SIGNATURES = [
     (0x4FD2A0, "558BEC83EC088B45088B15E487250156", "CUpperHouseTrigger::Evaluate"),
     (0x1E64D0, "558BEC51894DFC8B45FC05B00800008BE55DC3",
      "CCountry::GetUpperHouse, add eax,0x8B0"),
+    # 2026-10-12, DLL-0: the only call to the per-frame pump FUN_009DF2B0 (rel32 = 0x5DF2B0 - 0x28572C)
+    (0x285727, "E8849B3500", "call FUN_009DF2B0, DLL tick hook site"),
 ]
 
 
