@@ -58,6 +58,6 @@ Original screenshot (2560x1440):
 Metadata beside it; keep game art outside git. Native legend is 83/5/12;
 chart wedge hover still follows the old pie. P30 records this; next P31.
 No save/reload/date-advance/Alt-Tab coverage or tooltip repair is claimed.
-User requested commit/push after handoff. The local commit is prepared;
-public push awaits a distribution decision under AGENTS R8/§13 because
-marked V2DLL-derived code is included. No game assets/build outputs staged.
+User authorized pushing to the existing public repository and removed the
+publication approval requirement from AGENTS §13. V2DLL provenance comments
+remain. No game assets or build outputs are included in the commit.

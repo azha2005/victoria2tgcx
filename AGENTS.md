@@ -419,5 +419,4 @@ The user has the game installed; studying it to make a personal mod is not
 a problem. Neither the executable nor parts of it, nor the Ghidra project,
 are redistributed. TGC, the RE repo and V2DLL have no published licence.
 The project is for **personal use** (D6): V2DLL code may be used, marked
-(R8); nothing from TGC or the executable enters git. If the submod is ever
-published, first ask its authors for permission or remove the marked code.
+(R8); nothing from TGC or the executable enters git.
