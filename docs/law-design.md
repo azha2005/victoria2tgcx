@@ -1,6 +1,6 @@
 # Design: laws with political favours and ideological affinity
 
-> **Reference** (v3, 2026-10-12). Decision D7 (user, 2026-10-12): **direct
+> **Reference** (v4, 2026-10-12). Decision D7 (user, 2026-10-12): **direct
 > political favours and each bloc's ideological closeness to each law**,
 > instead of Better Politics Mod's staged negotiation
 > (`docs/archive/law-design-v1-stages.md`).
@@ -9,6 +9,13 @@
 > rebuilt on TGC v2.5.2's own idioms (`docs/tgc-howto.md` §1-2) and on what
 > U-2 measured (P19-P21). v2, verbatim: `docs/archive/law-design-v2-1012.md`.
 > What changed is listed in §12. Target: TGC v2.5.2 only (D1, revised).
+>
+> **v4 approved for LAW-1:** TGC's conditional reform-support rules supply
+> starting votes. Reviewed affinity controls bargaining and promised laws.
+> The catalogue preview has not implemented this revision yet; LAW-0 keeps
+> its tested legacy behavior. v3 is preserved in `archive/law-design-v3-1012.md`.
+> Local Bill mockup updated/exported; online republish needs browser access.
+> See `report-law-1-start-1012.md` for evidence and remaining gates.
 >
 > Rules: `AGENTS.md` R3, R4, R5, R6, R10; P16 (no `if`), P21 (a fired
 > event's `trigger` is not checked). **Mockup (R10):** boards **Bill** and
@@ -85,9 +92,9 @@ Consequences carried from v2:
 
 ---
 
-## 3. Affinity: each bloc's stance on each law
+## 3. Affinity: each bloc's bargaining preference
 
-Each ideology has, **for each law group**, an ideal option and an
+For bargaining, each ideology has, **for each law group**, an ideal option and an
 intensity (1 or 2). Facing a bill that moves the group from option `a` to
 option `b`:
 
@@ -98,7 +105,8 @@ option `b`:
 | leaves it at the same distance | **undecided** (0) |
 
 **Conservatives** have **the status quo** (the current option) as their
-ideal, with intensity 1: they are against every change, but weakly.
+ideal, with intensity 1: their bargaining preference opposes change weakly.
+Their starting vote in LAW-1 still responds to TGC's pressure rules.
 
 Example, `press_rights` (`state_press` 0, `censored_press` 1, `free_press`
 2), from 1 to 2 in the 1836 United Kingdom:
@@ -121,10 +129,11 @@ liberal = {
 }
 ```
 
-**What the file does not name** comes from TGC's bases: if the ideology has
-`add_political_reform` (or `add_social_reform`), its ideal is the group's
-highest option; if it has `remove_…`, the lowest; otherwise, the status
-quo. Intensity 1. `tgc_scan.py` warns about every such case.
+**Every LAW-1 affinity row is explicit and reviewed.** Do not infer an
+ideal from the presence of an add/remove reform block: these are conditional
+category support rules, not per-law ideals. Missing rows fail generation.
+`data/tgcx_law_catalog.txt` holds the full review; the original small file
+remains the LAW-0 baseline.
 
 **Initial values** (to be discussed with the user, [user]):
 
@@ -146,50 +155,60 @@ that do not run from "closed" to "open": `slavery`, `centralization`,
 
 ## 4. The projected vote
 
-- Each bloc votes according to its stance: **for → yes**, **undecided →
-  abstains**, **against → no**, except for what has been bought or
-  promised (§5).
-- It **passes** if **yes > no** and there is a **quorum: yes + no ≥ 50** of
-  100 seats.
-- Then **the Crown** (§6) signs or vetoes.
+**LAW-1 candidate (2026-10-13, report fix awaiting game retest):**
 
-**The count is a block of effects, not an event** (no hidden events, §2).
-The same generated block runs at the end of **every** bill decision
-(present, buy, promise, audience) and of a free **"Count the votes"**
-decision the player can use after an election changes the chamber. It:
+- Evaluate TGC's applicable add/remove political/social rule for each bloc
+  and the current country. Its support fraction supplies starting Aye;
+  remaining seats start Nay. Re-evaluate during counts and before voting.
+- Affinity determines bargaining terms and whether a later law repays a
+  promise. It no longer maps a whole bloc directly to Aye/Nay/abstention.
+- Purchases move available opposing seats to abstention or Aye; promises
+  secure remaining support. Never buy an already supportive seat or count
+  a seat twice. Retain the agreed favour prices unless a change is reviewed.
+- Pass when Aye > Nay and Aye + Nay >= 50 of 100 seats, then apply the
+  agreed Crown signature/veto. Recheck law, government and target allows.
 
-1. resets `tgcx_yes`, `tgcx_no` to 0 (Congo-style tallies);
-2. for each ideology and each 5 % step of its share
-   (`upper_house = { ideology = X value = 0.025 + 0.05·(k−1) }`), adds 5 to
-   yes or no as the stance flag says;
-3. moves what was bought: for step k, if the bloc has step k **and**
-   `tgcx_buy_<ideology>_ab` / `_yes` ≥ 5k, moves 5 (no → abstain, or
-   no → yes). A purchase therefore never counts for more seats than the
-   bloc has today, even after an election (it is a minimum, built from
-   steps);
-4. a promised bloc (`tgcx_promised_<ideology>`) votes yes in full;
-5. derives `tgcx_margin` (yes − no) and `tgcx_quorum` (yes + no) with the
-   same step-chain (each "+5 to yes" block also does +5 margin and +5
-   quorum).
+`report-law-1-native-1012.md` records native parser/evaluator/aggregation
+evidence, quantization and tests. Rules are imported from installed TGC
+v2.5.2, preserving the missing Conservative threshold and party conditions.
+All 23 base affinity groups are user-approved; later corrections are welcome.
 
-**The vote decision** ("Call the vote") requires the debate to be over (§7),
-`check_variable = { which = tgcx_margin value = 5 }` and
-`check_variable = { which = tgcx_quorum value = 50 }`. Its effect **counts
-again** before acting, so a stale count after an election cannot pass a
-bill the chamber no longer supports: it branches with `random_owned` on the
-fresh margin (P21) into "to the Crown" or "the count changed" (a window;
-the bill stays on the table).
+Allocate 100 seats in five-seat packets: nearest-five per bloc, then remove
+excess packets from rounded-up blocs or fill missing packets in positive
+rounded-down blocs, using installed ideology order. This balanced rounding
+gives each bloc its floor or ceiling packet count; it is not largest
+remainder. Starting Aye packets round allocated packets times native support
+to nearest, halves up. The native engine instead aggregates Q15 weighted
+support, so exact percentages and script tallies intentionally differ.
 
-**Showing the numbers without the DLL (R6):** "Count the votes" fires
-**one report event per outcome**, chosen by `random_owned` limits on the
-fresh tallies: "The whips report: the bill passes by N" / "fails by N" /
-"no quorum (N present)", for N in steps of 5 (≈ 40 events, generated, one
-localisation key each). With the DLL, the Bill window draws the same
-variables (§8).
+Purchased Aye applies first, then purchased abstention, clipped to opposition
+after native support. Sunk purchases are retained without refund when a bloc
+shrinks. Promises secure all remaining non-Aye seats, including purchased
+abstentions, and do not incur debt for an entirely supportive bloc. Friendly
+or undecided affinity with native Nay uses the existing 2-favour Aye price.
 
-**A single source of truth.** The DLL **does not recompute** the vote: it
-reads `tgcx_yes`, `tgcx_no`, the purchases and the stance flags from the
-country's variables (`CCountry+0x1DC`, `AGENTS.md` §4) and draws them.
+Introduction, Count and Vote fully recount. Purchases/promises validate
+the cached allocation inputs and current selected-bloc support inside their
+effects; stale input spends nothing and requires Count. The vote recounts
+after debate even when its cached tally was defeated. Target/government/law
+checks still prevent stale enactment. Compound negations wrap `AND` (P33).
+2026-10-13 correction: the game displayed every conditional result option
+of the shared report. Introduction/Count now count inside the decision,
+then select one ordinary report event through conditional firing effects,
+as in LAW-0 (P21/P34). Its body states the margin/quorum; one button closes
+it. Legacy result/debt/report IDs remain reserved; obsolete dispatcher
+420000194 has one recovery recount option for already queued saves only.
+See `report-law-1-report-fix-1013.md`. U-6 must retest presentation/loading
+and still validate timing, native comparisons, purchases and save/load.
+
+**Legacy LAW-0:** the installed/tested one-bill implementation still maps
+positive affinity to Aye, zero to abstention and negative to Nay, in
+five-seat slices. Its examples and purchases elsewhere in this document
+remain that historical baseline. Default `gen_laws.py` output remains
+byte-identical. The old section 4 is preserved verbatim in
+`archive/law-design-v3-1012.md`. The catalogue now implements native
+starting support. The earlier pending v4 reference is archived verbatim in
+`archive/law-design-v4-before-native-1012.md`.
 
 ---
 
@@ -308,9 +327,9 @@ ruler's ideology, **against** if not. Trait example (mockup): William IV,
 
 ## 7. The cycle
 
-Scope: **political and social reforms** (15 + 9 groups in TGC v2.5.2);
+Scope: **political and social reforms** (14 + 9 groups in TGC v2.5.2);
 TGC's economic and military ones are those of the uncivilized. One step at
-a time, up or down: at most 2 bills per group, 48 in total. One active bill
+a time, up or down: at most 2 bills per group, 46 in total. One active bill
 per country.
 
 ```
@@ -394,7 +413,7 @@ Each LAW card's report checks this table against screenshots.
 | Political Favours medallion, "+3 per month" with its breakdown tooltip (sources of the rate), "Spent on this bill" | `tgcx_favours`; the rate's factors are the tick's blocks (§5), and the DLL reads the same triggers' results from flags the tick sets (`tgcx_rate_prestige_2`…); spent = a `tgcx_spent` variable added by each purchase | the tick's decision states the month's total in its description; balance not shown as a number: decisions are greyed out when unaffordable (`check_variable` tooltip) |
 | Price table, "Buy in lots of 5 / 25 seats" selector | `data\tgcx_laws.txt` (`price`, `lots`), doubled under `tgcx_debt_broken_<ideology>` | one decision per lot; each title states its seats and price |
 | Debts ("law owed", "before January 1841", +2 militancy, double prices) | `tgcx_debt_<ideology>` + the `tgcx_debt_deadline_<ideology>` modifier | **the modifier itself**, with its expiry date, in the country's modifiers |
-| Upper House Blocs table: Bloc, Stance, Closeness, Votes, Bought | stance flags, `upper_house`, `tgcx_buy_*` | stance in the purchase decisions' titles ("Liberals — strongly for") |
+| Upper House Blocs table: Bloc, Affinity, Closeness, Votes, Bought; TGC starting Aye/Nay separately | stance flags, `tgcx_seats_*`, `tgcx_support_*` (thousandths), `tgcx_base_yes_*`, `tgcx_buy_*` | affinity in purchase titles/descriptions; count reports margin/quorum; full Bill window is later DLL work |
 | Buttons Abstain (n) / Vote Aye (n) / Promise a law | the generic purchase and promise decisions | the same decisions, in the decisions list |
 | The Crown: portrait, "Distrusts the Whigs", May veto / will sign, Audience (10) | §6 + GOV | the audience decision; the Crown's stance in its description |
 | Negotiation Log | — (no history in script) | none: only the DLL could keep it (from the variables' changes) |
@@ -435,3 +454,16 @@ breakdown tooltip (`mockups\2b-favours-breakdown.png`).
 | The Crown from a generic ruler | reads TGC's political-leader archetypes first | extend TGC's system (`docs/tgc-howto.md` §3) |
 | Compatible with any TGC version | TGC v2.5.2 only | D1 revised by the user after U-2 |
 | A flat +3 favours per month, collected by a decision | a rate from prestige and seven other factors, accrued automatically (DLL) | D11 (user, the same day) |
+
+
+## 13. LAW-2 implementation checkpoint (2026-10-13)
+
+0.3.0 adds the native Bill prototype, installed but not tested in game.
+The synchronized script GUI schema/route/stance/promise/audience variables
+are a read model, not a second source of vote rules. Count migrates old
+active bills; cleanup retains schema but clears activity. Native Count
+queues the engine decision command. GUI labels and projected chart read
+existing totals. Other actions remain in Decisions and favour accrual
+still uses its manual fallback. Full buttons, automatic ticking and mockup
+polish remain unfinished. `report-law-2-bill-1013.md` lists deviations;
+the agreed mechanic and mockup are unchanged by this prototype.

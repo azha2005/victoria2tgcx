@@ -439,7 +439,89 @@ wedge seating differs from old pie sectors, so the hovered ideology can
 be wrong for the dot beneath the cursor. This is not evidence of stale
 upper-house numbers.
 
-Repair pending in HEMI-3: share rendered seat geometry for hit-testing and
+HEMI-3 0.2.6 implements the repair and is accepted in game. Share rendered seat geometry for hit-testing and
 use a verified native tooltip path/ownership. Preserve native legend and
 UI ordering. Never restore the guessed structured return that caused P27
 or add duplicate overlay tooltips that recreate P28.
+
+## P31 — Native hover helpers have different ABIs and compressed slice IDs
+
+2026-10-12. Bounded Ghidra shows the pie entity bounds method takes ECX
+and eight stack words, returns an x87 ST0 value and uses **RET 32**, although
+its decompiled body uses only the first two floats. The Politics slice
+helper takes EAX and four stack words, returns AL and uses **RET 16**.
+The output slice is the ordinal among positive-share ideologies, not the
+engine ideology index or its political seat position. Treating these as
+ordinary interchangeable C callbacks corrupts the stack or selects wrong text.
+
+An initial isolated fixture also called the mid-function Politics CALL site
+as though it were a function entry, adding an extra return word. Its dump
+showed a return into stack memory; the corrected harness resolves the installed
+CALL target instead. No game was launched in that failure.
+
+Fix: verify disassembly, argument space, output ownership, result register/
+floating stack and RET cleanup. Test the actual thunks at a relocated fixture
+base with exact native stack shape and state preservation. HEMI-3 retains
+structured tooltip slot 10 and lets the native caller construct its result;
+it remaps only scalar bounds/slice selection. Evidence: `report-hemi-3-1012.md`
+and `symbols.md`; private `E:\v2re\logs\hemi3-*-1012.txt` exports.
+
+## P32 - A feathered pie cover paints into an earlier native header
+
+2026-10-12. User accepts 0.2.6 hover but shows the cover overlapping the
+Upper House block. The native title occupies root y=83..103; a cover at
+y=101 with three-pixel feather starts painting at y=98. Native ordered
+rendering preserves later popups, but an oversized cover still erases
+an earlier title. Checking only left-edge feather pixels missed this.
+
+0.2.7 clips the chart to content bounds x=[37,162), y=[104,209), intersected
+with the framebuffer. Captured D3D state restores the scissor rectangle and
+enable flag. Real GPU readback checks the whole header and reform row,
+plus the existing core/fringe coverage and hover tests. Seat geometry is
+unchanged. Installed, game confirmation pending. See
+`report-hemi-3-header-1012.md`; native TGC anchors stay outside git.
+
+2026-10-12 correction: 0.2.7 left a seam. Text `maxHeight` does not locate
+the painted header border. Inspecting installed `politics_bg.dds` at its
+GUI offset (18,9) places the last border row at root y=100. 0.2.8 clips
+at the first background row y=101 and checks both intact border and
+opaque coverage of the three previously exposed rows on the GPU.
+Installed, game confirmation pending; `report-hemi-3-seam-1012.md`.
+# P33 — Negate a compound gate as one AND
+
+2026-10-12, LAW-1. Vic2's `NOT` uses none-of-children semantics. Wrapping
+several generated gate clauses directly in `NOT = { ... }` does not mean
+"the complete gate failed" when some clauses remain true. After the native
+count added chamber validity to the target gate, the stale-target test
+caught a missing changed-count result.
+
+Wrap the compound condition in `AND = { ... }`, then negate that single
+node. `vote_validation()` now returns one AND node, so pass, veto and
+changed-count branches remain mutually consistent. Evidence is the
+catalogue interpreter's stale blocker/law/government/technology test,
+before/after the fix; no additional game test is claimed.
+
+### P34 - Conditional event options were all displayed
+
+**Found:** 2026-10-13, U-6 user screenshot of the first LAW-1 candidate.
+The Whips Report listed every quorum and margin result simultaneously,
+extending below the screen. The active error and system_error logs were
+empty. Installed TGC has no option-level trigger/allow/limit examples.
+
+**Cause:** the shared report used option-level `trigger` blocks to choose
+one button. The real game did not hide the other options. The catalogue
+interpreter filtered them as though the feature worked, allowing automatic
+tests to pass despite the unsupported presentation assumption.
+
+**Fix:** count in the firing decision and use `random_owned`/`limit` branches
+to select one ordinary result event (the established LAW-0 route, P21).
+Never rely on a fired event's trigger or hidden dispatcher (P21/P22).
+Keep obsolete event 420000194 as a one-option recovery for queued saves;
+new decisions never fire it. Generated events reject conditional options.
+
+**Verification:** every generated event has one ordinary option. All 231
+valid five-seat Aye/Nay combinations choose one correct report, including
+ties and no quorum. UK introduction and repeated Count each emit one event.
+These are script regression checks; corrected in-game presentation and the
+larger inline-count script load remain pending. See
+`report-law-1-report-fix-1013.md`.

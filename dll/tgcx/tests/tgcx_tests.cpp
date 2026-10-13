@@ -53,7 +53,7 @@ static void tgcx_FixtureTests() {
             memcpy(memory+sig.rva+sig.reloc[i],&value,4);
         }
     }
-    tgcx_Expect(tgcx_CheckSignatures(), "all twenty-three signatures at relocated fixture base");
+    tgcx_Expect(tgcx_CheckSignatures(), "all 27 signatures at relocated fixture base");
     tgcx_Expect(!tgcx_InstallRenderer(),"missing Direct3D import rejects installation without game patches");
     memory[tgcx_signatures[5].rva+11]^=1;
     tgcx_Expect(!tgcx_CheckSignatures(), "wrong relocated pointer rejected");
@@ -90,11 +90,14 @@ static void tgcx_FixtureTests() {
     *reinterpret_cast<int64_t**>(country+0x8C0)=shares;
     *reinterpret_cast<uintptr_t*>(country+0x8B0)=tgcx_base+0x9FD7DC;
     *reinterpret_cast<int64_t**>(country+0x8C4)=shares+10;
-    unsigned char ideology_manager[12]={},ideologies[9][0x50]={};
+    unsigned char ideology_manager[20]={},ideologies[9][0x50]={};
+    char* ideology_vector[10]={};
     uintptr_t nodes[9][2]={};uintptr_t bucket=0;
     *reinterpret_cast<uint32_t*>(ideology_manager+4)=1;
     *reinterpret_cast<uintptr_t**>(ideology_manager+8)=&bucket;
     *reinterpret_cast<unsigned char**>(memory+0xE58A3C)=ideology_manager;
+    *reinterpret_cast<char***>(ideology_manager+0xC)=ideology_vector;
+    *reinterpret_cast<char***>(ideology_manager+0x10)=ideology_vector+10;
     const unsigned int slots[]={1,2,3,4,5,6,7,8,9};
     for(unsigned int i=0;i<9;++i) {
         *reinterpret_cast<uintptr_t*>(ideologies[i])=tgcx_base+0xA36774;
@@ -104,6 +107,7 @@ static void tgcx_FixtureTests() {
         if(length<16)memcpy(ideologies[i]+0xC,name,length+1);
         else *reinterpret_cast<const char**>(ideologies[i]+0xC)=name;
         *reinterpret_cast<uint32_t*>(ideologies[i]+0x28)=slots[i];
+        ideology_vector[slots[i]]=reinterpret_cast<char*>(ideologies[i]);
         for(unsigned int component=0;component<3;++component)*reinterpret_cast<float*>(ideologies[i]+0x34+4*component)=component==0?1.0f:0.0f;
         nodes[i][0]=reinterpret_cast<uintptr_t>(ideologies[i]);nodes[i][1]=bucket;bucket=reinterpret_cast<uintptr_t>(nodes[i]);
     }
@@ -211,12 +215,14 @@ static void tgcx_LoaderProbe(const wchar_t* proxy_path) {
 }
 
 #include "tgcx_renderer_tests.h"
+#include "tgcx_bill_tests.h"
 
 int wmain(int argc, wchar_t** argv) {
+    setvbuf(stdout,nullptr,_IONBF,0);
     if (argc==3 && wcscmp(argv[1],L"probe")==0) tgcx_LoaderProbe(argv[2]);
     else if (argc==2) {
         tgcx_log=CreateFileW(L"tgcx_fixture.log",GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,0,nullptr);
-        tgcx_HashTests(argv[1]); tgcx_FixtureTests();
+        tgcx_HashTests(argv[1]); tgcx_BillTests();tgcx_FixtureTests();
         if (tgcx_log!=INVALID_HANDLE_VALUE) CloseHandle(tgcx_log);
     } else { printf("usage: tgcx_tests <reference exe> | probe <proxy>\n"); return 2; }
     printf("tgcx_tests: %s\n", tgcx_failures ? "FAIL" : "ALL OK");

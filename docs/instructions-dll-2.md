@@ -3,7 +3,9 @@
 2026-10-12. **0.2.4 working prototype, tested in game on E:.**
 Functional checkpoint: `report-u-5-1012.md`. HEMI-2 0.2.5 is now
 working in game, confirmed by the user (`report-hemi-2-handoff-1012.md`).
-Chart tooltip alignment is queued in HEMI-3.
+HEMI-3 0.2.6 hover is now accepted in game. 0.2.8 clips its cover below
+the Upper House header; accepted in game. See
+`report-law-1-start-1012.md` section 1 and `instructions-u-5.md`.
 Extended U-5 checks remain unconfirmed. No immediate rebuild needed.
 
 1. Compare `../mockups/1-politics.png` with the game's upper-house panel;

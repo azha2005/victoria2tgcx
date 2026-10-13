@@ -45,7 +45,7 @@ class InstallerTests(unittest.TestCase):
         installer.operate(self.folder)
         self.assertEqual(installer.digest(self.folder / "lua51_real.dll"), before["lua51.dll"])
         record = json.loads((self.folder / installer.STATE).read_text(encoding="utf-8"))
-        self.assertEqual(record["card"], "DLL-1+HEMI-2")
+        self.assertEqual(record["card"], "LAW-2")
         installed = self.snapshot()
         installer.operate(self.folder)
         self.assertEqual(installed, self.snapshot())

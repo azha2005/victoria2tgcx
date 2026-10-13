@@ -22,6 +22,10 @@ import os
 import re
 import shutil
 import sys
+import tempfile
+from pathlib import Path
+
+from install_dll import game_running
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "submod")
@@ -31,6 +35,8 @@ PREFIX = "tgcx_"
 GENERATED = {
     os.path.join("common", "event_modifiers.txt"): (os.path.join("common", "event_modifiers.txt"),
                                                     os.path.join(SRC, "tgcx_event_modifiers.txt")),
+    os.path.join("interface", "country_politics.gui"): (os.path.join("interface", "country_politics.gui"),
+                                                        os.path.join(SRC, NAME, "tgcx_bill_layout.txt")),
 }
 
 
@@ -42,6 +48,8 @@ def foreign_files(folder):
     for dirpath, _, files in os.walk(folder):
         for f in files:
             if os.path.relpath(os.path.join(dirpath, f), folder) in GENERATED:
+                if f == "country_politics.gui" and b"# >>> tgcx_bill" not in Path(dirpath, f).read_bytes():
+                    bad.append(os.path.relpath(os.path.join(dirpath, f), folder))
                 continue
             if not re.sub(r"^[0-9_]+(?=tgcx_)", "", f.lower()).startswith(PREFIX):
                 bad.append(os.path.relpath(os.path.join(dirpath, f), folder))
@@ -55,6 +63,10 @@ def is_our_mod_file(path):
 
 
 def remove(mod_dir):
+    mod_dir = Path(mod_dir).resolve()
+    target, descriptor = mod_dir / NAME, mod_dir / (NAME + ".mod")
+    if target.is_symlink() or descriptor.is_symlink() or target.resolve().parent != mod_dir:
+        raise ValueError("refusing linked or escaped removal targets")
     folder = os.path.join(mod_dir, NAME)
     modfile = os.path.join(mod_dir, NAME + ".mod")
     if os.path.isdir(folder):
@@ -71,9 +83,13 @@ def remove(mod_dir):
         print(f"removed   {modfile}")
 
 
-def generate(tgc, dest):
+def generate(tgc, dest, source=SRC):
     """TGC's file, byte for byte, then our block: the same bytes every time."""
     for rel, (tgc_rel, block) in GENERATED.items():
+        block = os.path.join(source, os.path.relpath(block, SRC))
+        bill_gui = rel == os.path.join("interface", "country_politics.gui")
+        if bill_gui and not os.path.isfile(block):
+            continue  # The script-only/default LAW-0 source has no GUI fragment.
         base = os.path.join(tgc, tgc_rel)
         if not os.path.isfile(base):
             sys.exit(f"install_submod: {base} not found: is --tgc the TGC v2.5.2 folder?")
@@ -87,21 +103,75 @@ def generate(tgc, dest):
         out = os.path.join(dest, rel)
         os.makedirs(os.path.dirname(out), exist_ok=True)
         with open(out, "wb") as f:
-            f.write(data.rstrip() + nl + nl + ours.replace(b"\r\n", b"\n").replace(b"\n", nl))
+            if bill_gui:
+                from tgcx_bill_gui import inject
+                f.write(inject(data.decode("cp1252"), ours.decode("cp1252")).encode("cp1252"))
+            else:
+                f.write(data.rstrip() + nl + nl + ours.replace(b"\r\n", b"\n").replace(b"\n", nl))
         print(f"generated {rel} = TGC's ({len(data)} bytes) + ours ({len(ours)} bytes)")
 
 
-def install(mod_dir, tgc):
-    src = os.path.join(SRC, NAME)
+def install(mod_dir, tgc, source=SRC, dry_run=False, backup=None):
+    mod_dir, tgc, source = (Path(p).resolve() for p in (mod_dir, tgc, source))
+    if game_running():
+        raise ValueError("close v2game.exe before installing the submod")
+    src = os.path.join(source, NAME)
+    descriptor = source / (NAME + ".mod")
+    if not os.path.isdir(src) or not descriptor.is_file() or not is_our_mod_file(descriptor):
+        raise ValueError("source must contain TGCX/ and a descriptor pointing to mod/TGCX")
     bad = foreign_files(src)
     if bad:
         sys.exit(f"install_submod: the submod has files without {PREFIX} (R4): {bad}")
-    remove(mod_dir)  # a reinstall leaves no stale files behind
-    shutil.copytree(src, os.path.join(mod_dir, NAME))
-    generate(tgc, os.path.join(mod_dir, NAME))
-    shutil.copy2(os.path.join(SRC, NAME + ".mod"), os.path.join(mod_dir, NAME + ".mod"))
+    target, modfile = mod_dir / NAME, mod_dir / (NAME + ".mod")
+    if target.is_symlink() or modfile.is_symlink() or target.resolve().parent != mod_dir:
+        raise ValueError("refusing linked or escaped installation targets")
+    if target.exists() and foreign_files(target):
+        raise ValueError("installed TGCX contains foreign files; leaving it alone")
+    if modfile.exists() and not is_our_mod_file(modfile):
+        raise ValueError("installed descriptor is not ours; leaving it alone")
+    if source == mod_dir or source.is_relative_to(target) or target.is_relative_to(source):
+        raise ValueError("source must be outside the live submod")
+    # Fully prepare generated files before any live deletion or replacement.
+    with tempfile.TemporaryDirectory(prefix="tgcx_submod_") as prepared:
+        payload = Path(prepared) / NAME
+        shutil.copytree(src, payload)
+        generate(tgc, payload, source)
+        if dry_run:
+            print("dry-run: source, ownership, generated modifiers and running-game gates OK; no live files changed")
+            return
+        retained = Path(backup).resolve() if backup else Path(tempfile.mkdtemp(prefix="tgcx_submod_backup_"))
+        if backup:
+            for protected in (mod_dir, source, tgc):
+                if retained == protected or retained.is_relative_to(protected) or protected.is_relative_to(retained):
+                    raise ValueError("backup must be outside the source, TGC and live mod folder")
+            retained.mkdir(parents=True, exist_ok=False)
+        if target.exists():
+            shutil.copytree(target, retained / NAME)
+            # Retain our appended block, so --source <backup> is a complete rollback.
+            base = (tgc / "common/event_modifiers.txt").read_bytes()
+            nl = b"\r\n" if b"\r\n" in base[:4096] else b"\n"
+            prefix = base.rstrip() + nl + nl
+            old = (target / "common/event_modifiers.txt").read_bytes()
+            if not old.startswith(prefix):
+                raise ValueError("installed generated modifiers do not match this TGC; backup retained, no live files changed")
+            (retained / "tgcx_event_modifiers.txt").write_bytes(old[len(prefix):])
+        if modfile.exists():
+            shutil.copy2(modfile, retained / modfile.name)
+        remove(mod_dir)  # verified targets are ours, with a retained copy
+        try:
+            shutil.copytree(payload, target)
+            shutil.copy2(descriptor, modfile)
+        except Exception:
+            remove(mod_dir)
+            if (retained / NAME).exists():
+                shutil.copytree(retained / NAME, target)
+            if (retained / modfile.name).exists():
+                shutil.copy2(retained / modfile.name, modfile)
+            raise
+        print(f"rollback source: {retained}")
     n = sum(len(fs) for _, _, fs in os.walk(src))
-    print(f"installed {NAME} ({n} files + {len(GENERATED)} generated) + {NAME}.mod in {mod_dir}")
+    generated = sum((target / rel).is_file() for rel in GENERATED)
+    print(f"installed {NAME} ({n} files + {generated} generated) + {NAME}.mod in {mod_dir}")
 
 
 def main():
@@ -109,13 +179,20 @@ def main():
     ap.add_argument("mod_dir", help=r"the game's mod\ folder")
     ap.add_argument("--remove", action="store_true")
     ap.add_argument("--tgc", help=r"TGC folder the generated files start from (default: <mod>\TGC_v2.5.2\TGC)")
+    ap.add_argument("--source", default=SRC, help="complete staged submod root (default: repository submod)")
+    ap.add_argument("--dry-run", action="store_true", help="prepare and validate without changing the live mod")
+    ap.add_argument("--backup", help="new directory for a complete rollback source")
     a = ap.parse_args()
     if not os.path.isdir(a.mod_dir) or not any(f.lower().endswith(".mod") for f in os.listdir(a.mod_dir)):
         sys.exit(f"install_submod: {a.mod_dir} does not look like a mod\\ folder (no .mod files)")
     if a.remove:
+        if game_running():
+            sys.exit("close v2game.exe before removing the submod")
+        if a.dry_run:
+            sys.exit("use --dry-run for installation validation; removal was not performed")
         remove(a.mod_dir)
     else:
-        install(a.mod_dir, a.tgc or os.path.join(a.mod_dir, "TGC_v2.5.2", "TGC"))
+        install(a.mod_dir, a.tgc or os.path.join(a.mod_dir, "TGC_v2.5.2", "TGC"), a.source, a.dry_run, a.backup)
 
 
 if __name__ == "__main__":

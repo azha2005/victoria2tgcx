@@ -182,8 +182,9 @@ this project has named, with its evidence, is in `docs/symbols.md`.
 
 Complete upper-house mapping/vector bounds and the hemicycle's ordered
 GUI drawing are runtime-confirmed (GH-2/U-5, 0.2.4). Visual polish remains
-implemented in 0.2.5, installed and confirmed working in game. The user
-reports tooltips do not correlate with the new chart; HEMI-3 is queued. Current status
+implemented in 0.2.5 and confirmed working in game. HEMI-3 0.2.6 native
+seat hover is accepted and retained as the baseline; 0.2.8 aligns its cover
+with the native header border, accepted in game. Current status
 and next work are in ROADMAP.md and NEXT.md.
 What is **not** known and is needed: which function decides whether a
 reform can be voted; how a GUI
@@ -253,10 +254,22 @@ E:\tools\ghidra_12.1.4_PUBLIC\support\analyzeHeadless.bat E:\v2re\ghidra v2game 
   -process v2game.exe -noanalysis -scriptPath <folder> -postScript <Script>.java
 ```
 
-Current release: **0.2.5 (DLL-1+HEMI-2)**, installed on E:, automatic
-gates passed; user confirms it works in game. Native pie hover regions do
-not match the new chart; HEMI-3 hover integration is next. 0.2.4 is the game-tested
-functional baseline. `docs/report-hemi-2-build-1012.md` records the changes.
+Current candidate: **0.3.0 (LAW-2 Bill prototype)**, installed on E:,
+automatic gates passed; **done, not tested in game**. Accepted DLL 0.2.8
+hover/header baseline is retained privately for rollback.
+0.2.6 native seat hover works in game and is the retained working baseline.
+Remaining extended U-5 coverage is unconfirmed; LAW-2 is now selected.
+`docs/report-hemi-3-seam-1012.md` records the latest correction; the header
+report records 0.2.6 hover acceptance.
+LAW-1's first U-6 run exposed every conditional report option at once.
+The correction passed the user's short Present/Count/save-reload check.
+All 23 base affinities are approved; 25 catalogue, 3 GUI and 10 script
+installer tests pass. Complete prior script/DLL rollbacks retained; default
+LAW-0 output remains byte-identical. LAW-2 adds native Bill labels/buttons
+and an ordered projected chart; Count uses the engine decision command.
+Full controls and automatic favours remain unfinished. Finish laws before
+starting another mechanic. See `docs/report-law-2-bill-1013.md`,
+`docs/instructions-law-2.md` and `docs/instructions-u-7.md`.
 Build with `tools/build_dll.ps1`, check with `tools/test_dll.ps1`, and install
 with `tools/install_dll.py` after normal game exit. Keep native tooltip slot
 10 untouched and draw in native GUI order; Final Present only samples.
@@ -308,7 +321,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P31**).
+number (**the next one is P35**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -347,7 +360,14 @@ number (**the next one is P31**).
 
 - **P29** Windows PowerShell redirected stderr can reject successful unittest progress; runner output uses stdout and exit-code gates stay intact
 
-- **P30** Drawing a hemicycle does not change native pie hit-testing; 0.2.5 works but chart tooltip ideology can mismatch seats; HEMI-3 pending
+- **P30** Drawing a hemicycle does not change native pie hit-testing; HEMI-3 0.2.6 scalar hover fix accepted in game
+
+- **P31** Native hover helpers have different register/stack/result ABIs; verify RET cleanup and compressed slice ordinals before hooking or invoking fixtures
+
+- **P32** A cover feather extends beyond its opaque core and can erase earlier native labels; clip to actual sprite/content bounds rather than text maximum height (0.2.8 accepted in game)
+
+- **P33** Negate a compound generated gate as one `AND`; `NOT` directly over several children tests none of them
+- **P34** Conditional event options were all displayed in game; select one ordinary result event in the firing effect, and do not simulate option hiding
 
 ## 9. Decisions
 
@@ -359,7 +379,7 @@ number (**the next one is P31**).
 | **D4** | "Leaders" | **both: rulers and generals/admirals, starting with those who existed in 1836** | **closed** (user, 2026-10-12); `docs/technical-plan.md` §5 |
 | **D5** | Multiplayer | **later**: single player first. R5 still holds (it is cheap and avoids rework), but MP is not tested until the user asks | **closed** (user, 2026-10-12) |
 | **D6** | DLL base | **our own DLL, allowed to use V2DLL code** (personal use; R8 says how to mark it) | **closed** (user, 2026-10-12) |
-| **D7** | What "negotiating" a law means | **political favours and ideological affinity**: each bloc has a stance on each law according to its closeness to it; deterministic projected vote; abstentions and votes are bought with favours, laws are promised (debts with a deadline), the Crown signs or vetoes. Replaces BPM's staged negotiation (archived) | **closed** (user, 2026-10-12, revised the same day); `docs/law-design.md` |
+| **D7** | What "negotiating" a law means | **political favours and ideological affinity**: each bloc has a stance on each law according to its closeness to it; deterministic projected vote (LAW-1: TGC conditional support supplies starting votes; affinity controls bargaining and promises, approved 2026-10-12); abstentions and votes are bought with favours, laws are promised (debts with a deadline), the Crown signs or vetoes. Replaces BPM's staged negotiation (archived) | **closed** (user, 2026-10-12, revised the same day); `docs/law-design.md` |
 | D8 | Event range | 420 000 000 – 420 999 999 | closed (agent, 2026-10-12): empty in TGC v2.3.4 and v2.5.2 (`tgc_scan.py`) |
 | **D9** | Interface route | **hybrid, case by case**: each element chooses A (draw on top) or B (real game element) using the criteria in `docs/technical-plan.md` §9.1, and the card records the choice | **closed** (user, 2026-10-12) |
 | **D11** | Law details (favours) | **virtual purchases only, lasting the bill** (not TGC's real seat shifts); favours **accrue automatically like diplomatic points** (the DLL sends the monthly tick; a decision is the no-DLL fallback); the rate comes **from prestige plus stability, militancy, consciousness, voting pop and monarch/leader support** (initial values in `docs/law-design.md` §5) | **closed** (user, 2026-10-12) |

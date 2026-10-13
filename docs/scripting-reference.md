@@ -63,3 +63,4 @@ is ordinary:
 | A polled event (`mean_time_to_happen = { days = 1 }`) fired about a month after its trigger held (P23); modifier durations are exact | U-3: debt deadline ~2 March, event 2 April 1836, twice |
 | There are **no hidden events**: every event opens a window (P22) | the user; wiki Event modding; 0 uses in TGC |
 | Branch in the firing effect with `random_owned = { limit = { … } owner = { country_event = … } }` | wiki IF Emulation; TGC's usual idiom; load test since 2026-10-12 (to be confirmed in U-2 run 3) |
+| Conditional `trigger` blocks inside event options did not hide any option: every result button appeared | U-6 user screenshot, 2026-10-13 (P34); use LAW-0's conditional firing of one ordinary event; tests must not implement imaginary option hiding |

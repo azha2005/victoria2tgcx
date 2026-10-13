@@ -279,6 +279,7 @@ static bool tgcx_PatchFramePumpCall() {
 }
 
 #include "tgcx_renderer.h"
+#include "tgcx_bill.h"
 
 #ifndef TGCX_TEST
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
@@ -297,7 +298,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
         tgcx_log=CreateFileW(log_path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, 0, nullptr);
         if (tgcx_log == INVALID_HANDLE_VALUE) return TRUE;
         tgcx_base=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
-        tgcx_Log("TGCX DLL-1+HEMI-2 0.2.5 base=%08X preferred=%08X read_only=1", tgcx_base, tgcx_preferred_base);
+        tgcx_Log("TGCX LAW-2 0.3.0 base=%08X preferred=%08X simulation_writes=engine_commands_only", tgcx_base, tgcx_preferred_base);
         char digest[65]={};
         bool hash_ok=tgcx_HashFile(exe, digest) && strcmp(digest,tgcx_exe_sha256)==0;
         tgcx_Log("%s sha256 %s", hash_ok ? "OK" : "BAD", digest[0] ? digest : "unavailable");
@@ -321,6 +322,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
             return TRUE;
         }
         if (!tgcx_InstallRenderer()) tgcx_Log("Renderer hook rejected; original pie retained");
+        else { tgcx_bill_enabled=true;tgcx_bill_decision_fn=tgcx_base+0x2DCE10; }
     } else if (reason == DLL_PROCESS_DETACH && tgcx_log != INVALID_HANDLE_VALUE) {
         CloseHandle(tgcx_log); tgcx_log=INVALID_HANDLE_VALUE;
     }

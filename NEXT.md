@@ -1,63 +1,71 @@
-# NEXT — what comes next
+# NEXT - what comes next
 
-2026-10-12 (14). **0.2.5 works in game, confirmed by the user.** Tooltip
-hover does not correlate with the new chart. Handoff:
-`docs/report-hemi-2-handoff-1012.md`. Preserve the working build; next card
-is HEMI-3 hover integration. No immediate rebuild or repeat game test.
+2026-10-13 (22). **LAW-2 Bill prototype 0.3.0 installed on E:, done, not
+tested in game.** LAW-1's short Present/Count/save-reload path is accepted
+by the user; extended coverage is not inferred. Finish the law mechanic
+before economy, rulers or templates. Read `docs/report-law-2-bill-1013.md`,
+`docs/instructions-law-2.md` and `docs/instructions-u-7.md`.
 
-## 1. Scope
+## Current result
 
-TGC v2.5.2 only; single player first; read-only presentation. No new mechanic
-selected. Keep fewer iterations: one consolidated hover fix/build/test.
-REA and the Victoria II RE git remain references for later army templates.
-D3 remains open and blocks nothing.
+- Native Bill child with live law, vote/favours/bloc/affinity/promise data.
+  Open/Close/Count wired; Count queues the native engine decision command.
+  Projected chart draws in native GUI order. Native tooltip slot untouched.
+- Purchases, promises, audience, withdrawal, vote and manual favour collection
+  remain in Decisions. Automatic favour ticking and the full Bill controls
+  are unfinished. The mechanic itself has not changed.
+- 25 catalogue, 3 GUI, 10 script installer tests, LAW-0 byte identity,
+  reference/TGC/signature gates and native/real-GPU/eight DLL installer/Lua
+  tests pass. 70 file gates, 38 runtime guards. Catalogue 37,775,061 bytes.
+- Generated GUI comes from installed TGC plus our own fragment. No copied
+  TGC GUI or art enters git. Private layout preview is not a game screenshot.
+- Only the user launches/exits the game. Preserve existing uncommitted work.
+  No new mechanic, commit or subagent is selected. Next pitfall is P35.
 
-## 2. Next implementation session: HEMI-3
+## Next session in order
 
-1. Read `docs/instructions-hemi-3.md`, the handoff, Main mockup, renderer/tests,
-   symbols and P27-P30. Inspect the saved original game screenshot.
-2. Diagnose chart hover ownership and native tooltip ABI with bounded RE.
-   Current new geometry is drawn over unchanged native pie hit regions.
-   Do not confuse that mismatch with stale upper-house data.
-3. Align chart hover with shared rendered geometry and correct engine
-   ideology; preserve native legend, layering, fallback and CPU/D3D state.
-   No guessed structured string returns or duplicate tooltip overlays.
-4. Consolidate verified changes, run reference/TGC/native/GPU/installer
-   gates and document mockup deviations. No unrelated polish expansion.
-5. Only after a concrete safe build is ready, install reversibly with the
-   game closed. Only the user starts the game. Combine hover checks with
-   remaining U-5 integration coverage; see its instructions.
-6. Preserve evidence and write a new immutable report; archive NEXT,
-   rewrite it and update statuses/next-card instructions.
+1. U-7: user loads an active bill, Counts once in Decisions, opens Politics,
+   checks the Bill and its Count/Close/Open controls. One screenshot and a
+   brief description suffice. Do not repeat the extended U-6 assignment.
+2. After normal exit retain game/DLL logs; use `tools/tgcx_check_laws.py`
+   for seven script/GUI gates and a snapshot. Actual GUI/command execution
+   and native text placement need evidence; fixtures alone cannot close U-7.
+3. Fix concrete failures and keep rollback. Once the GUI path works, finish
+   LAW-2: bloc buys/promises, lot selector, audience, withdraw/vote and
+   accurate Crown/debt status. Reuse native decision dispatch and fresh
+   script eligibility; never write simulation fields directly.
+4. Add automatic favour collection through the engine command path,
+   persisted script timer and manual fallback. Handle save/load and
+   duplicate commands without a second scheduler changing game state.
+5. Apply Bill mockup polish and recorded deviations. Earlier online mockup
+   update remains awaiting browser access. Do not replace actual GUI work
+   with another mockup or label the whole mechanic complete prematurely.
+6. Write an immutable report with observed evidence, archive/rewrite NEXT,
+   update statuses and step-by-step instructions for the next cards.
+
+## Installation and rollback
+
+Current source: `E:\v2re\logs\tgcx-law2-bill-stage-1013`.
+Script rollback: `E:\v2re\logs\tgcx-before-law2-submod-1013`.
+DLL/log rollback: `E:\v2re\logs\tgcx-before-law2-1013` (accepted 0.2.8).
+LAW-1 smoke evidence: `E:\v2re\logs\tgcx-law1-smoke-accepted-1013`.
+Install/build/native gates and verification: `tgcx-law2-*-1013` private logs.
+Seven-gate bundle: `E:\v2re\logs\tgcx-law-check-20261013T053026919692Z`.
+Its copied game logs predate the prototype; no new game evidence is inferred.
+Rollback commands are in U-7; restore both script and DLL after normal exit.
+
+Installed DLL SHA-256:
+`43bb3e7d3d0133b3bdb316fe9dd4253923297143ad0b113724534be5ed2f6ca5`.
+Accepted 0.2.8 rollback SHA-256:
+`61824e4bc1b72fc5792533ede1cd14ea3f759c458c59d35407cef973db0ccdc5`.
 
 | card | status | instructions/evidence |
 |---|---|---|
-| DLL-0 / U-4 | done, tested in game; backups retained | existing reports |
-| DLL-1 / HEMI-1 | functional prototype tested in game; extended coverage remains | DLL-1/2 instructions; U-5 report |
-| HEMI-2 | 0.2.5 works in game; tooltip mismatch and background/legend deviations retained | HEMI-2 handoff/instructions |
-| HEMI-3 | queued: correlate hover with actual rendered seats | instructions-hemi-3.md |
-| U-5 | functional checkpoint passed; remaining checks with hover build | instructions-u-5.md |
-| GH-2 | runtime data/mapping/coordinates/ordered draw confirmed | symbols.md |
-| LAW-0 / U-3 | done, tested in game | existing reports |
+| LAW-1 | script smoke accepted; broader native/mechanic coverage unconfirmed | instructions-law-1.md; report-law-2-bill-1013.md |
+| U-6 | short smoke passed; extended list not assigned again | instructions-u-6.md |
+| LAW-2 | prototype installed, done, not tested in game; full controls/ticking unfinished | instructions-law-2.md; report-law-2-bill-1013.md |
+| U-7 | brief Bill visual/Count check pending | instructions-u-7.md |
+| HEMI-3 | accepted 0.2.8 retained; behavior carried into unconfirmed 0.3.0 | existing reports |
+| U-5 | extended integration coverage unconfirmed | instructions-u-5.md |
 | GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
-| GH-4 / TPL-1 | later; REA reference retained | rea-for-templates.md |
-| COMPAT-0 | deferred (D1) | existing instructions |
-
-## 3. Continuity
-
-Active/source 0.2.5 DLL SHA-256:
-`1ec1aea4fee87441a293358451ee15859cdf66435991abebe3a52370f5de5a1b`.
-Original shim and previous proxies retained; submod release comment 0.2.5.
-Checks: 23 signatures, TGC anchors/range, Win32 /W4 /WX build, real GPU/native,
-8 installer/Lua forwarding tests and law checks passed.
-Accepted log: `E:\v2re\logs\tgcx-hemi2-025-accepted-1012.log`:
-10032 ordered draws, paused samples, final Politics hidden, empty errors.
-
-Original screenshot (2560x1440):
-`E:\v2re\logs\tgcx-hemi2-025-user-screenshot-1012.png`.
-Metadata beside it; keep game art outside git. Native legend is 83/5/12;
-chart wedge hover still follows the old pie. P30 records this; next P31.
-No save/reload/date-advance/Alt-Tab coverage or tooltip repair is claimed.
-User authorized pushing to the existing public repository and removed the
-publication approval requirement from AGENTS §13. V2DLL provenance comments
-remain. No game assets or build outputs are included in the commit.
+| COMPAT-0 | deferred D1 | existing instructions |

@@ -25,6 +25,17 @@ TEXT_DELTA = 0xC00
 
 # (RVA, expected bytes, where it comes from)
 SIGNATURES = [
+    (0xA0E48C, "C0D06000A0FF6D00007D7300504472003034750090E17900", "LAW-2 CButtonObserverGlue<CPoliticsView> table"),
+    (0x5E4C80, "558BEC568BF1578B7D088D866C020000508D8E7C02000051", "LAW-2 native button lookup"),
+    (0x5CD610, "8BC18B500885D274088B480C034804FFE2C3CCCCCCCCCCCC", "LAW-2 button observer native trampoline"),
+    (0xA0A58C, "C0D06000401C640010D69C0050D27B00A0BC9400C0BC9400", "LAW-2 CButtonObserverGlue primary vtable"),
+    (0x9FBB60, "F0D64700A01B6400106B9E00A01B7E00B01B7E0050C64300", "LAW-2 CVariables primary vtable"),
+    (0x241BA0, "558BEC8B45088378141072028B008B11508B4208FFD05DC2", "LAW-2 CVariables Find(std::string)"),
+    (0x5E4A20, "558BEC83E4F864A1000000006AFF68A646B5005064892500", "LAW-2 native child-window lookup"),
+    (0x5E4D00, "558BEC8D81CC020000508B450881C1DC02000051E8171E00", "LAW-2 native text-box lookup"),
+    (0x8ED0, "558BEC538B5D0C568BF18B4D08578B79103BFB730A6818DADE00", "LAW-2 native std::string assign"),
+    (0x65ECC0, "558BEC64A1000000006AFF6818D9B300508B450864892500", "LAW-2 native GUI text SetText ESI ABI"),
+    (0x2DCE10, "558BEC83E4F864A1000000006AFF68A90EBA00508B450864", "LAW-2 native decision click handler"),
 
     (0x1D74BE, "B8E8030000", "PATCH_ALLIED_REINFORCE_150, mov eax,1000"),
     (0x282EC0, "558BEC6AFF", "FUN_00682EC0, daily sync check (OOS)"),
@@ -54,6 +65,49 @@ SIGNATURES = [
     (0xA3C11C, "404D9E00", "native root icon lookup slot, FUN_009E4D40"),
     (0xA3A930, "007EA80060E29E00B06B9A0020366300", "native icon primary vtable"),
     (0xA3FF30, "20F1A200", "native overlay entity Draw slot, FUN_00A2F120"),
+    # HEMI-3: native scalar hover selection; structured tooltip slot stays untouched.
+    (0x2D52C6, "E8C5B930008BCE3AC3", "Politics pie slice CALL, FUN_006D2DD0"),
+    (0xA3BDA8, "700B9E00", "pie entity hit-test slot +0x50, FUN_009E0B70"),
+    (0x5E0B70, "558BEC83E4F883EC08568BF18B8E68010000", "pie hit-test ECX/float arguments, x87 result, RET 32"),
+    (0x5E0C90, "558BEC83E4F883EC18660F6E4508660F6E4D0C", "pie slice EAX/int arguments, AL result, RET 16"),
+]
+
+
+# Research-only gates, separate from the guards generated into the DLL.
+# Promote a function to SIGNATURES before calling or hooking it at runtime.
+RESEARCH_SIGNATURES = [
+    (0x337D00, "8B410885C074058B4904FFE0C3CCCCCC558BEC8B55088948", "Politics observer click slot (LAW-2 research)"),
+    (0x2DFFA0, "558BEC8B412085C074068B49045DFFE05DC20400CCCCCCCC", "Politics observer slot 1 (LAW-2 research)"),
+    (0x2D26D0, "100800837DEC10720C8B45D850E839C23D0083C404C745EC", "Politics observer construction region (LAW-2 research)"),
+    (0x505B30, "558BEC64A1000000006AFF68CB23B4005064892500000000", "FUN_00905B30, decision message construction (LAW-2 research)"),
+    (0x241C40, "558BEC8BC18B503885D274098B483C0348045DFFE25DC204", "FUN_00641C40, button observer slot 1 (LAW-2 research)"),
+    (0x5A29F0, "558BEC568B7508837E04FF578BF97438", "FUN_009A29F0, variables second table Find slot (LAW-2 research)"),
+    (0x241BA0, "558BEC8B45088378141072028B008B11", "FUN_00641BA0, variables Find slot (LAW-2 research)"),
+    (0x5E4A20, "558BEC83E4F864A1000000006AFF68A6", "FUN_009E4A20, root window lookup (LAW-2 research)"),
+    (0x5E4D00, "558BEC8D81CC020000508B450881C1DC", "FUN_009E4D00, root text lookup (LAW-2 research)"),
+    (0x474F80, "558BEC6AFF68F026B40064A100000000", "FUN_00874F80, decision execution command path (LAW-2 research)"),
+    (0x8ED0, "558BEC538B5D0C568BF18B4D08578B79", "FUN_00408ED0, native string assign (LAW-2 research)"),
+    (0x65ECC0, "558BEC64A1000000006AFF6818D9B300", "FUN_00A5ECC0, native text SetText (LAW-2 research)"),
+    (0x4DA5C0, "558BEC8B450883EC0883780C00535657", "FUN_008DA5C0, variable trigger lookup (LAW-2 research)"),
+    (0x2DCE10, "558BEC83E4F864A1000000006AFF68A90EBA", "FUN_006DCE10, native decision click handler (LAW-2 research)"),
+    (0x4AE290, "558BEC8B450C3DBE030000740E508B45", "FUN_008AE290, modifier factor field parser"),
+    (0x83D41C, "BA304AE2008DB564CBFFFFE8A4B1D4FF8BC6B9F3", "support token registration, add political"),
+    (0x4E8AB0, "558BEC83E4F86AFF686BBCB40064A100", "FUN_008E8AB0, militancy trigger by scope"),
+    (0x4FB3E0, "558BEC83E4F88B450883EC08568BF18B", "FUN_008FB3E0, average militancy trigger"),
+    (0x125A20, "558BEC83E4F88B451083EC5053C70700", "FUN_00525A20, social support aggregation"),
+    (0x125BE0, "558BEC83E4F88B450C83EC50538B5D10", "FUN_00525BE0, political support aggregation"),
+    (0x126A30, "558BEC6AFF680F1DBA0064A100000000", "FUN_00526A30, social reform support tooltip"),
+    (0x1273A0, "558BEC6AFF680F1DBA0064A100000000", "FUN_005273A0, political reform support tooltip"),
+    (0x58FC80, "558BEC83EC08538B5D08568D45FC5033", "FUN_0098FC80, decimal-to-thousandths parser"),
+    (0x572260, "558BEC64A1000000006AFF688883B500", "FUN_00972260, ideology construction/support objects"),
+    (0x5A1CE0, "558BEC51568BF08B4E1C8B018B5008FF", "FUN_009A1CE0, additive numeric field parsing"),
+    (0x5A0F40, "558BEC6AFF68C1A1B40064A100000000", "FUN_009A0F40, additive parser fallback"),
+    (0x4AF810, "558BEC83E4F883EC1C8B411C8B550889", "FUN_008AF810, additive upper-house support evaluator"),
+    (0x4AEC00, "558BEC83E4F883EC1C8B51242B51208B", "FUN_008AEC00, general additive evaluator comparison"),
+    (0x4AF210, "558BEC64A1000000006AFF6868C1B500", "FUN_008AF210, additive support parser"),
+    (0x572B20, "558BEC518B450C5356578BF93DE70200", "FUN_00972B20, ideology parser"),
+    (0x4FE3C0, "558BEC83EC088B45088B50088B400C8B", "FUN_008FE3C0, country social movement trigger"),
+    (0x4FE6E0, "558BEC83EC088B45088B50088B400C8B", "FUN_008FE6E0, country political movement trigger"),
 ]
 
 
@@ -72,7 +126,7 @@ def main() -> int:
         bad += 1
 
     image = PE(path)
-    for rva, expect, what in SIGNATURES:
+    for rva, expect, what in SIGNATURES + RESEARCH_SIGNATURES:
         off = image.offset(rva)
         want = bytes.fromhex(expect)
         got = data[off:off + len(want)]

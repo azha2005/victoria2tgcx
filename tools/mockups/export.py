@@ -35,6 +35,7 @@ SHOTS = [
     ("2-negotiation.png", "Bill.dc.html?do=Abstain 5 (2)*2|Buy in lots of 25 seats|Aye 25 (25)|Abstain 25 (10)|Promise a law|Show both", 900,
      "Bill: favours and affinity"),
     ("2b-favours-breakdown.png", "Bill.dc.html?do=Favours per month: breakdown", 900, None),
+    ("2c-law-pressure.png", "Bill.dc.html?pressure=9", 900, None),
     ("3-ruler.png", "Ruler.dc.html", 760, "Head of State"),
     ("4-economy.png", "Economy.dc.html", 1168, "Economy: GDP meter and history"),
     ("5-templates.png", "Templates.dc.html", 900, "Army templates"),

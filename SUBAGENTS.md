@@ -108,16 +108,19 @@ update §4.
 | COMPAT-1 | Generator (N1), v2.5.2 only: build the overrides from the installed TGC at install time | when the first card needs a fixed-name file (LAW-0 needs `event_modifiers.txt`) | `docs/instructions-law-0.md` step 0 (the seed) |
 | LAW-0 | One bill with favours and affinity, end to end (`press_rights`) | **done** (2026-10-12, U-3 passed) | `docs/instructions-law-0.md`; `docs/report-law-0-1012.md` |
 | U-3 | Play the LAW-0 bill (with a save/load halfway) | **done** (2026-10-12) | `docs/instructions-law-0.md` step 6 |
-| LAW-1 | Generator for the ≤ 48 bills from TGC v2.5.2 | after LAW-0 | to be written |
+| LAW-1 | Catalogue for 23 groups / 46 direction entries | **short script smoke accepted**; broader engine coverage unconfirmed; 25 catalogue/10 installer tests pass | `docs/instructions-law-1.md`; `docs/report-law-1-report-fix-1013.md` |
+| LAW-2 | Bill GUI and command bridge | **prototype 0.3.0 installed, done, not tested in game**; full actions/automatic favours unfinished | `docs/instructions-law-2.md`; `docs/report-law-2-bill-1013.md` |
+| U-7 | Bill prototype visual/Count evidence | **pending**, brief check only | `docs/instructions-u-7.md` |
+| U-6 | LAW-1 catalogue game evidence | **short smoke passed**; user requests moving on, extended coverage unconfirmed | `docs/instructions-u-6.md` |
 | DLL-0 | Our own `lua51.dll` proxy that logs signatures and the upper house | **done, tested in game** (U-4, 2026-10-12); installed on E:\; cadence coverage remains to verify in DLL-1 | `docs/instructions-dll-0.md`; `docs/report-dll-0-1012.md` |
 | U-4 | Install DLL-0, play a few days, send the log | **done** (2026-10-12): screenshots/log match, clean errors, save/load | `docs/instructions-u-4.md`; `docs/report-u-4-1012.md` |
 | DLL-1 | Renderer, cadence and Politics visibility | **working prototype, tested in game (0.2.4)**; extended coverage outstanding | `docs/instructions-dll-1.md`; U-5 report |
-| U-5 | Combined renderer/hemicycle acceptance | **functional checkpoint passed**; extended checks accompany the polish build | `docs/instructions-u-5.md`; `docs/report-u-5-1012.md` |
+| U-5 | Combined renderer/hemicycle acceptance | **functional hover checkpoint passed**; 0.2.8 header accepted; extended integration coverage remains | `docs/instructions-u-5.md`; `docs/report-u-5-1012.md` |
 | GH-3 | GUI: element positions and creation on the fly | after GH-1 | to be written |
 | GH-4 | Engine commands: `CConstructUnitCommand` and how it is sent | after GH-1; REA candidate noted | to be written; `docs/rea-for-templates.md` |
 | GH-5 | Save/load: the save's name, the moment | after GH-1 | to be written |
 | HEMI-1 | Hemicycle (user DLL-2 alias) | **working prototype, tested in game (0.2.4)**; visual polish outstanding | `docs/instructions-dll-2.md`; U-5 report |
-| HEMI-3 | Match hover with rendered ideology | **queued, not implemented** | `docs/instructions-hemi-3.md` |
+| HEMI-3 | Match hover with rendered ideology | **0.2.8 hover/header accepted in game** | `docs/instructions-hemi-3.md`; `docs/report-hemi-3-seam-1012.md` |
 | HEMI-2 | Visual polish of the working hemicycle | **0.2.5 works in game**, user-confirmed; tooltip mismatch remains; softer dots/background and bloc sweep | `docs/instructions-hemi-2.md` |
 | ECO-B | Charts in game | DLL-1 prototype available; GH-5 still needed; not selected | — |
 | GOV-0 | Data: 1836 rulers and generals' portraits | ready to start (no RE, in parallel) | `docs/instructions-gov-0.md` |
@@ -185,7 +188,8 @@ comes.
 - **DLL-1** — guarded native GUI ordered drawing/final Present cadence and Politics
   lifetime/geometry; combined with HEMI-1 at user request.
 - **DLL-2** — user alias for HEMI-1: 100 seats, seven rows and tooltips.
-  0.2.4 works in game; HEMI-2 0.2.5 works in game; HEMI-3 tooltip alignment queued; U-5 checks remain.
+  0.2.4, HEMI-2 0.2.5 and HEMI-3 0.2.6 work in game. 0.2.8 header
+  correction is accepted in game; extended U-5 coverage remains.
 
 - **HEMI-2** — mockup-based visual polish of the working 0.2.4 hemicycle;
   consolidate visual changes and remaining integration tests in one run.

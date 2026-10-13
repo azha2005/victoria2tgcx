@@ -1,4 +1,4 @@
-// DLL-1 + HEMI-2: guarded presentation callbacks and read-only upper-house drawing.
+// DLL-1 + HEMI-3: guarded presentation callbacks and native scalar chart hover.
 #pragma once
 
 class tgcx_CpuScope {
@@ -27,17 +27,24 @@ static bool tgcx_chart_drawn=false;
 static DWORD tgcx_guard_log_tick=0;
 static bool tgcx_guard_logged=false;
 static const char* tgcx_gui_stage="not read";
+static void tgcx_ClearHover();
+static void tgcx_BillReset(bool destroyed);
+static void tgcx_BillTick();
+static void tgcx_BillAfterEntity(uintptr_t renderer,uintptr_t entity);
 
 static void __cdecl tgcx_ShowPolitics(uintptr_t view) {
     DWORD error=GetLastError();
-    tgcx_politics=view; tgcx_chart_drawn=false;tgcx_guard_logged=false;
+    tgcx_politics=view; tgcx_chart_drawn=false;tgcx_guard_logged=false;tgcx_ClearHover();
     tgcx_Log("Politics shown view=%08X",view);
     SetLastError(error);
 }
 static void __cdecl tgcx_HidePolitics(uintptr_t view) {
     DWORD error=GetLastError();
-    if (tgcx_politics==view) { tgcx_politics=0; tgcx_chart_drawn=false; tgcx_Log("Politics hidden/destroyed view=%08X",view); }
+    if (tgcx_politics==view) { tgcx_BillReset(false);tgcx_politics=0; tgcx_chart_drawn=false;tgcx_ClearHover();tgcx_Log("Politics hidden/destroyed view=%08X",view); }
     SetLastError(error);
+}
+static void __cdecl tgcx_DestroyPolitics(uintptr_t view) {
+    tgcx_HidePolitics(view);tgcx_BillReset(true);
 }
 
 // from V2DLL: V2TechButton.cpp, View hook/thunk pattern. Flags and FXSAVE added.
@@ -51,7 +58,7 @@ __declspec(naked) static void name() { \
 }
 TGCX_VIEW_THUNK(tgcx_ShowThunk,tgcx_ShowPolitics,tgcx_show_original)
 TGCX_VIEW_THUNK(tgcx_HideThunk,tgcx_HidePolitics,tgcx_hide_original)
-TGCX_VIEW_THUNK(tgcx_DestroyThunk,tgcx_HidePolitics,tgcx_destroy_original)
+TGCX_VIEW_THUNK(tgcx_DestroyThunk,tgcx_DestroyPolitics,tgcx_destroy_original)
 #undef TGCX_VIEW_THUNK
 
 static bool tgcx_ReplacePointer(uintptr_t* slot, uintptr_t expected, uintptr_t replacement) {
@@ -119,6 +126,29 @@ static bool tgcx_AllocateSeats(const tgcx_Snapshot& sample, unsigned int seats[t
     return assigned==100;
 }
 struct tgcx_Seat { float x,y; unsigned int ideology; };
+static constexpr float tgcx_seat_radius=2.3f;
+struct tgcx_HoverFrame {
+    uintptr_t view,entity;
+    tgcx_GuiRect gui;
+    tgcx_Snapshot sample;
+    tgcx_Seat dots[100];
+    DWORD tick;
+};
+static tgcx_HoverFrame tgcx_hover={};
+static SRWLOCK tgcx_hover_lock=SRWLOCK_INIT;
+static unsigned int tgcx_hover_logged=0;
+static const char* tgcx_hover_stage="no rendered frame";
+static void tgcx_ClearHover() {
+    AcquireSRWLockExclusive(&tgcx_hover_lock);tgcx_hover.view=0;ReleaseSRWLockExclusive(&tgcx_hover_lock);
+}
+static int tgcx_SeatAt(const tgcx_Seat dots[100],float x,float y) {
+    // Match the visible outline, excluding its transparent feather and spaces between seats.
+    for(unsigned int i=0;i<100;++i) {
+        float dx=x-dots[i].x,dy=y-dots[i].y;
+        if(dx*dx+dy*dy<=tgcx_seat_radius*tgcx_seat_radius)return static_cast<int>(i);
+    }
+    return -1;
+}
 // Left-to-right seating by candidate index (tgcx_ideology_candidates). Presentation only;
 // engine indices/colours are still resolved by name. Main: Liberal left, Conservative centre, Reactionary right.
 static constexpr unsigned int tgcx_seating_order[]={7,6,8,5,4,0,1,3,2};
@@ -200,6 +230,11 @@ static HRESULT tgcx_DrawChart(IDirect3DDevice9* device,const tgcx_Snapshot& samp
     if(target)target->Release();if(backbuffer)backbuffer->Release();
     if(FAILED(result))return result;
     if(!correct || desc.Width!=static_cast<UINT>(gui.width) || desc.Height!=static_cast<UINT>(gui.height))return S_FALSE;
+    // politics_bg.dds at (18,9) ends the Upper House border at root y=100.
+    // Start at its first background row, not the text box's maximum height.
+    RECT chart_clip={ (std::max)(0,gui.left+37), (std::max)(0,gui.top+101),
+        (std::min)(gui.width,gui.left+162), (std::min)(gui.height,gui.top+209) };
+    if(chart_clip.left>=chart_clip.right || chart_clip.top>=chart_clip.bottom)return S_FALSE;
     D3DVIEWPORT9 viewport={0,0,static_cast<DWORD>(gui.width),static_cast<DWORD>(gui.height),0.0f,1.0f};
     IDirect3DStateBlock9* state=nullptr;
     result=device->CreateStateBlock(D3DSBT_ALL,&state);
@@ -214,7 +249,8 @@ static HRESULT tgcx_DrawChart(IDirect3DDevice9* device,const tgcx_Snapshot& samp
     TGCX_SET(device->SetRenderState(D3DRS_ZENABLE,FALSE));TGCX_SET(device->SetRenderState(D3DRS_ZWRITEENABLE,FALSE));
     TGCX_SET(device->SetRenderState(D3DRS_CULLMODE,D3DCULL_NONE));TGCX_SET(device->SetRenderState(D3DRS_LIGHTING,FALSE));
     TGCX_SET(device->SetRenderState(D3DRS_FOGENABLE,FALSE));TGCX_SET(device->SetRenderState(D3DRS_STENCILENABLE,FALSE));
-    TGCX_SET(device->SetRenderState(D3DRS_SCISSORTESTENABLE,FALSE));TGCX_SET(device->SetRenderState(D3DRS_ALPHATESTENABLE,FALSE));
+    TGCX_SET(device->SetScissorRect(&chart_clip));TGCX_SET(device->SetRenderState(D3DRS_SCISSORTESTENABLE,TRUE));
+    TGCX_SET(device->SetRenderState(D3DRS_ALPHATESTENABLE,FALSE));
     TGCX_SET(device->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE));TGCX_SET(device->SetRenderState(D3DRS_SRCBLEND,D3DBLEND_SRCALPHA));
     TGCX_SET(device->SetRenderState(D3DRS_DESTBLEND,D3DBLEND_INVSRCALPHA));TGCX_SET(device->SetRenderState(D3DRS_BLENDOP,D3DBLENDOP_ADD));
     TGCX_SET(device->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE,FALSE));TGCX_SET(device->SetRenderState(D3DRS_SRGBWRITEENABLE,FALSE));
@@ -235,7 +271,7 @@ static HRESULT tgcx_DrawChart(IDirect3DDevice9* device,const tgcx_Snapshot& samp
     for(unsigned int i=0;i<100;++i) {
         float x=gui.left+dots[i].x,y=gui.top+dots[i].y;
         tgcx_Vertex* out=tgcx_seat_vertices+i*2*tgcx_disc_vertices;
-        tgcx_AppendDisc(out,cosine,sine,x,y,2.3f,0.8f,0xFF34332B);
+        tgcx_AppendDisc(out,cosine,sine,x,y,tgcx_seat_radius,0.8f,0xFF34332B);
         tgcx_AppendDisc(out+tgcx_disc_vertices,cosine,sine,x,y,1.75f,0.6f,sample.colors[dots[i].ideology]);
     }
     TGCX_SET(device->DrawPrimitiveUP(D3DPT_TRIANGLELIST,100*2*tgcx_disc_vertices/3,tgcx_seat_vertices,sizeof(tgcx_Vertex)));
@@ -272,12 +308,12 @@ static HRESULT WINAPI tgcx_EndScene(IDirect3DDevice9* device) {
 static HRESULT WINAPI tgcx_Present(IDirect3DDevice9* device,const RECT* source,const RECT* destination,HWND window,const RGNDATA* dirty) {
     tgcx_DeviceHooks* entry=tgcx_Device(device);if(!entry)return D3DERR_INVALIDCALL;
     HRESULT result=entry->present(device,source,destination,window,dirty);
-    if(FAILED(result))tgcx_chart_drawn=false;
+    if(FAILED(result)){tgcx_CpuScope cpu;tgcx_chart_drawn=false;tgcx_ClearHover();}
     return result;
 }
 static HRESULT WINAPI tgcx_Reset(IDirect3DDevice9* device,D3DPRESENT_PARAMETERS* parameters) {
     tgcx_DeviceHooks* entry=tgcx_Device(device);if(!entry)return D3DERR_INVALIDCALL;
-    { tgcx_CpuScope cpu;tgcx_chart_drawn=false;tgcx_Log("Device Reset: no persistent chart resources"); }
+    { tgcx_CpuScope cpu;tgcx_chart_drawn=false;tgcx_ClearHover();tgcx_Log("Device Reset: no persistent chart resources"); }
     HRESULT result=entry->reset(device,parameters);
     { tgcx_CpuScope cpu;tgcx_render_failed=false;tgcx_Log("Device Reset result=%08X",static_cast<unsigned int>(result)); }
     return result;
@@ -309,31 +345,161 @@ static bool tgcx_HookDevice(IDirect3DDevice9* device) {
 }
 // Native icon lookup: parallel vectors of 28-byte strings and object pointers.
 // FUN_009E4D40/FUN_009E6B30; bounded read only, no engine string construction.
-static bool tgcx_IsUpperHouseOverlay(uintptr_t renderer,uintptr_t entity) {
-    if(!tgcx_politics || !entity) return false;
-    char* root=*reinterpret_cast<char**>(tgcx_politics+0x4C);
-    if(!root || *reinterpret_cast<uintptr_t*>(root+0x90)!=renderer) return false;
+static uintptr_t tgcx_GuiEntity(char* root,uintptr_t renderer,const char* expected,uintptr_t entity_table) {
+    if(!root || *reinterpret_cast<uintptr_t*>(root+0x90)!=renderer) return 0;
     auto* table=*reinterpret_cast<uintptr_t**>(root);
-    if(table[17]!=tgcx_base+0x5E4D40) return false;
+    if(table[17]!=tgcx_base+0x5E4D40) return 0;
     uintptr_t objects=*reinterpret_cast<uintptr_t*>(root+0x2AC);
     uintptr_t object_end=*reinterpret_cast<uintptr_t*>(root+0x2B0);
     uintptr_t names=*reinterpret_cast<uintptr_t*>(root+0x2BC);
     uintptr_t name_end=*reinterpret_cast<uintptr_t*>(root+0x2C0);
     if(!objects || !names || object_end<objects || name_end<names ||
         (name_end-names)%28 || (name_end-names)/28>256 ||
-        (object_end-objects)/4!=(name_end-names)/28 || (object_end-objects)%4) return false;
-    const char* expected="chart_upper_house_overlay";
+        (object_end-objects)/4!=(name_end-names)/28 || (object_end-objects)%4) return 0;
     for(unsigned int i=0;i<(name_end-names)/28;++i) {
         char* name=reinterpret_cast<char*>(names+28*i);
         if(*reinterpret_cast<uint32_t*>(name+16)!=strlen(expected)) continue;
         const char* text=*reinterpret_cast<uint32_t*>(name+20)>15?*reinterpret_cast<const char**>(name):name;
         if(!text || memcmp(text,expected,strlen(expected))) continue;
         uintptr_t icon=*reinterpret_cast<uintptr_t*>(objects+4*i);
-        return icon && *reinterpret_cast<uintptr_t*>(icon)==tgcx_base+0xA3A930 &&
-            *reinterpret_cast<uintptr_t*>(icon+0x94)==entity &&
-            *reinterpret_cast<uintptr_t*>(entity)==tgcx_base+0xA3FF08;
+        if(!icon || *reinterpret_cast<uintptr_t*>(icon)!=tgcx_base+0xA3A930)return 0;
+        uintptr_t entity=*reinterpret_cast<uintptr_t*>(icon+0x94);
+        return entity && *reinterpret_cast<uintptr_t*>(entity)==tgcx_base+entity_table?entity:0;
     }
-    return false;
+    return 0;
+}
+static uintptr_t tgcx_PoliticsEntity(uintptr_t renderer,const char* expected,uintptr_t entity_table) {
+    if(!tgcx_politics)return 0;
+    return tgcx_GuiEntity(*reinterpret_cast<char**>(tgcx_politics+0x4C),renderer,expected,entity_table);
+}
+static bool tgcx_IsUpperHouseOverlay(uintptr_t renderer,uintptr_t entity) {
+    return entity && tgcx_PoliticsEntity(renderer,"chart_upper_house_overlay",0xA3FF08)==entity;
+}
+static bool tgcx_NativeSlices(uintptr_t entity,const tgcx_Snapshot& sample,uintptr_t* slices_out) {
+    tgcx_hover_stage="native ideology vector";
+    char* manager=*reinterpret_cast<char**>(tgcx_base+0xE58A3C);
+    if(!manager)return false;
+    uintptr_t begin=*reinterpret_cast<uintptr_t*>(manager+0xC),end=*reinterpret_cast<uintptr_t*>(manager+0x10);
+    if(!begin || end<begin || end-begin!=sample.array_entries*4)return false;
+    int positive=0;
+    for(unsigned int i=0;i<tgcx_ideology_count;++i) {
+        if(reinterpret_cast<char**>(begin)[sample.indices[i]]!=tgcx_FindIdeology(manager,tgcx_ideology_candidates[i]))return false;
+        if(sample.shares[i]>0)++positive;
+    }
+    tgcx_hover_stage="native slice vector";
+    uintptr_t slices=*reinterpret_cast<uintptr_t*>(entity+0x158),end_slices=*reinterpret_cast<uintptr_t*>(entity+0x15C);
+    if(!slices || end_slices<slices || end_slices-slices!=static_cast<uintptr_t>(positive)*36)return false;
+    for(int i=0;i<positive;++i)if(reinterpret_cast<int*>(slices+i*36)[8]!=i)return false;
+    *slices_out=slices;return true;
+}
+static void tgcx_PublishHover(uintptr_t renderer,const tgcx_GuiRect& gui,const tgcx_Snapshot& sample) {
+    uintptr_t chart=tgcx_PoliticsEntity(renderer,"chart_upper_house",0xA3BD58);
+    unsigned int seats[tgcx_ideology_count]={};
+    if(!chart || !tgcx_AllocateSeats(sample,seats))return;
+    tgcx_HoverFrame frame={};frame.view=tgcx_politics;frame.entity=chart;frame.gui=gui;frame.sample=sample;frame.tick=GetTickCount();
+    tgcx_SeatGeometry(seats,frame.dots);
+    AcquireSRWLockExclusive(&tgcx_hover_lock);tgcx_hover=frame;ReleaseSRWLockExclusive(&tgcx_hover_lock);
+}
+// Native scalar outputs only. -1 delegates to the original pie; 0 uses native no-hover; 1 selects a seat.
+static int tgcx_QueryHoverImpl(uintptr_t entity,float x,float y,int* slice,int* weight) {
+    tgcx_HoverFrame frame={};
+    AcquireSRWLockShared(&tgcx_hover_lock);frame=tgcx_hover;ReleaseSRWLockShared(&tgcx_hover_lock);
+    if(!entity || !frame.view || frame.view!=tgcx_politics || entity!=frame.entity ||
+        !tgcx_chart_drawn || GetTickCount()-frame.tick>1000)return -1;
+    __try {
+        tgcx_hover_stage="view/position";
+        tgcx_GuiRect gui={};tgcx_Snapshot sample={};bool fault=false;
+        if(!tgcx_ReadPoliticsRect(&gui) || memcmp(&gui,&frame.gui,sizeof(gui)))return -1;
+        uintptr_t renderer=*reinterpret_cast<uintptr_t*>(*reinterpret_cast<uintptr_t*>(tgcx_politics+0x4C)+0x90);
+        tgcx_hover_stage="entity/snapshot";
+        if(!*reinterpret_cast<unsigned char*>(renderer+0x6BCA0) ||
+            tgcx_PoliticsEntity(renderer,"chart_upper_house",0xA3BD58)!=entity ||
+            !tgcx_ReadSnapshot(&sample,&fault))return -1;
+        // A loading/country/share change invalidates the published frame until a new successful draw.
+        tgcx_hover_stage="changed frame";
+        if(sample.country!=frame.sample.country || sample.world!=frame.sample.world || sample.array!=frame.sample.array ||
+            sample.date_hours!=frame.sample.date_hours || !sample.shares_in_range ||
+            memcmp(sample.indices,frame.sample.indices,sizeof(sample.indices)) ||
+            memcmp(sample.shares,frame.sample.shares,sizeof(sample.shares)))return -1;
+        uintptr_t slices=0;if(!tgcx_NativeSlices(entity,sample,&slices))return -1;
+        int hit=tgcx_SeatAt(frame.dots,x-gui.left,y-gui.top);
+        if(hit<0)return 0;
+        unsigned int ideology=frame.dots[hit].ideology;
+        int ordinal=0;
+        for(unsigned int i=0;i<tgcx_ideology_count;++i)if(sample.shares[i]>0) {
+            if(sample.indices[i]<sample.indices[ideology])++ordinal;
+        }
+        auto* record=reinterpret_cast<int*>(slices+ordinal*36);
+        if(slice && weight) {
+            *slice=ordinal;*weight=record[0];
+            if(!(tgcx_hover_logged&(1u<<ideology))) {
+                tgcx_hover_logged|=1u<<ideology;
+                tgcx_Log("Hemicycle native hover ideology=%s index=%u slice=%d screen=(%.0f,%.0f)",
+                    tgcx_ideology_candidates[ideology],sample.indices[ideology],ordinal,x,y);
+            }
+        }
+        return 1;
+    } __except(EXCEPTION_EXECUTE_HANDLER) {return -1;}
+}
+static int __cdecl tgcx_QueryBounds(uintptr_t entity,float x,float y) {
+    tgcx_CpuScope cpu;return tgcx_QueryHoverImpl(entity,x,y,nullptr,nullptr);
+}
+static int __cdecl tgcx_QuerySlice(uintptr_t entity,int x,int y,int* slice,int* weight) {
+    tgcx_CpuScope cpu;
+    if(!slice || !weight)return -1;
+    return tgcx_QueryHoverImpl(entity,static_cast<float>(x),static_cast<float>(y),slice,weight);
+}
+static uintptr_t tgcx_bounds_original=0,tgcx_slice_original=0;
+// from V2DLL: V2TechButton.cpp, register-preservation pattern. Native scalar ABIs verified in HEMI-3.
+__declspec(naked) static void tgcx_BoundsThunk() {
+    __asm { pushfd } __asm { pushad } __asm { mov ebx,esp }
+    __asm { sub esp,528 } __asm { and esp,-16 } __asm { fxsave [esp] } __asm { cld }
+    __asm { push dword ptr [ebx+44] } __asm { push dword ptr [ebx+40] } __asm { push dword ptr [ebx+24] }
+    __asm { call tgcx_QueryBounds } __asm { add esp,12 }
+    __asm { cmp eax,-1 } __asm { je delegate } __asm { test eax,eax } __asm { jz empty }
+    __asm { fxrstor [esp] } __asm { mov esp,ebx } __asm { popad } __asm { popfd } __asm { fld1 } __asm { ret 32 }
+empty:
+    __asm { fxrstor [esp] } __asm { mov esp,ebx } __asm { popad } __asm { popfd } __asm { fldz } __asm { ret 32 }
+delegate:
+    __asm { fxrstor [esp] } __asm { mov esp,ebx } __asm { popad } __asm { popfd }
+    __asm { jmp dword ptr [tgcx_bounds_original] }
+}
+// The original helper receives the entity in EAX and pops four stack arguments.
+__declspec(naked) static void tgcx_SliceThunk() {
+    __asm { pushfd } __asm { pushad } __asm { mov ebx,esp }
+    __asm { sub esp,528 } __asm { and esp,-16 } __asm { fxsave [esp] } __asm { cld }
+    __asm { push dword ptr [ebx+52] } __asm { push dword ptr [ebx+48] }
+    __asm { push dword ptr [ebx+44] } __asm { push dword ptr [ebx+40] } __asm { push dword ptr [ebx+28] }
+    __asm { call tgcx_QuerySlice } __asm { add esp,20 }
+    __asm { cmp eax,-1 } __asm { je delegate }
+    __asm { mov [ebx+28],eax }
+    __asm { fxrstor [esp] } __asm { mov esp,ebx } __asm { popad } __asm { popfd } __asm { ret 16 }
+delegate:
+    __asm { fxrstor [esp] } __asm { mov esp,ebx } __asm { popad } __asm { popfd }
+    __asm { jmp dword ptr [tgcx_slice_original] }
+}
+static bool tgcx_InstallHover() {
+    unsigned int guards=0;
+    for(const auto& signature:tgcx_signatures)
+        if(signature.rva==0x2D52C6 || signature.rva==0xA3BDA8 || signature.rva==0x5E0B70 || signature.rva==0x5E0C90) {
+            if(!tgcx_CheckSignature(signature))return false;
+            ++guards;
+        }
+    if(guards!=4)return false;
+    auto* site=reinterpret_cast<unsigned char*>(tgcx_base+0x2D52C6);
+    auto* slot=reinterpret_cast<uintptr_t*>(tgcx_base+0xA3BDA8);
+    DWORD protection=0,ignored=0;
+    if(!VirtualProtect(site,5,PAGE_EXECUTE_READWRITE,&protection))return false;
+    tgcx_bounds_original=tgcx_base+0x5E0B70;tgcx_slice_original=tgcx_base+0x5E0C90;
+    if(!tgcx_ReplacePointer(slot,tgcx_bounds_original,reinterpret_cast<uintptr_t>(&tgcx_BoundsThunk))) {
+        VirtualProtect(site,5,protection,&ignored);return false;
+    }
+    uint32_t displacement=static_cast<uint32_t>(reinterpret_cast<uintptr_t>(&tgcx_SliceThunk)-(tgcx_base+0x2D52CB));
+    memcpy(site+1,&displacement,4);
+    bool restored=VirtualProtect(site,5,protection,&ignored)!=0;
+    bool flushed=FlushInstructionCache(GetCurrentProcess(),site,5)!=0;
+    tgcx_Log("Native scalar hover installed CALL_RVA=2D52C6 bounds_slot_RVA=A3BDA8 protection_restored=%u cache_flushed=%u; tooltip slot 10 untouched",restored,flushed);
+    return true;
 }
 static void tgcx_AfterEntityImpl(uintptr_t renderer,uintptr_t entity) {
     if(!tgcx_politics || tgcx_render_failed || InterlockedCompareExchange(&tgcx_render_busy,1,0)!=0) return;
@@ -341,13 +507,24 @@ static void tgcx_AfterEntityImpl(uintptr_t renderer,uintptr_t entity) {
         if(renderer && (*reinterpret_cast<uintptr_t*>(renderer)==tgcx_base+0xA38324 ||
             *reinterpret_cast<uintptr_t*>(renderer)==tgcx_base+0xA19B8C) &&
             *reinterpret_cast<unsigned char*>(renderer+0x6BCA0)) {
+            tgcx_BillAfterEntity(renderer,entity);
             tgcx_GuiRect gui={};tgcx_Snapshot sample={};bool fault=false;
-            if(tgcx_ReadPoliticsRect(&gui) && tgcx_IsUpperHouseOverlay(renderer,entity) && tgcx_ReadSnapshot(&sample,&fault)) {
+            if(tgcx_ReadPoliticsRect(&gui) && tgcx_IsUpperHouseOverlay(renderer,entity)) {
+                tgcx_chart_drawn=false;tgcx_ClearHover();
+                if(!tgcx_ReadSnapshot(&sample,&fault)) {
+                    InterlockedExchange(&tgcx_render_busy,0);return;
+                }
                 auto* device=*reinterpret_cast<IDirect3DDevice9**>(renderer+0x64);
                 if(device) {
+                    uintptr_t chart=tgcx_PoliticsEntity(renderer,"chart_upper_house",0xA3BD58),slices=0;
+                    if(!chart || !tgcx_NativeSlices(chart,sample,&slices)) {
+                        if(!tgcx_guard_logged)tgcx_Log("Hemicycle blocked: hover %s; original pie retained",tgcx_hover_stage);
+                        tgcx_guard_logged=true;InterlockedExchange(&tgcx_render_busy,0);return;
+                    }
                     // No BeginScene/EndScene: this callback is already inside the native UI scene.
                     HRESULT result=tgcx_DrawChart(device,sample,gui);
                     if(result==S_OK) {
+                        tgcx_PublishHover(renderer,gui,sample);
                         ++tgcx_draw_count;
                         if(tgcx_draw_count==1)tgcx_Log("Hemicycle first ordered draw tag=%.4s seats=100 rows=7 root=(%d,%d) vector_entries=%u",sample.country_tag,gui.left,gui.top,sample.array_entries);
                     } else if(FAILED(result) && result!=D3DERR_DEVICELOST && result!=D3DERR_DEVICENOTRESET) {
@@ -378,6 +555,7 @@ __declspec(naked) static void tgcx_OrderedEntityThunk() {
 // Final presentation supplies sampling and diagnostics only; never paints over completed UI.
 static void tgcx_BeforePresentImpl(uintptr_t renderer) {
     __try {
+        tgcx_BillTick();
         ++tgcx_present_count;
         if(!tgcx_politics || GetTickCount()-tgcx_chart_tick>1000) tgcx_chart_drawn=false;
         DWORD previous=tgcx_last_sample;tgcx_OnFramePump();
@@ -419,6 +597,10 @@ static bool tgcx_InstallNativeStages() {
     if(!VirtualProtect(draw_site,7,PAGE_EXECUTE_READWRITE,&draw_protection))return false;
     if(!VirtualProtect(final_site,6,PAGE_EXECUTE_READWRITE,&final_protection)) {
         VirtualProtect(draw_site,7,draw_protection,&ignored);return false;
+    }
+    if(!tgcx_InstallHover()) {
+        VirtualProtect(draw_site,7,draw_protection,&ignored);VirtualProtect(final_site,6,final_protection,&ignored);
+        tgcx_Log("Renderer rejected: native scalar hover guards or installation failed; original pie retained");return false;
     }
     tgcx_present_resume=tgcx_base+0x59A526;tgcx_entity_resume=tgcx_base+0x599F29;
     unsigned char final_patch[6]={0xE9,0,0,0,0,0x90},draw_patch[7]={0xE9,0,0,0,0,0x90,0x90};
@@ -501,7 +683,7 @@ static bool tgcx_InstallRenderer() {
             if(hide)tgcx_ReplacePointer(view+4,reinterpret_cast<uintptr_t>(&tgcx_HideThunk),tgcx_hide_original);
             return false;
         }
-        tgcx_Log("Renderer installed: Direct3DCreate9 IAT_RVA=%06X; ordered GUI draw, final native Present and Politics show/hide/destroy guarded; native tooltip untouched",static_cast<unsigned int>(reinterpret_cast<uintptr_t>(slot)-tgcx_base));
+        tgcx_Log("Renderer installed: Direct3DCreate9 IAT_RVA=%06X; ordered GUI draw, final native Present, Politics lifecycle and scalar hover guarded; native tooltip untouched",static_cast<unsigned int>(reinterpret_cast<uintptr_t>(slot)-tgcx_base));
         return true;
     } __except(EXCEPTION_EXECUTE_HANDLER) {return false;}
 }

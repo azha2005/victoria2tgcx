@@ -29,6 +29,13 @@ checking them against `tgc_scan.py` on every version in the matrix (D1).
 | **Result events are polled, not fired**: `mean_time_to_happen = { days = 1 }` + `fire_only_once = yes`, so their `trigger` *is* checked (unlike fired events, P21) | same | the way to get "fires when the condition holds" |
 | Fire with a delay: `country_event = { id = N days = 0 }` | same | |
 | Ask another country and get an answer: Sender → Receiver → Choice events (`FROM`) | `events/Utility.txt` (ids 95-99) | if a mechanic ever needs another country to answer |
+
+2026-10-13: AST scan of installed TGC v2.5.2 found zero event options
+with direct `trigger`, `allow` or `limit` fields. The LAW-1 candidate's
+conditional option triggers were all ignored in the user's screenshot
+(P34). Select the matching result in a firing-effect branch, then fire an
+ordinary single-option result event, as LAW-0 already did. Empty error logs
+do not establish support for a new script construct.
 | Other variables worth a look: `farrapos_negotiation`, `repeated_elections`, `brz_slavery_politics` (86 uses) | `decisions/Brazil.txt`, `00_Setup.txt` | earlier "negotiation" and long political chains in TGC |
 
 ## 3. Rulers (GOV-0)

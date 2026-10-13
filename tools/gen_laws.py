@@ -31,11 +31,15 @@ SUB = os.path.join(ROOT, "submod")
 
 # Event ids (D8 range; LAW-0 owns 420 000 100 - 420 000 199).
 EV_PASSED, EV_VETOED, EV_CHANGED = 420000100, 420000101, 420000102
-EV_BROKEN = 420000103          # + index of the ideology (one per bloc that can be promised)
 EV_PASS_BY = 420000110         # + margin/5 - 1: passes by 5 ... 100
 EV_FAIL_BY = 420000130         # + (-margin)/5: fails by 0 ... 100
 EV_NO_QUORUM = 420000151       # + quorum/5: 0 ... 45 present
 EV_FAVOURS = 420000170         # + favours/5: about 0 ... 100
+# Stable across data ordering. Preserve LAW-0's Reactionary event 420000105.
+# 110..160 belong to whip reports; 170..190 to the LAW-0 test aid.
+BROKEN_EVENTS = dict(zip(
+    ("liberal", "conservative", "reactionary", "socialist", "communist", "anarchist", "fascist", "anarcho_liberal", "tribalist"),
+    (420000103, 420000104, 420000105, 420000106, 420000107, 420000108, 420000109, 420000192, 420000193)))
 
 STANCES = ["p2", "p1", "z", "m1", "m2"]  # +2 strongly for ... -2 strongly against
 STANCE_TEXT = {"p2": "strongly for", "p1": "for", "z": "undecided", "m1": "against", "m2": "strongly against"}
@@ -219,6 +223,8 @@ class Gen:
         bill_flags += [f"tgcx_law_{g}_{to}" for g, _, to in self.bills]
         bill_flags += [f"tgcx_stance_{i}_{s}" for i in self.blocs for s in STANCES]
         bill_flags += [f"tgcx_promised_{i}" for i in self.blocs]
+        bill_flags += self.extra_bill_flags()
+        bill_flags = list(dict.fromkeys(bill_flags))
         bill_vars = ["tgcx_yes", "tgcx_no", "tgcx_margin", "tgcx_quorum", "tgcx_spent"]
         bill_vars += [f"tgcx_{v}_{i}{s}" for i in self.blocs for v, s in (("left", ""),)]
         bill_vars += [f"tgcx_buy_{i}_{s}" for i in self.blocs for s in ("yes", "total")]
@@ -229,6 +235,22 @@ class Gen:
     def crown_signs(self):
         distrusted = ors([f"ruling_party_ideology = {i}" for i in self.distrust])
         return f"OR = {{ {gov_in(self.full)} {flag('crown_signs')} NOT = {{ {distrusted} }} }}"
+
+    def extra_bill_flags(self):
+        return []
+
+    def vote_validation(self):
+        return [], ""
+
+    def promise_requirements(self, ideology):
+        return []
+
+    def purchase_requirements(self, ideology):
+        return []
+
+    def changed_text(self):
+        return ("Since the last count the upper house has changed, and the bill no longer has the votes to pass. "
+                "The bill stays on the table: buy more support, or wait.")
 
     # --- decisions
 
@@ -262,6 +284,11 @@ class Gen:
         cleanup = self.cleanup_block()
         legislature = gov_in(self.limited + self.full)
 
+        self.build_bills(count, report, legislature)
+        self.build_negotiation(count, report, cleanup)
+
+    def build_bills(self, count, report, legislature):
+
         # Present one bill per (group, target): the bill's own decision.
         for g, frm, to in self.bills:
             grp = self.groups[g]
@@ -286,6 +313,7 @@ class Gen:
                  *count, *report],
                 picture="free_press_in_baden" if to == "free_press" else "cogs_blue")
 
+    def build_negotiation(self, count, report, cleanup):
         # Purchases: generic, per bloc x kind x stance x lot, and a double-price twin under a broken debt.
         # A lot of n seats costs n/5 times the price per 5 seats (user, U-3: fewer clicks).
         price = {kind: as_dict(v) for kind, v in self.L["price"]}
@@ -314,7 +342,7 @@ class Gen:
                             + ("Prices are doubled: a promise to them was broken. " if twin else "")
                             + "Spent favours are lost if the bill fails.",
                             ["ai = no", flag("law_active"), flag(f"stance_{i}_{st}"), f"NOT = {{ {flag(f'promised_{i}')} }}",
-                             mod if twin else f"NOT = {{ {mod} }}"],
+                             mod if twin else f"NOT = {{ {mod} }}", *self.purchase_requirements(i)],
                             [chk("tgcx_favours", c), chk(f"tgcx_left_{i}", lot)],
                             [chg("tgcx_favours", -c), chg("tgcx_spent", c), chg(f"tgcx_left_{i}", -lot),
                              chg(f"tgcx_buy_{i}_total", lot), *moves])
@@ -326,7 +354,7 @@ class Gen:
                 f"they vote Aye in full. If the promise is broken: +{self.n('broken_debt_militancy')} militancy among "
                 f"their supporters, and their votes cost double for {int(self.n('broken_debt_days')) // 365} years.",
                 ["ai = no", flag("law_active"), flag(f"stance_{i}_m2"), f"NOT = {{ {flag(f'promised_{i}')} }}"],
-                [f"NOT = {{ {flag(f'debt_{i}')} }}"],
+                [f"NOT = {{ {flag(f'debt_{i}')} }}", *self.promise_requirements(i)],
                 [f"set_country_flag = tgcx_debt_{i}", f"set_country_flag = tgcx_promised_{i}",
                  f"add_country_modifier = {{ name = tgcx_debt_deadline_{i} duration = {self.n('debt_days')} }}", *count])
 
@@ -344,13 +372,16 @@ class Gen:
             ["ai = no", flag("law_active")], [], [*count, *report])
 
         # Call the vote: recount, decide the outcome into flags first, then act (the acts change the tallies).
-        ok = f"{chk('tgcx_margin', 5)} {chk('tgcx_quorum', 50)}"
+        validation, valid = self.vote_validation()
+        ok = f"{chk('tgcx_margin', 5)} {chk('tgcx_quorum', 50)} {valid}".rstrip()
         crown = self.crown_signs()
         act = [when(f"{ok} {crown}", "set_country_flag = tgcx_outcome_pass"),
                when(f"{ok} NOT = {{ {crown} }}", "set_country_flag = tgcx_outcome_veto"),
                when(f"NOT = {{ {chk('tgcx_margin', 5)} }}", "set_country_flag = tgcx_outcome_changed"),
                when(f"NOT = {{ {chk('tgcx_quorum', 50)} }}", "set_country_flag = tgcx_outcome_changed")]
-        for g, _, to in self.bills:
+        if valid:
+            act.append(when(f"NOT = {{ {valid} }}", "set_country_flag = tgcx_outcome_changed"))
+        for g, to in dict.fromkeys((g, to) for g, _, to in self.bills):
             kind = "political_reform" if self.groups[g]["category"] == "political_reforms" else "social_reform"
             act.append(when(f"{flag('outcome_pass')} {flag(f'law_{g}_{to}')}", f"{kind} = {to}"))
         for i in self.blocs:  # a law the bloc wanted pays its debt
@@ -368,7 +399,7 @@ class Gen:
             "Then the Crown signs or vetoes. Favours spent are lost if the bill fails.",
             ["ai = no", flag("law_active")],
             ["NOT = { has_country_modifier = tgcx_debate }", chk("tgcx_margin", 5), chk("tgcx_quorum", 50)],
-            [*count, *act], picture="hellenic_parliament")
+            [*count, *validation, *act], picture="hellenic_parliament")
 
         self.decision(
             "tgcx_withdraw", "Withdraw the bill",
@@ -387,8 +418,7 @@ class Gen:
                    "The upper house passed the bill, but the Crown refused to sign it. The favours spent are lost.",
                    "So be it.")
         self.event(EV_CHANGED, "tgcx_law_changed", "The Count Has Changed",
-                   "Since the last count the upper house has changed, and the bill no longer has the votes to pass. "
-                   "The bill stays on the table: buy more support, or wait.", "We need more votes.")
+                   self.changed_text(), "We need more votes.")
         for m in range(5, 101, 5):
             self.event(EV_PASS_BY + m // 5 - 1, f"tgcx_whip_pass_{m}", "The Whips Report",
                        f"If the vote were held today, the bill would pass by {m} seats.", "Good.")
@@ -400,10 +430,10 @@ class Gen:
             self.event(EV_NO_QUORUM + q // 5, f"tgcx_whip_quorum_{q}", "The Whips Report",
                        f"If the vote were held today, only {q} seats would vote, short of the quorum of 50.",
                        "We need more votes.")
-        for idx, i in enumerate(self.blocs):
+        for i in self.blocs:
             if not any(self.stance(i, g, f, t) == "m2" for g, f, t in self.bills):
                 continue
-            self.event(EV_BROKEN + idx, f"tgcx_promise_broken_{i}", f"A Promise to the {BLOC.get(i, i)} Broken",
+            self.event(BROKEN_EVENTS[i], f"tgcx_promise_broken_{i}", f"A Promise to the {BLOC.get(i, i)} Broken",
                        f"The law we promised the {BLOC.get(i, i)} was never passed. Their supporters are furious, "
                        f"and their votes will cost us double for {int(self.n('broken_debt_days')) // 365} years.",
                        "We will pay for this.",

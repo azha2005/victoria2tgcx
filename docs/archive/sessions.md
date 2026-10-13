@@ -1,3 +1,696 @@
+# Session close 2026-10-13 (22): LAW-2 Bill prototype
+
+User accepted the LAW-1 smoke path and asked to finish laws before starting
+another mechanic. Requested the in-game Bill prototype; bounded Ghidra
+research, native GUI/command bridge, guarded live model and ordered chart
+implemented. 0.3.0 built, gates passed, installed on E: with complete
+script/DLL rollback. Prototype is not tested in game. See report-law-2-bill-1013.md.
+No game launch, commit or subagents.
+
+## Starting NEXT with active steering (verbatim)
+
+# Active steering 2026-10-13
+
+**LAW-2 Bill GUI prototype is now selected.** User confirmed the LAW-1
+smoke check, asked to move on without more manual law tests, then corrected
+the proposed economy switch: finish the law mechanic first. Explicitly
+requested an in-game Bill prototype and authorized Ghidra/RE references.
+Read docs/instructions-law-2.md. Prototype work is in progress; not installed.
+Existing installed DLL 0.2.8 and LAW-1 report fix remain the baseline until
+prototype gates pass. Earlier session-21 handoff is retained below until
+normal session close; its requests for further U-6 tests are superseded.
+
+---
+
+# NEXT - what comes next
+
+2026-10-13 (21). **LAW-1 report fix installed on E:, awaiting U-6 retest.**
+User's screenshot exposed every conditional result option at once. Read
+`docs/report-law-1-report-fix-1013.md`, then `docs/instructions-u-6.md`.
+The earlier native implementation report remains an immutable snapshot.
+All 23 base affinity groups remain approved; DLL 0.2.8 remains accepted.
+
+## 1. Current implementation and evidence
+
+- Present/Count now fully count in the decision, then fire exactly one
+  ordinary result event with one button. No conditional options. Obsolete
+  event 420000194 is retained only for a queued-save recovery recount.
+- Screenshot confirms the earlier candidate loaded and opened its report,
+  but failed presentation. Current run's error/system_error logs are empty.
+  Do not infer tally, purchases, save/load or full LAW-1 acceptance.
+- Corrected generated decisions are 35,319,087 bytes. The catalogue ceiling
+  is now 40 MiB; counting cannot be shared through unsupported conditional
+  options. Actual loading/performance needs another user run.
+- Native TGC starting votes, balanced five-seat counts, fresh spending and
+  target validation are retained. 24 catalogue tests, seven installer
+  tests, LAW-0 and TGC scan pass. Default LAW-0 output stays byte-identical.
+- Only the user launches/exits the game. No DLL rebuild, address change,
+  commit or subagents. Preserve all existing uncommitted HEMI/LAW work.
+
+## 2. Next session, in order
+
+1. Use U-6's quick player check: fresh UK, Press Rights forward bill,
+   Count again, save/reload and Count once more. Exactly one report/button;
+   low-pressure 83/12/5 example says Nay leads by 80. Only ask the player for
+   this short path first, plus whether loading was slow and one screenshot.
+   After normal exit, retain logs with `python tools/tgcx_check_laws.py`.
+   The agent can run the command; no reinstall needed.
+2. Treat U-6's extended list as coordinator coverage, not a whole manual
+   assignment to the player. Existing automated tests cover route/rounding/
+   bargaining/debt/guard logic. Arrange targeted live bargains/Crown,
+   forward/reverse paths and native comparisons after the smoke test works.
+   A short smoke pass does not close full LAW-1 acceptance. Five-seat
+   quantization intentionally differs from native Q15 percentages.
+3. Fix concrete failures, rerun relevant gates, stage and install reversibly
+   after normal exit. Never simulate option hiding again (P34); branch
+   before firing the result (P21). Preserve accepted native DLL behavior.
+4. Republish the already updated private Bill artifact when a browser
+   session becomes available. Local PNGs are current; online artifact is
+   still stale. This fix changes report routing, not the Bill mechanic.
+5. Write new immutable evidence reports. Mark LAW-1 accepted only after
+   actual game checks; U-5 extended coverage remains separately unconfirmed.
+6. Archive/rewrite NEXT, update ROADMAP/SUBAGENTS and next-card instructions.
+   Further mechanics are not selected. Next pitfall P35.
+
+## 3. Candidate, rollback and retained gates
+
+Current stage: `E:\v2re\logs\tgcx-law1-report-stage-1013`.
+Pre-fix candidate rollback: `E:\v2re\logs\tgcx-law1-before-report-fix-1013`.
+Accepted LAW-0 rollback: `E:\v2re\logs\tgcx-law1-before-native-1012`.
+Failure evidence: `E:\v2re\logs\tgcx-law1-report-failure-1013` plus the
+user's screenshot in conversation. Current game logs preserved there.
+Installation/gate logs use `tgcx-law1-report-*-1013` in the private logs.
+Installer prepares generation, retains backups and refuses a running game.
+
+Installed candidate matches staging; generated modifiers still use installed
+TGC plus our nine-bloc block. DLL SHA-256 remains
+`61824e4bc1b72fc5792533ede1cd14ea3f759c458c59d35407cef973db0ccdc5`.
+No address/runtime change; retained 45 file gates / 27 runtime guards.
+No claim of in-game confirmation of this report fix.
+
+| card | status | instructions/evidence |
+|---|---|---|
+| LAW-1 | prior presentation failed; fix installed, retest pending; all affinities approved | instructions-law-1.md; report-law-1-report-fix-1013.md |
+| U-6 | in progress; report-fix retest first | instructions-u-6.md |
+| LAW-0 / U-3 | accepted baseline retained in rollback | existing reports |
+| HEMI-3 | accepted DLL 0.2.8 unchanged | existing reports |
+| U-5 / DLL-1 / HEMI-1 | extended coverage unconfirmed | instructions-u-5.md |
+| GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
+| COMPAT-0 | deferred (D1) | existing instructions |
+
+Latest one-command automatic bundle (all six gates pass, 11 game logs copied):
+`E:\v2re\logs\tgcx-law-check-20261013T031729187160Z`.
+This is a new snapshot of existing logs, not a new live game run.
+
+
+---
+
+# Session close 2026-10-13 (21): shorten U-6 player testing
+
+User asked for a simpler test workflow. U-6 now begins with a short UK
+Present/Count/save-reload smoke test; the extended list is coordinator
+coverage, not a request to run every case manually. Added one command to
+run existing automatic gates and retain private game logs. The installed
+report-fix candidate and accepted DLL are unchanged. No game launch,
+installation, commit or subagents. Live mechanic acceptance is still pending.
+See docs/instructions-u-6.md; current next card remains U-6.
+
+## Starting NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-13 (20). **LAW-1 report fix installed on E:, awaiting U-6 retest.**
+User's screenshot exposed every conditional result option at once. Read
+`docs/report-law-1-report-fix-1013.md`, then `docs/instructions-u-6.md`.
+The earlier native implementation report remains an immutable snapshot.
+All 23 base affinity groups remain approved; DLL 0.2.8 remains accepted.
+
+## 1. Current implementation and evidence
+
+- Present/Count now fully count in the decision, then fire exactly one
+  ordinary result event with one button. No conditional options. Obsolete
+  event 420000194 is retained only for a queued-save recovery recount.
+- Screenshot confirms the earlier candidate loaded and opened its report,
+  but failed presentation. Current run's error/system_error logs are empty.
+  Do not infer tally, purchases, save/load or full LAW-1 acceptance.
+- Corrected generated decisions are 35,319,087 bytes. The catalogue ceiling
+  is now 40 MiB; counting cannot be shared through unsupported conditional
+  options. Actual loading/performance needs another user run.
+- Native TGC starting votes, balanced five-seat counts, fresh spending and
+  target validation are retained. 24 catalogue tests, seven installer
+  tests, LAW-0 and TGC scan pass. Default LAW-0 output stays byte-identical.
+- Only the user launches/exits the game. No DLL rebuild, address change,
+  commit or subagents. Preserve all existing uncommitted HEMI/LAW work.
+
+## 2. Next session, in order
+
+1. Follow U-6's report-fix retest first: new UK game, Press Rights forward
+   bill, exactly one report/one button; low-pressure 83/12/5 example should
+   state Nay leads by 80. Count again gives the same single report. Preserve
+   new logs and report slow loading or missing counts. No reinstall needed.
+2. Continue U-6 purchases/promises, Crown, save/load, political/social
+   forward/reverse paths, pressure/party/chamber changes and stale guards.
+   Collect live native comparisons separately; five-seat quantization is
+   intentionally different from native Q15 percentages.
+3. Fix concrete failures, rerun relevant gates, stage and install reversibly
+   after normal exit. Never simulate option hiding again (P34); branch
+   before firing the result (P21). Preserve accepted native DLL behavior.
+4. Republish the already updated private Bill artifact when a browser
+   session becomes available. Local PNGs are current; online artifact is
+   still stale. This fix changes report routing, not the Bill mechanic.
+5. Write new immutable evidence reports. Mark LAW-1 accepted only after
+   actual game checks; U-5 extended coverage remains separately unconfirmed.
+6. Archive/rewrite NEXT, update ROADMAP/SUBAGENTS and next-card instructions.
+   Further mechanics are not selected. Next pitfall P35.
+
+## 3. Candidate, rollback and retained gates
+
+Current stage: `E:\v2re\logs\tgcx-law1-report-stage-1013`.
+Pre-fix candidate rollback: `E:\v2re\logs\tgcx-law1-before-report-fix-1013`.
+Accepted LAW-0 rollback: `E:\v2re\logs\tgcx-law1-before-native-1012`.
+Failure evidence: `E:\v2re\logs\tgcx-law1-report-failure-1013` plus the
+user's screenshot in conversation. Current game logs preserved there.
+Installation/gate logs use `tgcx-law1-report-*-1013` in the private logs.
+Installer prepares generation, retains backups and refuses a running game.
+
+Installed candidate matches staging; generated modifiers still use installed
+TGC plus our nine-bloc block. DLL SHA-256 remains
+`61824e4bc1b72fc5792533ede1cd14ea3f759c458c59d35407cef973db0ccdc5`.
+No address/runtime change; retained 45 file gates / 27 runtime guards.
+No claim of in-game confirmation of this report fix.
+
+| card | status | instructions/evidence |
+|---|---|---|
+| LAW-1 | prior presentation failed; fix installed, retest pending; all affinities approved | instructions-law-1.md; report-law-1-report-fix-1013.md |
+| U-6 | in progress; report-fix retest first | instructions-u-6.md |
+| LAW-0 / U-3 | accepted baseline retained in rollback | existing reports |
+| HEMI-3 | accepted DLL 0.2.8 unchanged | existing reports |
+| U-5 / DLL-1 / HEMI-1 | extended coverage unconfirmed | instructions-u-5.md |
+| GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
+| COMPAT-0 | deferred (D1) | existing instructions |
+
+---
+
+# Session close 2026-10-13 (20): repair LAW-1 report options
+
+U-6 screenshot revealed every conditional result button at once. Preserved
+current game logs privately (error and system_error empty); do not infer
+numeric acceptance. Restored LAW-0 count-before-fire result dispatch and
+corrected the interpreter's unsupported option filtering. All 24 catalogue
+and seven installer tests, LAW-0 and TGC scan pass. Corrected candidate
+installed on E: after game exit, with complete pre-fix rollback; DLL 0.2.8
+unchanged. New report presentation and larger script load remain untested
+in game. P34 added, next P35. No game launch, commit or subagents.
+See docs/report-law-1-report-fix-1013.md; U-6 remains the next card.
+
+## Starting NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-12 (19). **LAW-1 native-support candidate installed on E:;
+not tested in game. All base affinities approved.** Read
+`docs/report-law-1-native-1012.md`, then `docs/instructions-u-6.md`.
+The accepted DLL 0.2.8 is unchanged; complete LAW-0 rollback is retained.
+
+## 1. Decisions and completed implementation
+
+- User approved all proposed base affinity rows for the 23 groups; later
+  corrections remain possible. Do not request the same review again.
+- TGC starting votes plus affinity bargaining is implemented. Import
+  conditional add/remove political/social rules from installed v2.5.2;
+  conserve 100 five-seat parliament seats with balanced rounding.
+- Full counts at introduction, Count and Vote; stale purchases/promises
+  spend nothing and require Count. Friendly native Nay uses the existing
+  2-favour price. Old purchases clip without refund; promises include
+  earlier abstentions. Target/current law/government checks remain fresh.
+- Only the user launches or exits the game. Single player first; R5 holds.
+- No DLL rebuild or install. No commit or subagents. Preserve all existing
+  uncommitted HEMI/LAW work and immutable reports.
+
+## 2. Next session, in order
+
+1. Perform U-6 from `docs/instructions-u-6.md`: load time/errors, UK low-
+   pressure count and purchases, Crown, save/load, political/social forward
+   and reverse steps, pressure/party/chamber changes and stale restrictions.
+   Candidate is already installed; do not reinstall before collecting data.
+2. Preserve screenshots/logs privately. Native percentage arithmetic is
+   statically traced; live numeric comparisons remain outstanding. Expected
+   UK 83/12/5 allocation is 85/10/5; low-pressure count 10/90, high
+   Conservative political support 60/40. Exact native shares differ from
+   this five-seat quantization. The report button states margin/quorum;
+   the full Bill GUI is later DLL work.
+3. Inspect new game errors and respond to any odd affinity rows the user
+   identifies. Fix concrete failures; rerun relevant gates, stage and
+   install reversibly after normal exit. Do not loosen checks or change
+   accepted native tooltip/ordered-draw behavior.
+4. Republish the updated private Bill artifact when a browser session is
+   available. Local exports, including `mockups/2c-law-pressure.png`, are
+   current. Inventory still had no apps/browsers despite full filesystem
+   access. Online artifact remains stale; do not claim R10 is fully met.
+5. Write a new immutable U-6 report. Mark LAW-1 game-tested only after
+   actual evidence; preserve unconfirmed extended U-5 coverage separately.
+6. Archive/rewrite NEXT, update ROADMAP/SUBAGENTS and next-card instructions.
+   Further mechanics are not selected by this handoff. Next pitfall P34.
+
+| card | status | instructions/evidence |
+|---|---|---|
+| LAW-1 | implemented and installed candidate; not tested in game; all 23 affinities approved | instructions-law-1.md; report-law-1-native-1012.md |
+| U-6 | next: actual LAW-1 game evidence | instructions-u-6.md |
+| LAW-0 / U-3 | accepted baseline retained in rollback; repository default byte-identical | existing reports |
+| HEMI-3 | accepted DLL 0.2.8 unchanged | existing instructions/reports |
+| U-5 / DLL-1 / HEMI-1 | extended coverage unconfirmed | instructions-u-5.md |
+| GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
+| COMPAT-0 | deferred (D1) | existing instructions |
+
+## 3. Continuity and gates
+
+Candidate: `E:\v2re\logs\tgcx-law1-native-stage-1012`.
+Complete rollback source: `E:\v2re\logs\tgcx-law1-before-native-1012`.
+After normal exit, rollback command is in `docs/instructions-u-6.md`.
+`install_submod.py` supports `--source`, `--dry-run` and retained backups;
+prepares generation before replacement and refuses a running game.
+
+23 catalogue tests, seven installer tests, LAW-0 ALL OK, TGC scan and
+reference SHA/45 file signatures pass. Runtime header retains 27 guards;
+18 separate read-only research gates. Installed candidate matches staging.
+Default LAW-0 generation remains byte-identical; production catalogue
+output stays outside git. Generated modifiers use installed TGC plus our
+staged nine-bloc block, not the repository's three-bloc LAW-0 block.
+
+Source/installed DLL SHA-256:
+`61824e4bc1b72fc5792533ede1cd14ea3f759c458c59d35407cef973db0ccdc5`.
+No new live game log is claimed. The earlier accepted HEMI log still has
+27 guards, 6332 frames, 1451 ordered draws and empty active errors.
+
+---
+
+# Session close 2026-10-12 (19): LAW-1 native votes and installed candidate
+
+User approved every base affinity row. Imported native conditional support,
+implemented conserved five-seat counts and guarded negotiations, retained
+legacy IDs/default LAW-0 byte identity, and prepared a reversible installer.
+23 catalogue tests, 7 installer tests and all executable/TGC/signature gates
+pass. Candidate installed on E: with complete LAW-0 rollback; accepted
+DLL 0.2.8 unchanged. Local mockup/pressure export current; online artifact
+still inaccessible (no connected browser). U-6 game evidence remains.
+No game launch, DLL rebuild, commit or subagent. P33 added; next P34.
+See docs/report-law-1-native-1012.md and docs/instructions-u-6.md.
+
+## Starting NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-12 (18). **LAW-1 selected and in progress. HEMI-3 0.2.8 accepted
+in game.** User requested a handoff. No LAW-1 preview installed; installed
+LAW-0 and accepted DLL 0.2.8 are unchanged. Read the handoff:
+`docs/report-law-1-start-1012.md`, then `docs/instructions-law-1.md`.
+
+## 1. Decisions already made
+
+- **TGC starting votes + affinity bargaining approved.** Import TGC's
+  conditional add/remove political/social support for starting votes;
+  use reviewed affinity for bargaining prices and promised laws. Do not
+  ask for this approval again. The current preview is still affinity-only.
+- Ten affinity groups approved: Press Rights, Public Meetings, Voting
+  Franchise, Voting System, Minimum Wage, Work Hours, Safety Regulations,
+  Unemployment Subsidies, Pensions and Health Care. Exact rows are in
+  `data/tgcx_law_catalog.txt`. Thirteen remain pending.
+- TGC v2.5.2 only; single player first. Only the user launches the game.
+
+## 2. Next session, in order
+
+1. Read the two reports and LAW-1 instructions. Preserve accepted 0.2.8
+   evidence in `E:\v2re\logs\tgcx-hemi3-028-accepted-1012`.
+2. Finish bounded native support verification from existing private
+   `law1-support-*-1012.txt` outputs. Additive evaluator is identified;
+   parser mapping, clamping and full numeric parity remain to verify.
+   Run check_exe before addresses; six research gates are separate from
+   the DLL's 27 runtime guards. Do not replace them with vanilla rules.
+3. Implement the approved starting-vote formula in the catalogue generator
+   and meaningful tests. Recount pressure/ruling-party/chamber changes,
+   prevent double-counting supportive seats, preserve fresh target allows.
+4. Resolve independent five-seat rounding: nine blocs can currently sum
+   above/below 100. Enforce chamber conservation and document quantization.
+5. Continue user affinity review for the thirteen pending groups. Do not
+   infer approval. Refresh the review document and statuses after answers.
+6. Local Bill board/PNGs now distinguish TGC starting votes and affinity.
+   Republish the private artifact when browser access exists; no browsers
+   were available this session. Update/export further mechanic changes.
+7. Run TGC scan, LAW-0 checks and catalogue tests; stage outside live submod.
+   Current twelve tests pass but prove the old affinity-only preview.
+   Keep LAW-0 default output byte-identical unless deliberately migrated.
+8. Once all release gates are met, prepare reversible installation and a
+   concrete user game-test checklist. No immediate rebuild/install needed.
+   Keep LAW-1 in progress until its remaining work and game evidence exist.
+9. Close with an immutable report, archive/rewrite NEXT and update statuses
+   and next-card instructions. Remaining U-5 coverage can be collected in
+   a future user run; it does not block this selected LAW-1 research.
+
+| card | status | instructions/evidence |
+|---|---|---|
+| LAW-1 | in progress; staged affinity-only preview; approved native model not implemented | instructions-law-1.md; report-law-1-start-1012.md |
+| LAW-0 / U-3 | done, tested in game; installed baseline retained | existing reports |
+| HEMI-3 | 0.2.8 hover/header accepted in game | updated instructions; LAW-1 start report section 1 |
+| U-5 / DLL-1 / HEMI-1 | functional checkpoint passed; extended coverage unconfirmed | instructions-u-5.md; DLL-1/2 instructions |
+| DLL-0 / U-4 | done, tested in game | existing reports |
+| GH-2 | hemicycle data/mapping/ordered draw/scalar hover exercised in game | symbols.md |
+| GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
+| GH-4 / TPL-1 | later; REA reference retained | rea-for-templates.md |
+| COMPAT-0 | deferred (D1) | existing instructions |
+
+## 3. Continuity
+
+Source/installed DLL 0.2.8 SHA-256:
+`61824e4bc1b72fc5792533ede1cd14ea3f759c458c59d35407cef973db0ccdc5`.
+Accepted log: 27 runtime guards, 6332 frames, 1451 ordered draws, empty
+active errors. No new DLL build or install. Runtime signature list remains
+27; check_exe now also checks six separate read-only research signatures.
+
+Preview: `E:\v2re\logs\tgcx-law1-preview-1012`. Gates:
+`tgcx-law1-{tests,law0-tests,exe}-1012.txt`, `tgcx-law1-tgc252-1012.json`.
+Twelve catalogue tests pass; LAW-0 checks ALL OK; TGC anchors/range and
+reference hash/33 file signatures pass. Thirteen affinities, native votes,
+rounding and game evidence are release gates. No production script changed.
+
+No commit made; existing uncommitted HEMI and LAW-1 work must be preserved.
+No subagents used. Native structured tooltip slot 10 remains untouched.
+Next pitfall P33. The online mockup is stale; local board/export is updated.
+
+---
+
+# Session close 2026-10-12 (18): LAW-1 preview and native-support decision
+
+User accepted HEMI-3 0.2.8 and selected LAW-1. Added a staged catalogue
+(23 groups, 46 direction entries, 144 transitions, nine blocs), twelve
+passing behavioral tests and backward-compatible LAW-0 generator hooks.
+Ten affinity groups approved; thirteen pending. Inspected installed TGC
+and vanilla ideology rules. User approved TGC starting votes + affinity
+bargaining. Native arithmetic research started; conditional votes and
+100-seat normalization remain unimplemented. No LAW-1 output installed.
+Local Bill mockup updated/exported; online republish unavailable because
+no browser is connected. User requested handoff due to little usage left.
+See docs/report-law-1-start-1012.md and docs/instructions-law-1.md.
+
+## Starting NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-12 (17). **HEMI-3 0.2.6 works in game, confirmed by the user.
+0.2.8 header seam correction built, checked and installed on E:;
+this visual correction is done, not tested in game.** 0.2.6 retained.
+Report: `docs/report-hemi-3-seam-1012.md`.
+
+## 1. Scope and user direction
+
+TGC v2.5.2 only, single player first, read-only presentation. User accepted
+hover; 0.2.7 then left a thin seam below the header. Inspected the actual
+TGC header artwork: border ends at root y=100, cover now starts at y=101.
+Seats and hover geometry are unchanged.
+LAW-1 is for discussion afterwards, not selected or started. D3 blocks nothing.
+
+## 2. Next session
+
+1. Read `docs/instructions-hemi-3.md`, `docs/instructions-u-5.md` and the
+   header report. No immediate rebuild/reinstall needed.
+2. Only the user starts the usual E: game with TGC v2.5.2 + TGCX. Check
+   that the cover meets the Upper House border with no seam or overlap,
+   the legend/reform row remain intact, and seat hover still works.
+3. Preserve the 0.2.8 runtime log before restarting; inspect 27 guards,
+   ordered draws, hover mappings and active errors. Compare screenshot
+   with Main. Record the visual result without inferring other passes.
+4. Collect remaining U-5 coverage during the same run if convenient:
+   gaps, legend/lower pies, overlapping popup, view reopen, days,
+   save/reload and Alt-Tab. Unreported coverage remains unconfirmed.
+5. Write a new immutable report; archive/rewrite NEXT and update statuses
+   and next-card instructions. Discuss LAW-1 after visual acceptance;
+   do not expand laws or decide user affinity choices during this check.
+
+| card | status | instructions/evidence |
+|---|---|---|
+| DLL-0 / U-4 | done, tested in game | existing reports |
+| DLL-1 / HEMI-1 | functional prototype tested in game; extended coverage remains | DLL-1/2 instructions; U-5 report |
+| HEMI-2 | 0.2.5 accepted; earlier baseline retained | HEMI-2 handoff |
+| HEMI-3 | 0.2.6 hover accepted; 0.2.8 header seam correction installed, not tested in game | instructions-hemi-3.md; report-hemi-3-seam-1012.md |
+| U-5 | functional hover checkpoint passed; header check and remaining integration next | instructions-u-5.md |
+| GH-2 | data/mapping/ordered draw/scalar hover exercised in game | symbols.md |
+| LAW-0 / U-3 | done, tested in game | existing reports |
+| LAW-1 | discuss afterwards; implementation not started | SUBAGENTS.md; law-design.md |
+| GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
+| GH-4 / TPL-1 | later; REA reference retained | rea-for-templates.md |
+| COMPAT-0 | deferred (D1) | existing instructions |
+
+## 3. Continuity
+
+Active/source 0.2.8 DLL SHA-256:
+`61824e4bc1b72fc5792533ede1cd14ea3f759c458c59d35407cef973db0ccdc5`.
+Install record: DLL-1+HEMI-3; descriptor release 0.2.8. Reference hash/27
+signatures, TGC anchors/range, Win32 /W4 /WX, native/real-GPU checks and
+eight installer/Lua tests pass. Logs:
+`E:\v2re\logs\tgcx-hemi3-028-{build,tests,exe}-1012.txt` and install JSON.
+
+Accepted 0.2.6 DLL/record/descriptor/log/error logs/acceptance metadata:
+`E:\v2re\logs\tgcx-before-027-1012`. 0.2.7 and its seam-feedback log:
+`E:\v2re\logs\tgcx-before-028-1012`. Older 0.2.5 backup remains in
+`tgcx-before-026-1012`; original Lua shim retained. Latest screenshot is
+in the user's message; original 0.2.5 PNG remains outside git.
+
+No new hooks/addresses or simulation writes. Native structured tooltip
+slot 10 remains untouched. Only the user launches the game. P32 refined,
+next P33. Generated background/native legend-order deviations remain.
+
+
+---
+
+# Session close 2026-10-12 (17): Cover seam corrected from native artwork
+
+User reports 0.2.7 cover approximately two pixels short. Preserved runtime
+log/proxy/metadata and inspected installed TGC artwork: the header border
+ends at root y=100, earlier than its text layout maximum. 0.2.8 starts the
+cover at y=101 instead of y=104. GPU tests check preserved border and all
+three seam rows. Build/reference/TGC/native/GPU/installer checks pass;
+installed with game closed, visual confirmation pending. 0.2.6 remains
+accepted hover baseline. P32 refined, next P33. LAW-1 not started.
+
+## Starting NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-12 (16). **HEMI-3 0.2.6 works in game, confirmed by the user.
+0.2.7 header-overlap correction built, checked and installed on E:;
+this visual correction is done, not tested in game.** 0.2.6 retained.
+Report: `docs/report-hemi-3-header-1012.md`.
+
+## 1. Scope and user direction
+
+TGC v2.5.2 only, single player first, read-only presentation. User accepted
+hover and reported a small overlap with the Upper House block. The cover
+is now clipped below the header; seats and hover geometry are unchanged.
+LAW-1 is for discussion afterwards, not selected or started. D3 blocks nothing.
+
+## 2. Next session
+
+1. Read `docs/instructions-hemi-3.md`, `docs/instructions-u-5.md` and the
+   header report. No immediate rebuild/reinstall needed.
+2. Only the user starts the usual E: game with TGC v2.5.2 + TGCX. Check
+   that the entire Upper House title strip is visible above the chart,
+   the legend/reform row remain intact, and seat hover still works.
+3. Preserve the 0.2.7 runtime log before restarting; inspect 27 guards,
+   ordered draws, hover mappings and active errors. Compare screenshot
+   with Main. Record the visual result without inferring other passes.
+4. Collect remaining U-5 coverage during the same run if convenient:
+   gaps, legend/lower pies, overlapping popup, view reopen, days,
+   save/reload and Alt-Tab. Unreported coverage remains unconfirmed.
+5. Write a new immutable report; archive/rewrite NEXT and update statuses
+   and next-card instructions. Discuss LAW-1 after visual acceptance;
+   do not expand laws or decide user affinity choices during this check.
+
+| card | status | instructions/evidence |
+|---|---|---|
+| DLL-0 / U-4 | done, tested in game | existing reports |
+| DLL-1 / HEMI-1 | functional prototype tested in game; extended coverage remains | DLL-1/2 instructions; U-5 report |
+| HEMI-2 | 0.2.5 accepted; earlier baseline retained | HEMI-2 handoff |
+| HEMI-3 | 0.2.6 hover accepted; 0.2.7 header correction installed, not tested in game | instructions-hemi-3.md; report-hemi-3-header-1012.md |
+| U-5 | functional hover checkpoint passed; header check and remaining integration next | instructions-u-5.md |
+| GH-2 | data/mapping/ordered draw/scalar hover exercised in game | symbols.md |
+| LAW-0 / U-3 | done, tested in game | existing reports |
+| LAW-1 | discuss afterwards; implementation not started | SUBAGENTS.md; law-design.md |
+| GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
+| GH-4 / TPL-1 | later; REA reference retained | rea-for-templates.md |
+| COMPAT-0 | deferred (D1) | existing instructions |
+
+## 3. Continuity
+
+Active/source 0.2.7 DLL SHA-256:
+`6c83fb8c4ff47efd2df6d8e5aefedd4f028c12d4423491dbf53975aa3635eb40`.
+Install record: DLL-1+HEMI-3; descriptor release 0.2.7. Reference hash/27
+signatures, TGC anchors/range, Win32 /W4 /WX, native/real-GPU checks and
+eight installer/Lua tests pass. Logs:
+`E:\v2re\logs\tgcx-hemi3-027-{build,tests,exe}-1012.txt` and install JSON.
+
+Accepted 0.2.6 DLL/record/descriptor/log/error logs/acceptance metadata:
+`E:\v2re\logs\tgcx-before-027-1012`. Older 0.2.5 backup remains in
+`tgcx-before-026-1012`; original Lua shim retained. Latest screenshot is
+in the user's message; original 0.2.5 PNG remains outside git.
+
+No new hooks/addresses or simulation writes. Native structured tooltip
+slot 10 remains untouched. Only the user launches the game. New P32,
+next P33. Generated background/native legend-order deviations remain.
+
+---
+
+# Session close 2026-10-12 (16): HEMI-3 accepted, header bounds repaired
+
+User confirms 0.2.6 works and supplies a crop showing overlap with the
+Upper House block. Preserved accepted DLL/log/metadata outside git: all
+27 guards, 5555 ordered draws, three native ideology hover mappings and
+empty errors. Clipped the cover below the native header without moving
+seats or hover. 0.2.7 built, all automatic gates passed and installed with
+game closed; visual correction not yet tested in game. 0.2.6 retained.
+P32, next P33. Extended U-5 coverage remains; LAW-1 not started.
+
+## Starting NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-12 (15). **HEMI-3 0.2.6 built, checked and installed on E:;
+done, not tested in game.** 0.2.5 remains the accepted working baseline,
+retained outside git. Report: `docs/report-hemi-3-1012.md`.
+
+## 1. Scope and user direction
+
+TGC v2.5.2 only; single player first; read-only presentation. User requested
+HEMI-3 now and consideration of LAW-1 afterwards. No LAW-1 implementation
+has started; review that card after HEMI-3/U-5 acceptance. D3 blocks nothing.
+
+## 2. Next session: one HEMI-3/U-5 acceptance run
+
+1. Read `docs/instructions-u-5.md`, `docs/instructions-hemi-3.md` and the
+   HEMI-3 report. No immediate rebuild/reinstall is needed.
+2. Only the user launches the usual E: game with TGC v2.5.2 + TGCX.
+   Hover actual seat dots in each UK bloc, especially the left/right ends.
+   Verify ideology matches colour, gaps/hole have no chart tooltip, native
+   legend remains correct and menus/popups occlude normally.
+3. In the same run, switch/reopen views, advance days, save/reload, wait
+   paused and Alt-Tab once. Follow the U-5 checklist; preserve evidence.
+4. Inspect the actual 0.2.6 log (27 guards, ordered draws, native hover
+   ideology/index/slice lines), active errors and screenshot beside Main.
+   If something fails, preserve log/dump before restarting; diagnose that
+   failure and consolidate corrections. Do not infer unobserved passes.
+5. Write a new immutable acceptance/failure report. Archive/rewrite NEXT,
+   update statuses and write instructions for every selected next card.
+6. After acceptance, discuss LAW-1 (up to 48 bills and affinity review).
+   Do not expand laws during hover validation or decide user affinities.
+
+| card | status | instructions/evidence |
+|---|---|---|
+| DLL-0 / U-4 | done, tested in game; backups retained | existing reports |
+| DLL-1 / HEMI-1 | functional prototype tested in game; extended coverage remains | DLL-1/2 instructions; U-5 report |
+| HEMI-2 | 0.2.5 accepted; retained baseline, background/legend deviations | HEMI-2 handoff |
+| HEMI-3 | 0.2.6 built/installed; done, not tested in game | instructions-hemi-3.md; report-hemi-3-1012.md |
+| U-5 | one combined hover/remaining integration run next | instructions-u-5.md |
+| GH-2 | runtime data/mapping/ordered draw confirmed; scalar hover ABI confirmed in code | symbols.md |
+| LAW-0 / U-3 | done, tested in game | existing reports |
+| LAW-1 | consider after HEMI-3 acceptance; implementation not started | SUBAGENTS.md; law-design.md |
+| GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
+| GH-4 / TPL-1 | later; REA reference retained | rea-for-templates.md |
+| COMPAT-0 | deferred (D1) | existing instructions |
+
+## 3. Continuity
+
+Active/source 0.2.6 DLL SHA-256:
+`35465f6375813b8b3e71a71560fa382e31ccd3aba69ec35ded35e5155f3aba94`.
+Install record: DLL-1+HEMI-3; submod release comment 0.2.6.
+All 27 signatures, TGC anchors/range, Win32 /W4 /WX, native/real-GPU tests,
+eight installer/Lua tests and law checks passed. Logs:
+`E:\v2re\logs\tgcx-hemi3-026-{build,tests,exe}-1012.txt` and fixture log.
+
+Accepted 0.2.5 DLL/record/descriptor/log retained in
+`E:\v2re\logs\tgcx-before-026-1012`; original shim and previous proxies remain.
+Original screenshot: `E:\v2re\logs\tgcx-hemi2-025-user-screenshot-1012.png`.
+
+Two verified scalar hooks (native pie bounds and Politics slice selection)
+share the rendered seats; native structured tooltip slot 10 stays untouched.
+Unsupported layout retains the native pie. No simulation writes. No game
+launch or new runtime acceptance is claimed. New P31, next P32.
+
+---
+
+# Session close 2026-10-12 (15): HEMI-3 native hover built and installed
+
+User requested HEMI-3 now and LAW-1 consideration afterwards. Implemented
+verified native scalar picking/slice hooks, shared seat geometry and guarded
+fallback. 0.2.6 built/installed on E: with game closed; 27 signatures, native/
+GPU/Lua/eight installer tests and law checks pass. Not tested in game.
+0.2.5 retained; one combined U-5 run next. P31, next P32.
+
+## Starting NEXT (verbatim)
+
+# NEXT — what comes next
+
+2026-10-12 (14). **0.2.5 works in game, confirmed by the user.** Tooltip
+hover does not correlate with the new chart. Handoff:
+`docs/report-hemi-2-handoff-1012.md`. Preserve the working build; next card
+is HEMI-3 hover integration. No immediate rebuild or repeat game test.
+
+## 1. Scope
+
+TGC v2.5.2 only; single player first; read-only presentation. No new mechanic
+selected. Keep fewer iterations: one consolidated hover fix/build/test.
+REA and the Victoria II RE git remain references for later army templates.
+D3 remains open and blocks nothing.
+
+## 2. Next implementation session: HEMI-3
+
+1. Read `docs/instructions-hemi-3.md`, the handoff, Main mockup, renderer/tests,
+   symbols and P27-P30. Inspect the saved original game screenshot.
+2. Diagnose chart hover ownership and native tooltip ABI with bounded RE.
+   Current new geometry is drawn over unchanged native pie hit regions.
+   Do not confuse that mismatch with stale upper-house data.
+3. Align chart hover with shared rendered geometry and correct engine
+   ideology; preserve native legend, layering, fallback and CPU/D3D state.
+   No guessed structured string returns or duplicate tooltip overlays.
+4. Consolidate verified changes, run reference/TGC/native/GPU/installer
+   gates and document mockup deviations. No unrelated polish expansion.
+5. Only after a concrete safe build is ready, install reversibly with the
+   game closed. Only the user starts the game. Combine hover checks with
+   remaining U-5 integration coverage; see its instructions.
+6. Preserve evidence and write a new immutable report; archive NEXT,
+   rewrite it and update statuses/next-card instructions.
+
+| card | status | instructions/evidence |
+|---|---|---|
+| DLL-0 / U-4 | done, tested in game; backups retained | existing reports |
+| DLL-1 / HEMI-1 | functional prototype tested in game; extended coverage remains | DLL-1/2 instructions; U-5 report |
+| HEMI-2 | 0.2.5 works in game; tooltip mismatch and background/legend deviations retained | HEMI-2 handoff/instructions |
+| HEMI-3 | queued: correlate hover with actual rendered seats | instructions-hemi-3.md |
+| U-5 | functional checkpoint passed; remaining checks with hover build | instructions-u-5.md |
+| GH-2 | runtime data/mapping/coordinates/ordered draw confirmed | symbols.md |
+| LAW-0 / U-3 | done, tested in game | existing reports |
+| GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
+| GH-4 / TPL-1 | later; REA reference retained | rea-for-templates.md |
+| COMPAT-0 | deferred (D1) | existing instructions |
+
+## 3. Continuity
+
+Active/source 0.2.5 DLL SHA-256:
+`1ec1aea4fee87441a293358451ee15859cdf66435991abebe3a52370f5de5a1b`.
+Original shim and previous proxies retained; submod release comment 0.2.5.
+Checks: 23 signatures, TGC anchors/range, Win32 /W4 /WX build, real GPU/native,
+8 installer/Lua forwarding tests and law checks passed.
+Accepted log: `E:\v2re\logs\tgcx-hemi2-025-accepted-1012.log`:
+10032 ordered draws, paused samples, final Politics hidden, empty errors.
+
+Original screenshot (2560x1440):
+`E:\v2re\logs\tgcx-hemi2-025-user-screenshot-1012.png`.
+Metadata beside it; keep game art outside git. Native legend is 83/5/12;
+chart wedge hover still follows the old pie. P30 records this; next P31.
+No save/reload/date-advance/Alt-Tab coverage or tooltip repair is claimed.
+User authorized pushing to the existing public repository and removed the
+publication approval requirement from AGENTS §13. V2DLL provenance comments
+remain. No game assets or build outputs are included in the commit.
+
+---
+
 # Session close 2026-10-12 (14): 0.2.5 works, tooltip mismatch handed off
 
 User confirms 0.2.5 works and reports tooltips do not correspond to the

@@ -23,3 +23,4 @@ dll/**/.vs/
 
 # Generated from TGC's own files at install time (R3, R8): never in git
 submod/TGCX/common/event_modifiers.txt
+submod/TGCX/interface/country_politics.gui

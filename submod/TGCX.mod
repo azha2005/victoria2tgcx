@@ -1,4 +1,4 @@
-# TGCX release 0.2.5: HEMI-2 visual polish in the optional proxy DLL.
+# TGCX release 0.2.8: HEMI-3 seat hover and cover aligned to the native header border.
 name = "TGCX"
 path = "mod/TGCX"
 user_dir = "TGCX"

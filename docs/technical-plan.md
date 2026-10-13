@@ -28,7 +28,7 @@ Pieces, in the order they are needed:
 | 1.6 | Read script variables | `CCountry+0x1DC` `CVariables`, `vtable[1]` = `Find(std::string)` | done (V2DLL §4.7) | rulers, templates |
 | 1.7 | The player's country | `g_world+0xAEC` vector of humans | done (repo, `World`) | all |
 | 1.8 | Our own per-save file | store next to the save what the engine does not save (chart history) | **pending**: the save's name and the moment of saving/loading | charts |
-| 1.9 | Send an engine command | create a `C*Command` and put it in the queue that is synchronised in MP (R5) | **pending** | templates (and laws, if done in the engine) |
+| 1.9 | Send an engine command | LAW-2 invokes the native decision click path, which queues CExecuteDecisionCommand (R5) | static/fixture evidence; actual Bill Count pending U-7 | law GUI; other command types still pending |
 
 **Script → DLL bridge:** the script writes country variables
 (`set_variable = { which = tgcx_ruler value = 17 }`), which are stored in
@@ -135,15 +135,20 @@ GUI (P11).
    replacement succeeds. Later windows/tooltips can occlude the chart.
 4. **Tooltip:** retain the engine's ideology tooltip and native legend.
    The separate seat-count tooltip was removed in 0.2.4 to eliminate
-   duplicate boxes; integrating per-seat hover requires verified native
-   tooltip construction/ownership (P27), not a guessed string return.
+   duplicate boxes; HEMI-3 0.2.6 maps seats through verified native scalar bounds and slice
+   helpers; the native caller retains tooltip construction/ownership and
+   structured slot 10 (P27). User confirms 0.2.6 hover works in game.
 
 **2026-10-12 implementation:** 0.2.3 was confirmed displaying by the user,
 with a layering defect. 0.2.4 now works in game (U-5 functional checkpoint);
 user notes clunky appearance. HEMI-2 0.2.5 adds a feathered cover, softer
 seat edges and political left-to-right wedges. Built/installed with automatic
 gates passed; user confirms it works in game. Chart tooltips still follow
-old pie regions (P30); HEMI-3 will align hover with rendered seats. Extended
+old pie regions (P30) in that accepted build. HEMI-3 0.2.6 implements native
+scalar seat hover, accepted by the user with all three UK mappings in the
+runtime log. 0.2.8 clips the cover/feather to the actual native header
+border (first background row y=101, P32), with scissor state restored;
+accepted in game (`report-law-1-start-1012.md` section 1). Extended
 integration coverage remains outstanding. See `report-hemi-2-build-1012.md`. Final Present supplies paused sampling only; draw
 at the native chart stage inside the existing scene, preserving state.
 No `.gui` override is required. `docs/report-dll-12-layering-fix-1012.md`
@@ -335,3 +340,5 @@ bottleneck is not technical: the agent cannot run the game, so every step
 that touches memory or the interface waits for the user's test
 (`AGENTS.md` §11). The risk to the user's game is low: every patch checks
 its bytes (R6) and the script works without the DLL.
+
+LAW-2 checkpoint (2026-10-13): generated native Bill child, labels and buttons use route B; projected seats use route A after their named native marker. Final Present updates GUI data only. 0.3.0 installed, not tested in game; full controls and automatic favours remain unfinished. See `report-law-2-bill-1013.md` and `instructions-law-2.md`.

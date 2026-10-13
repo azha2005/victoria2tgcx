@@ -64,7 +64,7 @@ def original(path):
 def proxy(path, reference):
     image = PE(path)
     if image.machine != 0x14C or not any(marker in image.data for marker in
-                (b"TGCX DLL-0 0.1.0", b"TGCX DLL-1+HEMI-1 0.2.0", b"TGCX DLL-1+HEMI-1 0.2.1", b"TGCX DLL-1+HEMI-1 0.2.2", b"TGCX DLL-1+HEMI-1 0.2.3", b"TGCX DLL-1+HEMI-1 0.2.4", b"TGCX DLL-1+HEMI-2 0.2.5")):
+                (b"TGCX DLL-0 0.1.0", b"TGCX DLL-1+HEMI-1 0.2.0", b"TGCX DLL-1+HEMI-1 0.2.1", b"TGCX DLL-1+HEMI-1 0.2.2", b"TGCX DLL-1+HEMI-1 0.2.3", b"TGCX DLL-1+HEMI-1 0.2.4", b"TGCX DLL-1+HEMI-2 0.2.5", b"TGCX DLL-1+HEMI-3 0.2.6", b"TGCX DLL-1+HEMI-3 0.2.7", b"TGCX DLL-1+HEMI-3 0.2.8", b"TGCX LAW-2 0.3.0")):
         raise ValueError(f"{path}: not a recognized TGCX Win32 build")
     expected = {name: (ordinal, f"lua51_real.{name}")
                 for name, (ordinal, _) in PE(reference).exports().items()}
@@ -164,7 +164,9 @@ def operate(folder, remove=False, dry_run=False, source=SOURCE):
     try:
         staged.rename(active)
         write_state(state, {"original_sha256": ORIGINAL_SHA256, "proxy_sha256": source_hash,
-                            "source": str(source), "card": "DLL-1+HEMI-2" if b"TGCX DLL-1+HEMI-2" in PE(source).data
+                            "source": str(source), "card": "LAW-2" if b"TGCX LAW-2" in PE(source).data
+                            else "DLL-1+HEMI-3" if b"TGCX DLL-1+HEMI-3" in PE(source).data
+                            else "DLL-1+HEMI-2" if b"TGCX DLL-1+HEMI-2" in PE(source).data
                             else "DLL-1+HEMI-1" if b"TGCX DLL-1+HEMI-1" in PE(source).data else "DLL-0"})
     except (OSError, ValueError):
         if active.exists():
@@ -180,9 +182,10 @@ def main():
     ap.add_argument("game_dir", type=Path)
     ap.add_argument("--remove", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--source", type=Path, default=SOURCE, help="built proxy or retained rollback DLL")
     args = ap.parse_args()
     try:
-        operate(args.game_dir, args.remove, args.dry_run)
+        operate(args.game_dir, args.remove, args.dry_run, args.source)
     except (OSError, ValueError, KeyError) as error:
         raise SystemExit(f"install_dll: {error}") from error
 
