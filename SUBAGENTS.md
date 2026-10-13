@@ -103,24 +103,27 @@ update §4.
 | SUB-0 | Submod skeleton and load test | **done** (2026-10-12; tested in U-2) | `docs/instructions-sub-0.md`; `docs/report-sub-0-1012.md` |
 | COMPAT-0 | Version matrix (`master` + `--matrix`) | **deferred** (D1 revised: v2.5.2 only) | `docs/instructions-compat-0.md` |
 | ECO-A | Economy charts outside the game | ready to start | `docs/technical-plan.md` §3 (instructions when chosen) |
-| GH-2 | Upper house: where it lives in `CCountry` | **read in the code** (`CCountry+0x8B0`); run-time confirmation missing | `docs/symbols.md` (what is missing, at the end) |
+| GH-2 | Upper house: where it lives in `CCountry` | hemicycle data/mapping/colours/coordinates and native ordered draw runtime-confirmed | `docs/symbols.md`; `docs/report-u-5-1012.md` |
 | U-2 | Start the skeleton submod with v2.3.4 and v2.5.2 | **done** (2026-10-12): loads on both, override works, one event per click, logs clean | `docs/report-sub-0-1012.md` §4 |
 | COMPAT-1 | Generator (N1), v2.5.2 only: build the overrides from the installed TGC at install time | when the first card needs a fixed-name file (LAW-0 needs `event_modifiers.txt`) | `docs/instructions-law-0.md` step 0 (the seed) |
 | LAW-0 | One bill with favours and affinity, end to end (`press_rights`) | **done** (2026-10-12, U-3 passed) | `docs/instructions-law-0.md`; `docs/report-law-0-1012.md` |
 | U-3 | Play the LAW-0 bill (with a save/load halfway) | **done** (2026-10-12) | `docs/instructions-law-0.md` step 6 |
 | LAW-1 | Generator for the ≤ 48 bills from TGC v2.5.2 | after LAW-0 | to be written |
-| DLL-0 | Our own `lua51.dll` proxy that logs signatures and the upper house | ready to start | `docs/instructions-dll-0.md` |
-| U-4 | Install DLL-0, play a few days, send the log | after DLL-0 | `docs/instructions-dll-0.md` step 5 |
-| DLL-1 | Draw on top (`Present`) and know which view is open | after DLL-0 | to be written |
+| DLL-0 | Our own `lua51.dll` proxy that logs signatures and the upper house | **done, tested in game** (U-4, 2026-10-12); installed on E:\; cadence coverage remains to verify in DLL-1 | `docs/instructions-dll-0.md`; `docs/report-dll-0-1012.md` |
+| U-4 | Install DLL-0, play a few days, send the log | **done** (2026-10-12): screenshots/log match, clean errors, save/load | `docs/instructions-u-4.md`; `docs/report-u-4-1012.md` |
+| DLL-1 | Renderer, cadence and Politics visibility | **working prototype, tested in game (0.2.4)**; extended coverage outstanding | `docs/instructions-dll-1.md`; U-5 report |
+| U-5 | Combined renderer/hemicycle acceptance | **functional checkpoint passed**; extended checks accompany the polish build | `docs/instructions-u-5.md`; `docs/report-u-5-1012.md` |
 | GH-3 | GUI: element positions and creation on the fly | after GH-1 | to be written |
-| GH-4 | Engine commands: `CConstructUnitCommand` and how it is sent | after GH-1 | to be written |
+| GH-4 | Engine commands: `CConstructUnitCommand` and how it is sent | after GH-1; REA candidate noted | to be written; `docs/rea-for-templates.md` |
 | GH-5 | Save/load: the save's name, the moment | after GH-1 | to be written |
-| HEMI-1 | Hemicycle | waits for GH-2, DLL-1 | — |
-| ECO-B | Charts in game | waits for DLL-1, GH-5 | — |
+| HEMI-1 | Hemicycle (user DLL-2 alias) | **working prototype, tested in game (0.2.4)**; visual polish outstanding | `docs/instructions-dll-2.md`; U-5 report |
+| HEMI-3 | Match hover with rendered ideology | **queued, not implemented** | `docs/instructions-hemi-3.md` |
+| HEMI-2 | Visual polish of the working hemicycle | **0.2.5 works in game**, user-confirmed; tooltip mismatch remains; softer dots/background and bloc sweep | `docs/instructions-hemi-2.md` |
+| ECO-B | Charts in game | DLL-1 prototype available; GH-5 still needed; not selected | — |
 | GOV-0 | Data: 1836 rulers and generals' portraits | ready to start (no RE, in parallel) | `docs/instructions-gov-0.md` |
 | GOV-1 | Rulers by script | waits for GOV-0, SUB-0 | — |
-| GOV-2 | The ruler's portrait and name (DLL) | waits for GOV-1, DLL-1 | — |
-| TPL-1 | Army templates | waits for GH-4, DLL-1 | — |
+| GOV-2 | Ruler portrait/name (DLL) | DLL-1 prototype available; waits for GOV-1; not selected | — |
+| TPL-1 | Army templates | DLL-1 prototype available; waits for GH-4; not selected | REA/RE references retained |
 
 ### I — Infrastructure
 
@@ -179,8 +182,13 @@ comes.
   with the load base, the `check_exe` signatures and the player's upper
   house (confirms GH-2). Reversible install and uninstall (rename, never
   delete).
-- **DLL-1** — `Present` hook and a test box visible only with
-  `CPoliticsView` open.
+- **DLL-1** — guarded native GUI ordered drawing/final Present cadence and Politics
+  lifetime/geometry; combined with HEMI-1 at user request.
+- **DLL-2** — user alias for HEMI-1: 100 seats, seven rows and tooltips.
+  0.2.4 works in game; HEMI-2 0.2.5 works in game; HEMI-3 tooltip alignment queued; U-5 checks remain.
+
+- **HEMI-2** — mockup-based visual polish of the working 0.2.4 hemicycle;
+  consolidate visual changes and remaining integration tests in one run.
 
 ### U — User
 

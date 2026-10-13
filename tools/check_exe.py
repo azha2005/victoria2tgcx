@@ -13,6 +13,7 @@ Exits with 0 if everything matches and with 1 if not.
 
 import hashlib
 import sys
+from tgcx_pe import PE
 
 DEFAULT_EXE = r"E:\Victoria.II.v3.04.Inclu.ALL.DLC\v2game.exe"
 
@@ -24,6 +25,7 @@ TEXT_DELTA = 0xC00
 
 # (RVA, expected bytes, where it comes from)
 SIGNATURES = [
+
     (0x1D74BE, "B8E8030000", "PATCH_ALLIED_REINFORCE_150, mov eax,1000"),
     (0x282EC0, "558BEC6AFF", "FUN_00682EC0, daily sync check (OOS)"),
     (0x35BB50, "558BEC5156", "ApplyVolumes, entry"),
@@ -36,6 +38,22 @@ SIGNATURES = [
      "CCountry::GetUpperHouse, add eax,0x8B0"),
     # 2026-10-12, DLL-0: the only call to the per-frame pump FUN_009DF2B0 (rel32 = 0x5DF2B0 - 0x28572C)
     (0x285727, "E8849B3500", "call FUN_009DF2B0, DLL tick hook site"),
+    # DLL-1/HEMI-1: scoped Ghidra evidence, docs/report-dll-12-1012.md.
+    (0xA0E45C, "002B6D00102C6D00", "CPoliticsView destructor/show slots"),
+    (0xA0E468, "402C6D00", "CPoliticsView hide slot"),
+    (0xA0E480, "D02D6D00", "CPoliticsView tooltip slot"),
+    (0x4FD801, "A13C8A2501E8C5630700", "ideology manager lookup operand"),
+    (0x5793C0, "558BEC83E4F8518B41142B4110535633", "CUpperHouse vector begin/end"),
+    (0x5E3BA0, "558BEC83EC0C8B9190000000", "GUI centred position setter"),
+    (0x5E4450, "568BF18B8E48020000C6466701", "GUI show flag"),
+    (0x5E4030, "568BF18B8E48020000C6466700", "GUI hide flag"),
+    (0x59A520, "FF868CBC060080BEA0BC06000074258B", "FUN_0099A520 final engine Present entry"),
+    (0xA38324, "B0599900202E9A00806B990090DC9900", "native renderer primary vtable"),
+    (0xA19B8C, "D0077E00202E9A0060097E0090DC9900", "CEU3Graphics live renderer primary vtable"),
+    (0x599F22, "80BEF00000000076158B43648B088B91E400", "ordered GUI render loop after entity Draw, FUN_00999D00"),
+    (0xA3C11C, "404D9E00", "native root icon lookup slot, FUN_009E4D40"),
+    (0xA3A930, "007EA80060E29E00B06B9A0020366300", "native icon primary vtable"),
+    (0xA3FF30, "20F1A200", "native overlay entity Draw slot, FUN_00A2F120"),
 ]
 
 
@@ -53,8 +71,9 @@ def main() -> int:
         print(f"BAD  sha256 {digest} (expected {SHA256})")
         bad += 1
 
+    image = PE(path)
     for rva, expect, what in SIGNATURES:
-        off = rva - TEXT_DELTA
+        off = image.offset(rva)
         want = bytes.fromhex(expect)
         got = data[off:off + len(want)]
         if got == want:

@@ -321,3 +321,125 @@ happen on the day goes into a decision's `allow` (it reads the modifier
 live): the vote already checks `tgcx_debate` that way. Deadlines measured in
 years (the debts) can absorb the month; show the deadline from the
 modifier's own date, not from the event.
+
+### P24 — Loaded signatures contain ASLR-relocated operands
+
+**Measured:** 2026-10-12, DLL-0. PE HIGHLOW relocation metadata places
+absolute operands at signature offsets 8 (RVA `0x233826`, menu label)
+and 11 (RVA `0x4FD2A0`, upper-house trigger). `gen_signatures.py` measured
+them from the hash-verified reference executable; the native fixture
+passed both at the nonpreferred base `0x01700000` and rejected a corrupted
+relocated operand. This is fixture evidence, not an in-game observation.
+
+**Cause:** `check_exe.py` compares disk bytes at the preferred base. Windows
+adjusts absolute operands when loading at another base, so comparing
+those same expected bytes directly against loaded memory falsely rejects
+the correct executable (P7).
+
+**Fix:** generate relocation offsets alongside the shared signature table.
+Adjust each expected 32-bit operand by `loaded_base - preferred_base`
+before comparing. Preserve the full comparison and the executable hash
+gate; do not mask or wildcard the relocated address bytes.
+
+
+### P25 — A time-advance pump call is not a general render tick
+
+**Measured:** 2026-10-12, DLL-1. U-4 retained one January 2 snapshot;
+scoped decompilation of UpdateTimeThrottle at VA 0x00685620 (RVA 0x285620)
+shows DLL-0's CALL RVA 0x285727 inside advancement/throttle conditions.
+This explains why the site cannot guarantee paused/menu sampling.
+
+**Fix:** use guarded Direct3D9 Present for read-only periodic diagnostics
+and EndScene for drawing inside the native scene. Test unchanged-date
+Present callbacks in a real D3D9 fixture, then verify pause/reload in U-5.
+Keep original CPU/renderer state, signatures, callbacks and fallback;
+do not introduce a polling thread or simulation writes.
+
+### P26 — Intermediate callbacks and inherited viewports can hide an overlay
+
+**Observed:** 2026-10-12, U-5 screenshot: original pie, no chart. 0.2.0
+logged no successful draw and did not name failed guards, so its exact
+runtime blocker is unproven. EndScene can be an intermediate/loading pass;
+assuming its viewport is already full-screen is an unnecessary restriction.
+
+**Code/test evidence:** the final engine Present function is FUN_0099A520,
+RVA 0x59A520, renderer in ESI and active device at +0x64. A real D3D9
+fixture confirms a restored smaller viewport can coexist with full-screen
+overlay pixels when drawing gets its own captured viewport and short scene.
+
+**Repair:** 0.2.1 uses guarded final engine presentation, verifies the active
+backbuffer, sets/restores its viewport, and logs the first failed GUI/data
+stage plus bounded follow-up diagnostics. This supersedes P25's initial
+EndScene drawing route. Do not call the game defect resolved until U-5
+passes; preserve the failed log and keep the game open for live inspection.
+
+**P26 follow-up, live evidence:** 0.2.1's runtime guard rejected the derived
+CEU3Graphics renderer table RVA 0xA19B8C. The Politics root +0x250 already
+contained absolute (768,470) at 2560 x 1440; adding half-screen again was
+incorrect. 0.2.2 guards both renderer families and reads absolute geometry.
+All ideology data and paused cadence are now runtime-confirmed. See
+`report-dll-12-live-fix-1012.md`; 0.2.4 functional drawing is now
+confirmed in `report-u-5-1012.md`. Visual polish/extended checks remain.
+
+### P27 — A tooltip return can be a structured object, not one string
+
+**Observed:** 2026-10-12, 0.2.2 drew the chart and crashed. The dump shows
+an invalid large memcpy in the engine tooltip-copy path. Scoped helper
+FUN_004115D0 (RVA 0x115D0) copies three string-bearing fields plus flags.
+The DLL's guessed empty 24-byte string left the rest uninitialized. A
+synthetic callback that mirrored that guess did not validate the real ABI.
+
+**Fix:** 0.2.3 removes tooltip suppression/return-buffer writes entirely
+and leaves the native callback untouched. 0.2.3 kept a separate drawn
+tooltip; 0.2.4 removes that duplicate box and retains only native tooltips.
+A regression test guards the unchanged pointer. Any future suppression
+must establish the full structure, constructors, destruction/ownership
+and caller ABI using the engine, not a same-assumption fixture. Stability
+was reported for 0.2.3 and functional acceptance for 0.2.4; see
+`report-u-5-1012.md`. Extended integration checks remain unconfirmed.
+
+
+## P28 — Final presentation drawing ignores GUI layering
+
+**Observed 2026-10-12, 0.2.3:** the user confirmed the chart works, but the
+beige chart panel covers the native tooltip and a second drawn tooltip
+appears above it. Final Present comes after the whole interface, so
+painting there cannot respect the engine's window/tooltip draw order.
+
+**Repair in 0.2.4:** final Present only samples/logs. Draw after the native
+`chart_upper_house_overlay` entity in FUN_00999D00's ordered GUI loop,
+with its existing scene, verified object name/vtables and restored D3D
+state. Preserve all original drawing; failed guards retain the pie.
+Remove the separate seat tooltip and leave the native structured tooltip
+untouched (P27). A real D3D9 pixel test confirms a later opaque UI element
+occludes seats and final presentation does not repaint them. The user
+confirmed 0.2.4 works, and its log confirms ordered drawing in game
+(`report-u-5-1012.md`). Appearance is still clunky; visual polish and
+individual extended coverage checks remain open.
+
+## P29 — Successful unittest stderr fails a redirected PowerShell check
+
+2026-10-12. Symptom: `tools/test_dll.ps1 *> <log>` stops with
+`NativeCommandError` on a test progress line ending in `... ok`, despite
+the same tests passing directly. Windows PowerShell turns redirected
+native stderr into error records; `ErrorActionPreference=Stop` aborts.
+Python unittest normally writes progress/results to stderr.
+
+Fix: explicitly give TextTestRunner stdout in test_install_dll.py. Keep
+unittest's failing exit code and test_dll.ps1's nonzero-exit gate. The
+full redirected suite passed after the change. Do not weaken signatures,
+compiler warnings or assertions to work around output routing.
+
+## P30 — New chart geometry retains old native pie hover regions
+
+2026-10-12. User confirms 0.2.5 works but chart tooltips do not correlate
+with the seats. The DLL replaces the visible pie with a hemicycle while
+leaving native pie hit-testing/tooltip selection unchanged. Political
+wedge seating differs from old pie sectors, so the hovered ideology can
+be wrong for the dot beneath the cursor. This is not evidence of stale
+upper-house numbers.
+
+Repair pending in HEMI-3: share rendered seat geometry for hit-testing and
+use a verified native tooltip path/ownership. Preserve native legend and
+UI ordering. Never restore the guessed structured return that caused P27
+or add duplicate overlay tooltips that recreate P28.

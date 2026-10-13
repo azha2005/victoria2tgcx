@@ -22,9 +22,9 @@ Pieces, in the order they are needed:
 |---|---|---|---|---|
 | 1.1 | Proxy + log | forwards the Lua exports, opens `Logs\tgcx.log` | none | all |
 | 1.2 | Installer with signatures | every patch carries its expected bytes; if they do not match, it is not installed (R6) | none | all |
-| 1.3 | Per-frame tick | hooks the message pump (`FUN_009DF2B0`, RVA `0x5DF2B0`, like V2DLL's music player) | done (V2DLL) | all |
-| 1.4 | Draw on top | hooks `IDirect3DDevice9::Present` (slot 17) and draws with Dear ImGui (MIT licence) or D3D9 primitives | done (V2DLL §7.2) | charts, hemicycle, rulers |
-| 1.5 | Which window is open, and where? | the `Update` slot of each view's vtable (`CPoliticsView` `0xA0E458`, `CBudgetView` `0xA059F0`, …) | partial: the on-screen position is missing | charts, hemicycle, rulers |
+| 1.3 | Per-frame tick | 0.2.4 uses guarded final engine Present for paused/menu sampling; DLL-0 conditional time-advance hook retained only in fixtures | runtime-confirmed (U-5); P25 | all |
+| 1.4 | Custom drawing | 0.2.4 draws D3D9 primitives within the native ordered GUI pass, after the named upper-house overlay; final Present does not draw | runtime-confirmed hemicycle prototype; P28 | charts, hemicycle, rulers |
+| 1.5 | Which window is open, and where? | Politics show/hide/destructor hooks, root visibility/absolute coordinates and named overlay identity | runtime-confirmed for Politics; other views need their own evidence | charts, hemicycle, rulers |
 | 1.6 | Read script variables | `CCountry+0x1DC` `CVariables`, `vtable[1]` = `Find(std::string)` | done (V2DLL §4.7) | rulers, templates |
 | 1.7 | The player's country | `g_world+0xAEC` vector of humans | done (repo, `World`) | all |
 | 1.8 | Our own per-save file | store next to the save what the engine does not save (chart history) | **pending**: the save's name and the moment of saving/loading | charts |
@@ -122,16 +122,33 @@ GUI (P11).
    `CUpperHouseTrigger`'s `Evaluate`: `CCountry+0x8B0` is the upper house
    and at its `+0x10` there is an `int64[]` with each ideology's share
    (index `CIdeology+0x28`, 2¹⁵ fixed point). `docs/symbols.md`. It still
-   has to be confirmed with the game running (that it sums to 1.0 and
-   matches the pie) and the array's length found.
+   was core-confirmed in U-4 (83/5/12%, quantized sum 32767). Vector end
+   `+0x14`, name lookup and colour fields were confirmed in code during
+   DLL-1/HEMI-1; complete live mapping/bounds/colours were confirmed in the 0.2.1 live inspection.
 2. **Seats:** N seats (configurable, e.g. 100) apportioned by largest
-   remainder; each ideology's colour read from `common\ideologies.txt` of
-   the installed TGC version (compatibility).
-3. **Drawing:** with 1.4, on top of `chart_upper_house`'s position when
-   `CPoliticsView` is open (1.5). The original pie is covered or hidden
-   (N1: generate `country_politics.gui` with the chart off screen, or N2 on
-   the fly).
-4. Tooltip with the ideology and the percentage on mouse-over (ImGui).
+   remainder. Build 0.2.0 implements the mockup's fixed 100; indices and
+   normalized RGB are read from the loaded engine ideology objects, using
+   names generated from installed TGC v2.5.2 (never file-order indices).
+3. **Drawing:** route A, read-only primitives, placed within the native
+   ordered UI pass immediately after `chart_upper_house_overlay`. The
+   original pie/overlay draw normally, then are covered only after guarded
+   replacement succeeds. Later windows/tooltips can occlude the chart.
+4. **Tooltip:** retain the engine's ideology tooltip and native legend.
+   The separate seat-count tooltip was removed in 0.2.4 to eliminate
+   duplicate boxes; integrating per-seat hover requires verified native
+   tooltip construction/ownership (P27), not a guessed string return.
+
+**2026-10-12 implementation:** 0.2.3 was confirmed displaying by the user,
+with a layering defect. 0.2.4 now works in game (U-5 functional checkpoint);
+user notes clunky appearance. HEMI-2 0.2.5 adds a feathered cover, softer
+seat edges and political left-to-right wedges. Built/installed with automatic
+gates passed; user confirms it works in game. Chart tooltips still follow
+old pie regions (P30); HEMI-3 will align hover with rendered seats. Extended
+integration coverage remains outstanding. See `report-hemi-2-build-1012.md`. Final Present supplies paused sampling only; draw
+at the native chart stage inside the existing scene, preserving state.
+No `.gui` override is required. `docs/report-dll-12-layering-fix-1012.md`
+records the native evidence and mockup differences;
+`docs/report-u-5-1012.md` records user acceptance and current limitations.
 
 It does not change the game: it is read-only (R5 holds by itself).
 
@@ -172,6 +189,11 @@ we get there).
 ---
 
 ## 6. Army templates (the most expensive)
+
+Tooling candidate suggested by the user on 2026-10-12:
+`docs/rea-for-templates.md` records REA's possible use for GH-4. Verify
+Windows **x86** support for the exact release before adoption; it is not
+installed and does not replace command-system evidence or the R5 gate.
 
 There is no clean script effect to recruit the player's brigades: it is all
 DLL.
