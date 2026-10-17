@@ -39,8 +39,9 @@ SHOTS = [
     ("3-ruler.png", "Ruler.dc.html", 760, "Head of State"),
     ("4-economy.png", "Economy.dc.html", 1168, "Economy: GDP meter and history"),
     ("5-templates.png", "Templates.dc.html", 900, "Army templates"),
+    ("6-conform.png", "Conform.dc.html?do=Conform to template", 900, "Conform a stack to a template"),
 ]
-OVERVIEW = [["1-politics.png", "4-economy.png"], ["2-negotiation.png", "3-ruler.png", "5-templates.png"]]
+OVERVIEW = [["1-politics.png", "4-economy.png"], ["2-negotiation.png", "3-ruler.png", "5-templates.png", "6-conform.png"]]
 HEIGHT = 772
 TYPES = {".css": "text/css", ".js": "application/javascript", ".png": "image/png",
          ".html": "text/html; charset=utf-8", ".json": "application/json"}

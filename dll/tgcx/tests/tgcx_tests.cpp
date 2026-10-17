@@ -55,6 +55,15 @@ static void tgcx_FixtureTests() {
     }
     tgcx_Expect(tgcx_CheckSignatures(), "all 27 signatures at relocated fixture base");
     tgcx_Expect(!tgcx_InstallRenderer(),"missing Direct3D import rejects installation without game patches");
+    tgcx_InstallTemplatesGui();
+    tgcx_Expect(tgcx_tpl_gui_enabled && *reinterpret_cast<uintptr_t*>(memory+0xA12A14)==reinterpret_cast<uintptr_t>(tgcx_TplDestroyThunk) &&
+        *reinterpret_cast<uintptr_t*>(memory+0xA12A18)==reinterpret_cast<uintptr_t>(tgcx_TplUpdateThunk),"Templates guarded native view hooks installed at relocated base");
+    tgcx_ReplacePointer(reinterpret_cast<uintptr_t*>(memory+0xA12A14),reinterpret_cast<uintptr_t>(tgcx_TplDestroyThunk),tgcx_tpl_destroy_original);
+    tgcx_ReplacePointer(reinterpret_cast<uintptr_t*>(memory+0xA12A18),reinterpret_cast<uintptr_t>(tgcx_TplUpdateThunk),tgcx_tpl_update_original);
+    tgcx_tpl_gui_enabled=tgcx_templates_installed=false;
+    memory[0x334E24]^=1;tgcx_InstallTemplatesGui();
+    tgcx_Expect(!tgcx_tpl_gui_enabled && *reinterpret_cast<uintptr_t*>(memory+0xA12A14)==tgcx_base+0x3340E0,
+        "Templates bad layout guard leaves native view hooks untouched");memory[0x334E24]^=1;
     memory[tgcx_signatures[5].rva+11]^=1;
     tgcx_Expect(!tgcx_CheckSignatures(), "wrong relocated pointer rejected");
     memory[tgcx_signatures[5].rva+11]^=1;
@@ -216,13 +225,16 @@ static void tgcx_LoaderProbe(const wchar_t* proxy_path) {
 
 #include "tgcx_renderer_tests.h"
 #include "tgcx_bill_tests.h"
+#include "tgcx_reforms_tests.h"
+#include "tgcx_templates_tests.h"
+#include "tgcx_templates_gui_tests.h"
 
 int wmain(int argc, wchar_t** argv) {
     setvbuf(stdout,nullptr,_IONBF,0);
     if (argc==3 && wcscmp(argv[1],L"probe")==0) tgcx_LoaderProbe(argv[2]);
     else if (argc==2) {
         tgcx_log=CreateFileW(L"tgcx_fixture.log",GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,0,nullptr);
-        tgcx_HashTests(argv[1]); tgcx_BillTests();tgcx_FixtureTests();
+        tgcx_HashTests(argv[1]); tgcx_BillTests();tgcx_ReformTests();tgcx_TemplateTests();tgcx_TplGuiTests();tgcx_BillWindowTests(argv[1]);tgcx_FixtureTests();
         if (tgcx_log!=INVALID_HANDLE_VALUE) CloseHandle(tgcx_log);
     } else { printf("usage: tgcx_tests <reference exe> | probe <proxy>\n"); return 2; }
     printf("tgcx_tests: %s\n", tgcx_failures ? "FAIL" : "ALL OK");

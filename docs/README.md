@@ -27,16 +27,20 @@
 | `technical-plan.md` | how each mechanic is built: the shared DLL (§1), laws (§2), charts (§3), hemicycle (§4), rulers (§5), templates (§6), overall order (§7), feasibility of the mockups and the interface route, D9: hybrid case by case (§9) |
 | `law-design.md` | laws with political favours and ideological affinity (D7 revised): each bloc's stance, projected vote, favours, promises, Crown, cycle, what the DLL adds; v3 builds it on TGC's idioms (timed modifiers, step-chains) and maps the Bill mockup element by element |
 | `tgc-compatibility.md` | levels N0/N1/N2, the generator for fixed-name files, event range; the any-version matrix is on hold (D1 revised: TGC v2.5.2 only) |
-| `pitfalls.md` | full text of pitfalls P1-P34 (index in `AGENTS.md` §8) |
-| `symbols.md` | what this project has named or discovered in `v2game.exe`, with evidence (today: the upper house at `CCountry+0x8B0`) |
+| `pitfalls.md` | full text of pitfalls P1-P41 (index in `AGENTS.md` §8) |
+| `symbols.md` | what this project has named or discovered in `v2game.exe`, with evidence (upper house, GUI/hover paths, templates, and the 2026-10-17 external cross-check) |
 | `rtti-classes.md` | **generated** by `ghidra/ExportRtti.java`: the 1 500 vtables with RVA and slots, and the detail of 22 mechanics classes. Not edited by hand |
 | `instructions-gh-1.md` | GH-1: review the Ghidra analysis, export the RTTI inventory, create `symbols.md` |
 | `instructions-sub-0.md` | SUB-0: minimal submod, reversible installer, load test in game (U-2) |
 | `instructions-compat-0.md` | COMPAT-0: clone more TGC versions and `tgc_scan.py --matrix` |
 | `instructions-law-1.md` | LAW-1 short smoke accepted; script baseline, later fixes and release gates |
 | `instructions-u-6.md` | accepted short LAW-1 smoke, retained evidence and limitations |
-| `instructions-law-2.md` | installed native Bill prototype; remaining full controls and automatic favours |
-| `instructions-u-7.md` | brief Bill visual/Count check and complete script/DLL rollback |
+| `instructions-law-2.md` | 0.3.5 buttons, Reforms tab and Decisions filter; what to do after U-7 |
+| `instructions-u-7.md` | short 0.3.5 game check (Reforms tab, Bill buttons, Decisions tab, a month with no popup) and rollback |
+| `instructions-u-8.md` | first live template recruit, queue, local library, save/reload and side-by-side comparison on 0.4.0 |
+| `instructions-tpl-1.md` | Conform: scoped stack/move/merge/detach research after TPL-0 acceptance |
+| `instructions-tpl-2.md` | Auto-replace regiments lost to rebellion: on hold (Conform covers it) |
+| `instructions-tpl-0.md` | TPL-0: army templates; the `CConstructUnitCommand` findings, board questions, first DLL recruit |
 | `law-1-affinity-review.md` | generated negotiation preferences: all 23 base groups approved; later user corrections welcome |
 | `instructions-law-0.md` | LAW-0: one bill with favours and affinity (`press_rights`, United Kingdom) end to end, and its test in game (U-3); v3 adds the generated `event_modifiers.txt` and `tools/gen_laws.py` |
 | `instructions-dll-0.md` | DLL-0: our own `lua51.dll` proxy that logs signatures and the upper house (confirms GH-2; U-4) |
@@ -57,7 +61,20 @@ statuses remain historical evidence. HEMI-2 0.2.5 works in game and is retained.
 
 | document | date | what |
 |---|---|---|
+| `report-tpl-0-visual-1017.md` | 2026-10-17 | 0.4.1 placement confirmed by the anchor log and screenshots; 0.4.2 board-5 detail pass (native sprites, ring, covers, miniatures, texts); retained deviations; installed, not tested in game |
+| `report-tpl-0-placement-1017.md` | 2026-10-17 | 0.4.1: build-root matrix is owner-relative (P40); anchor sums the owner chain; translated-parent fixture; installed, not tested in game |
+| `report-research-discord-1017.md` | 2026-10-17 | Discord Cheat Engine notes and smedley_kernel (LGPL-3.0) checked against our build: 59 RVAs on function starts, 10 decompiled; prestige `+0xEA0`, unit list `+0x7B4`, loans, leadership, research points; army/regiment/pop/economy offsets external (I) |
+| `report-law-2-reforms-1017.md` | 2026-10-17 | 0.3.5: visible buttons, Reforms tab per board 1, `tgcx_` decisions hidden (P39), DLL popups skipped; 4 more deviations; installed, not tested in game |
+| `report-tpl-0-runtime-1017.md` | 2026-10-17 | user accepts nine-regiment recruitment/save-reload; logs/preferences match; detached panel/top-bar overlap remain visual work |
+| `report-tpl-0-panel-1017.md` | 2026-10-17 | 0.4.0 native Templates panel/local preferences/engine-command recruit installed; gates pass, U-8 pending; nine board deviations and paired rollback |
+| `report-tpl-0-research-1017.md` | 2026-10-17 | TPL-0 static research: brigade command ABI, validity slot, pop capacity, build view; 25 runtime + 5 research guards; D12 answers incl. Conform to template; recruit module fixture-tested, not wired |
+| `report-law-2-controls-1017.md` | 2026-10-17 | 0.3.4: board layout, every control, Crown/debt timers, automatic favours; 10 board deviations; installed, not tested in game |
 | `report-law-2-bill-1013.md` | 2026-10-13 | LAW-1 short smoke accepted; Bill native GUI/command prototype, gates, deviations and rollback; 0.3.0 installed, not tested in game |
+| `report-law-2-mockup-scope-1016.md` | 2026-10-16 | acceptance scoped to position/layering repair; matching Bill mockup remains mandatory R10 work |
+| `report-law-2-visual-1016.md` | 2026-10-16 | user accepts 0.3.3 placement/chart/foreground screenshot; original saved, broader interactions separate |
+| `report-law-2-live-1016.md` | 2026-10-16 | live 0.3.2 projection/list-order evidence, 0.3.3 corrected and installed; game check pending |
+| `report-law-2-position-1016.md` | 2026-10-16 | 0.3.1 off-screen failure; absolute native setter and movable background, 0.3.2 installed, game check pending |
+| `report-law-2-layout-1016.md` | 2026-10-16 | user screenshot shows 0.3.0 position/layer failure; native foreground/transform repair 0.3.1 checked/installed, game check pending |
 | `report-u-6-test-workflow-1013.md` | 2026-10-13 | short player smoke test, coordinator coverage and verified one-command automatic/log bundle; no new live acceptance |
 | `report-law-1-report-fix-1013.md` | 2026-10-13 | U-6 screenshot exposes every conditional option; restored one-event report dispatch, 24 catalogue tests; fix installed, retest pending |
 | `report-law-1-native-1012.md` | 2026-10-12 | native trace/import, all base affinities, balanced conserved counts, 23 catalogue/7 installer tests; installed candidate and rollback, U-6 pending at that date; report UI superseded on 2026-10-13 |
@@ -119,3 +136,30 @@ statuses remain historical evidence. HEMI-2 0.2.5 works in game and is retained.
 | Interface mockups (politics, bill, head of state and generals, economic history, templates), built with the game's and TGC's sprites and bitmap fonts | <https://claude.ai/artifact/Wt2YTaaM6xV8JXsUwapRV4>. **Private**: it contains game and TGC art, not to be shared (R8, `AGENTS.md` §13). PNG exports in `../mockups/`. The scripts that extract the sprites and fonts are not in git. Translated to English on 2026-10-12 (boards: Main, Bill, Ruler, Economy, Templates). PNGs re-exported on 2026-10-12 with `tools/mockups/export.py` (boards and assets in `E:\v2re\mockups`, outside git; after republishing the artifact, refresh the boards there first) |
 
 LAW-2 superseded instructions retained verbatim: `archive/instructions-law-1-before-law2-1013.md`, `archive/instructions-u-6-before-law2-1013.md`.
+
+LAW-2/U-7 instructions before the 0.3.1 repair are retained verbatim in
+`archive/instructions-law-2-before-layout-fix-1016.md` and
+`archive/instructions-u-7-before-layout-fix-1016.md`.
+
+Instructions before 0.3.2 are retained in `archive/instructions-law-2-before-position-fix-1016.md`
+and `archive/instructions-u-7-before-position-fix-1016.md`; the original
+0.3.0 instructions are in the corresponding `before-layout-fix-1016.md` files.
+
+Before-live-fix LAW-2/U-7 instructions are archived in the corresponding
+`archive/instructions-*-before-live-fix-1016.md` files.
+
+LAW-2/U-7 instructions before the acceptance-scope clarification are preserved
+in `archive/instructions-*-before-mockup-clarification-1016.md`.
+
+LAW-2/U-7 instructions before the 0.3.4 controls are preserved in
+`archive/instructions-*-before-controls-1017.md`.
+
+LAW-2/U-7 instructions before 0.3.5 are preserved in
+`archive/instructions-*-before-reforms-1017.md`.
+
+TPL-0 instructions before the native panel are retained verbatim in
+`archive/instructions-tpl-0-before-panel-1017.md`.
+
+TPL-0/U-8 instructions before runtime acceptance are retained verbatim in
+`archive/instructions-tpl-0-before-runtime-1017.md` and
+`archive/instructions-u-8-before-runtime-1017.md`.

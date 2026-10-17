@@ -72,6 +72,11 @@ def catalog_data(tgc=DEFAULT_TGC, path=CATALOG, selected=None, release=False):
 
 
 class CatalogGen(Gen):
+    # Decisions the Bill window sends besides purchases/promises (already guarded).
+    DLL_SENT = ("tgcx_audience", "tgcx_withdraw", "tgcx_call_vote", "tgcx_collect_favours")
+    # The Bill's favour breakdown groups the rate factors (D11) by source.
+    RATE_PARTS = ("prestige", "house", "order", "franchise", "leader")
+
     def __init__(self, laws, affinity, groups, ideologies, chosen, support):
         self.chosen = chosen
         self.support = support
@@ -191,6 +196,16 @@ class CatalogGen(Gen):
                       when(flag(f"promised_{i}"), setv(f"tgcx_gui_promised_{i}", 1))]
             for stance, value in (("p2", 2), ("p1", 1), ("m1", -1), ("m2", -2)):
                 lines.append(when(flag(f"stance_{i}_{stance}"), setv(f"tgcx_gui_stance_{i}", value)))
+        # The Bill's Crown panel: the same rule the vote applies, plus the
+        # ruling party and government it depends on (1-based; 0 = other).
+        lines += [setv("tgcx_gui_ruling", 0), setv("tgcx_gui_government", 0),
+                  setv("tgcx_gui_crown_veto", 0), setv("tgcx_gui_crown_signs", 0)]
+        lines += [when(f"ruling_party_ideology = {i}", setv("tgcx_gui_ruling", n))
+                  for n, i in enumerate(self.all_ideologies, 1)]
+        lines += [when(f"government = {g}", setv("tgcx_gui_government", n))
+                  for n, g in enumerate(self.limited + self.full, 1)]
+        lines += [when(gov_in(self.limited), setv("tgcx_gui_crown_veto", 1)),
+                  when(self.crown_signs(), setv("tgcx_gui_crown_signs", 1))]
         # Only the accepted LAW-0 transition exists without catalogue mode flags.
         lines.append(when(f"NOT = {{ {flag('catalog_bill')} }} {flag('law_press_rights_free_press')}",
                           "set_country_flag = tgcx_support_add_political_reform"))
@@ -222,7 +237,8 @@ class CatalogGen(Gen):
         variables += ["tgcx_house_total"] + [
             f"tgcx_{kind}_{i}" for i in self.blocs
             for kind in ("seats", "remainder", "support", "current_support", "base_yes", "opposed")]
-        variables += ["tgcx_gui_active", "tgcx_gui_bill_id", "tgcx_gui_crown_audience"] + [
+        variables += ["tgcx_gui_active", "tgcx_gui_bill_id", "tgcx_gui_crown_audience", "tgcx_gui_ruling",
+                      "tgcx_gui_government", "tgcx_gui_crown_veto", "tgcx_gui_crown_signs"] + [
             f"tgcx_gui_{kind}_{i}" for i in self.blocs for kind in ("stance", "promised")]
         self.bill_state = (flags, variables, modifiers)
         return lines + [f"clr_country_flag = tgcx_allocated_{i}" for i in self.blocs] + [
@@ -346,9 +362,64 @@ class CatalogGen(Gen):
             # A previous defeat must not hide a newly winning fresh count.
             allow = ["NOT = { has_country_modifier = tgcx_debate }"]
         elif name == "tgcx_audience":
-            effect = [*effect, setv("tgcx_gui_crown_audience", 1)]
+            effect = [*effect, setv("tgcx_gui_crown_audience", 1), setv("tgcx_gui_crown_signs", 1)]
+        if name in self.DLL_SENT:
+            # The Bill sends these through the native decision click, which
+            # does not test potential/allow (LAW-2, FUN_006DCE10). The effect
+            # checks them itself, so a stale or repeated command does nothing.
+            effect = [when(" ".join([*potential, *allow]), " ".join(effect))]
         desc = desc.replace("are undecided on the bill", "have an undecided affinity on the bill")
         super().decision(name, title, desc, potential, allow, effect, picture)
+
+    def build_tick(self):
+        """LAW-0's monthly collection, plus a per-source breakdown and a counter.
+
+        The breakdown (tgcx_gui_rate_<part>) is what the Bill shows; the counter
+        tgcx_favours_ticks lets the DLL see that its automatic collection ran.
+        """
+        R = {k: as_dict(v) for k, v in self.L["rate"]}
+        flags = []
+        eff = [setv("tgcx_rate", self.n("rate_base"))] + [setv(f"tgcx_gui_rate_{p}", 0) for p in self.RATE_PARTS]
+
+        def factor(cond, value, fname, part):
+            flags.append(f"tgcx_rate_{fname}")
+            eff.append(when(cond, f"{chg('tgcx_rate', value)} set_country_flag = tgcx_rate_{fname} "
+                                  f"{chg(f'tgcx_gui_rate_{part}', value)}"))
+
+        for p, v in sorted(R["prestige"].items(), key=lambda kv: int(kv[0])):
+            factor(f"prestige = {p}", v, f"prestige_{p}", "prestige")
+        maj = R["majority"]
+        for i in self.all_ideologies:
+            factor(f"ruling_party_ideology = {i} upper_house = {{ ideology = {i} value = {maj['working']} }}",
+                   maj["working_value"], "majority", "house")
+            factor(f"ruling_party_ideology = {i} NOT = {{ upper_house = {{ ideology = {i} value = {maj['hostile']} }} }}",
+                   maj["hostile_value"], "hostile", "house")
+        for m, v in R["modifiers"].items():
+            factor(f"has_country_modifier = {m}", v, m,
+                   "order" if m in ("national_instability", "power_vacuum") else "leader")
+        for t in ("war_exhaustion", "average_militancy", "average_consciousness"):
+            for th, v in R[t].items():
+                factor(f"{t} = {th}", v, f"{t}_{th}", "order")
+        for opt, v in R["vote_franschise"].items():
+            if opt not in self.groups["vote_franschise"]["options"]:
+                raise ValueError(f"vote_franschise has no option {opt} in TGC")
+            factor(f"vote_franschise = {opt}", v, f"franchise_{opt}", "franchise")
+        clear = [f"clr_country_flag = {f}" for f in dict.fromkeys(flags)]
+        add = [when(chk("tgcx_rate", k), chg("tgcx_favours", 1)) for k in range(1, int(self.n("rate_max")) + 1)]
+        cap = self.n("favours_cap")
+        self.decision(
+            "tgcx_collect_favours", "Collect political favours",
+            "This month's political favours. Base 2, plus prestige, a working majority in the upper house, a "
+            "narrow franchise and a skilled political leader. Minus instability, war exhaustion, militancy, "
+            "consciousness, a hostile upper house and a broad franchise. Between 0 and 8 a month, up to 100. "
+            "With the TGCX DLL this is collected automatically.",
+            ["ai = no", "NOT = { has_country_modifier = tgcx_favours_tick }"], [],
+            [*clear, *eff, *add, when(chk("tgcx_favours", cap), setv("tgcx_favours", cap)),
+             chg("tgcx_favours_ticks", 1),
+             # The Reforms tab offers bills only where a chamber can vote one.
+             setv("tgcx_gui_legislature", 0), when(gov_in(self.limited + self.full), setv("tgcx_gui_legislature", 1)),
+             f"add_country_modifier = {{ name = tgcx_favours_tick duration = {self.n('tick_days')} }}"],
+            picture="cogs_yellow")
 
     def changed_text(self):
         return ("The vote cannot enact this bill: support, the starting law, the government, or TGC's target "

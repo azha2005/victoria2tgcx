@@ -37,6 +37,8 @@ GENERATED = {
                                                     os.path.join(SRC, "tgcx_event_modifiers.txt")),
     os.path.join("interface", "country_politics.gui"): (os.path.join("interface", "country_politics.gui"),
                                                         os.path.join(SRC, NAME, "tgcx_bill_layout.txt")),
+    os.path.join("interface", "buildunit.gui"): (os.path.join("interface", "buildunit.gui"),
+                                                os.path.join(SRC, NAME, "tgcx_templates_layout.txt")),
 }
 
 
@@ -49,6 +51,8 @@ def foreign_files(folder):
         for f in files:
             if os.path.relpath(os.path.join(dirpath, f), folder) in GENERATED:
                 if f == "country_politics.gui" and b"# >>> tgcx_bill" not in Path(dirpath, f).read_bytes():
+                    bad.append(os.path.relpath(os.path.join(dirpath, f), folder))
+                if f == "buildunit.gui" and b"# >>> tgcx_templates" not in Path(dirpath, f).read_bytes():
                     bad.append(os.path.relpath(os.path.join(dirpath, f), folder))
                 continue
             if not re.sub(r"^[0-9_]+(?=tgcx_)", "", f.lower()).startswith(PREFIX):
@@ -88,9 +92,13 @@ def generate(tgc, dest, source=SRC):
     for rel, (tgc_rel, block) in GENERATED.items():
         block = os.path.join(source, os.path.relpath(block, SRC))
         bill_gui = rel == os.path.join("interface", "country_politics.gui")
-        if bill_gui and not os.path.isfile(block):
+        templates_gui = rel == os.path.join("interface", "buildunit.gui")
+        if (bill_gui or templates_gui) and not os.path.isfile(block):
             continue  # The script-only/default LAW-0 source has no GUI fragment.
         base = os.path.join(tgc, tgc_rel)
+        if templates_gui and not os.path.isfile(base):
+            from tgcx_bill_gui import game_root
+            base = str(game_root(tgc) / tgc_rel)
         if not os.path.isfile(base):
             sys.exit(f"install_submod: {base} not found: is --tgc the TGC v2.5.2 folder?")
         if not os.path.isfile(block):
@@ -103,8 +111,11 @@ def generate(tgc, dest, source=SRC):
         out = os.path.join(dest, rel)
         os.makedirs(os.path.dirname(out), exist_ok=True)
         with open(out, "wb") as f:
-            if bill_gui:
-                from tgcx_bill_gui import inject
+            if bill_gui or templates_gui:
+                if templates_gui:
+                    from tgcx_templates_gui import inject
+                else:
+                    from tgcx_bill_gui import inject
                 f.write(inject(data.decode("cp1252"), ours.decode("cp1252")).encode("cp1252"))
             else:
                 f.write(data.rstrip() + nl + nl + ours.replace(b"\r\n", b"\n").replace(b"\n", nl))

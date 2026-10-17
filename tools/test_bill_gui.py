@@ -5,7 +5,11 @@ import unittest
 
 from gen_laws import DEFAULT_TGC
 from tgc_scan import parse, read
-from tgcx_bill_gui import inject, layout, catalogue_header
+import tempfile
+
+from PIL import Image
+from gen_law_catalog import catalog_data
+from tgcx_bill_gui import ATLAS_SIZE, ICON_CELL, ICON_COLUMNS, ICON_Y, atlas, background, buttons, catalogue_header, inject, layout, texts
 
 
 class BillGuiTests(unittest.TestCase):
@@ -32,13 +36,81 @@ class BillGuiTests(unittest.TestCase):
     def test_read_only_fallback_layout_and_catalogue(self):
         fragment, loc = layout()
         self.assertIn("x=30000 y=30000", fragment)
-        self.assertEqual(len([k for k in loc if k.startswith("tgcx_bill_bloc_") and k[-1].isdigit()]), 9)
+        self.assertIn("size={ x=900 y=772 }", fragment)
         header = catalogue_header()
-        self.assertEqual(header.count("    {"), 144)
+        catalog = header[header.index("tgcx_bill_catalog[]"):]
+        self.assertEqual(catalog[:catalog.index("};")].count("\n    {"), 144)
         self.assertTrue(all(k.startswith("tgcx_") for k in loc))
         self.assertTrue(all(";" not in text for text in loc.values()))
-        self.assertIn("undecided Aye 2", loc["tgcx_bill_prices"])
         self.assertNotIn("replace_path", fragment)
+        # Board numbers the DLL relies on (R10): price table, debts, lots.
+        self.assertIn("tgcx_bill_abstain_price[] = {5,2,0,0,0}", header)
+        self.assertIn("tgcx_bill_aye_price[] = {0,5,2,2,2}", header)
+        self.assertIn("tgcx_bill_broken_years = 10", header)
+
+    def test_layout_matches_the_header_and_draw_order(self):
+        fragment, _ = layout()
+        window = next(v for k, v in parse(fragment) if k == "windowType" and dict(v).get("name") == "tgcx_bill_window")
+        kinds = [(k, dict(v)["name"]) for k, v in window if isinstance(v, list) and "name" in dict(v)]
+        marker = kinds.index(("iconType", "tgcx_bill_chart_overlay"))
+        # Buttons below the DLL's overlay, every text above it (P26/P28).
+        self.assertTrue(all(k == "guiButtonType" for k, _ in kinds[:marker]))
+        self.assertTrue(all(k == "instantTextBoxType" for k, _ in kinds[marker+1:]))
+        header = catalogue_header()
+        self.assertEqual([n for k, n in kinds[1:marker]], [b[0] for b in buttons()])
+        self.assertEqual([n for k, n in kinds[marker+1:]], [t[0] for t in texts()])
+        self.assertEqual(header.count("TGCX_B_"), len(buttons()) + 1)
+        self.assertEqual(header.count("TGCX_T_"), len(texts()) + 1)
+        for name, _, x, y, w, h in buttons():
+            self.assertTrue(0 <= x and x + w <= 900 and 0 <= y and y + h <= 772, name)
+        for name, _, x, y, w, h, _, _ in texts():
+            self.assertTrue(0 <= x and x + w <= 900 and 0 <= y and y + h <= 772, name)
+
+    def test_composed_art_from_installed_textures(self):
+        with tempfile.TemporaryDirectory() as folder:
+            bg, atlas_path = Path(folder) / "bg.dds", Path(folder) / "atlas.dds"
+            background(bg)
+            groups = catalog_data(DEFAULT_TGC)[4]
+            atlas(atlas_path, groups=groups)
+            for path, size in ((bg, (900, 772)), (atlas_path, ATLAS_SIZE)):
+                data = path.read_bytes()
+                self.assertEqual(data[:4], b"DDS ")
+                self.assertEqual(len(data), 128 + size[0] * size[1] * 4)
+                self.assertEqual(Image.open(path).size, size)
+            art = Image.open(atlas_path).convert("RGBA")
+            for n in range(len(groups)):
+                x, y = ICON_CELL * (n % ICON_COLUMNS), ICON_Y + ICON_CELL * (n // ICON_COLUMNS)
+                self.assertIsNotNone(art.crop((x, y, x + ICON_CELL, y + ICON_CELL)).getbbox(), groups[n])
+
+    def test_bill_uses_native_movable_background(self):
+        fragment, _ = layout()
+        window = next(v for k, v in parse(fragment)
+                      if k == "windowType" and dict(v).get("name") == "tgcx_bill_window")
+        props = dict(window)
+        self.assertEqual(props["moveable"], "1")
+        background = props["backGround"]
+        buttons = [dict(v) for k, v in window if k == "guiButtonType"]
+        self.assertEqual(sum(b.get("name") == background for b in buttons), 1)
+        self.assertEqual(next(b for b in buttons if b["name"] == background)["quadTextureSprite"], "tgcx_bill_bg")
+
+    def test_text_sprite_buttons_declare_text_and_the_board_has_no_open_button(self):
+        fragment, _ = layout()
+        items = parse(fragment)
+        opened = next(dict(v) for k, v in items if k == "guiButtonType" and dict(v).get("name") == "tgcx_bill_open")
+        self.assertEqual(dict(opened["position"])["x"], "30000")     # probe only (board 1 has no button)
+        window = next(v for k, v in items if k == "windowType" and dict(v).get("name") == "tgcx_bill_window")
+        for b in (dict(v) for k, v in window if k == "guiButtonType"):
+            text_sprite = b["quadTextureSprite"].startswith(("GFX_button_standard", "GFX_sortbutton"))
+            self.assertEqual("buttonFont" in b, text_sprite, b["name"])
+            if text_sprite:
+                self.assertEqual(b["buttonText"].strip('"'), "", b["name"])
+
+    def test_header_names_every_option_by_its_script_key(self):
+        _, _, groups, _, chosen, _ = catalog_data(DEFAULT_TGC)
+        header = catalogue_header(DEFAULT_TGC)
+        for g in chosen:
+            self.assertIn('"' + '","'.join(groups[g]["options"]) + '"', header, g)
+        self.assertIn('"' + '","'.join(chosen) + '"', header)
 
 
 if __name__ == "__main__":

@@ -143,7 +143,7 @@ RTTI         1 165 named classes (.?AV…@@), measured 2026-10-12
 | `g_world` (game state) | VA `0x012588E8` | C | all |
 | `g_countryManager` (+0 count, +4 `CCountry*[]`) | VA `0x012587E4` | C | all |
 | `CCountry+0x1DC` `CVariables` (script variables; `int` value in thousandths at `node+0x1C`) | V2DLL §4.7 | C | script ↔ DLL bridge |
-| `CCountry+0xBD4` leader list (daily death-by-age roll) | structs.csv | I | rulers |
+| `CCountry+0xBD4` leader list (daily death-by-age roll; head/tail/count `+0xBD4/+0xBD8/+0xBDC`) | structs.csv; `AddLeader`, `docs/symbols.md` (2026-10-17) | C | rulers |
 | `CCountry+0xE78/+0xE7C` treasury (int64, 2¹⁵ fixed point; `+0xE80` start-of-day snapshot) | V2DLL §4.7 | C | charts |
 | `CCountry+0x198` industrial score (int64, 15 fraction bits) | V2DLL §4.7 | C | charts |
 | `CCountry+0x12E8` total population (adult men) | V2DLL §5.3, §10 | C | charts |
@@ -156,6 +156,9 @@ RTTI         1 165 named classes (.?AV…@@), measured 2026-10-12
 | Per-frame message pump `FUN_009DF2B0` | RVA `0x5DF2B0` | C | DLL tick |
 | Daily sync check `FUN_00682EC0` | RVA `0x282EC0` | C | OOS logging |
 | Custom button from `.gui`: `CButtonObserverGlue` (44 B: +0 vtable, +4 owner, +8 handler) | V2DLL §5.1 | C | every mechanic with buttons |
+| Reform click `FUN_006DC990` / reform rows `FUN_006DA930` / decisions list `FUN_006DB2E0` / decision message `FUN_00906F00` | RVA `0x2DC990` / `0x2DB22D` / `0x2DB52A`,`0x2DB5E8` / call `0x506691`; `docs/symbols.md` | C (static; hooks unconfirmed in game) | laws (0.3.5) |
+| `CConstructUnitCommand` ctor `FUN_0057D1B0` (size 0x68, id 0x5CA); UI recruit `FUN_00732520` | VA `0x0057D1B0` / `0x00732520`; `docs/symbols.md` | C (static) | templates |
+| `CCountry+0x4D8` timed modifiers (node +0 item, +8 next; `CTimedModifier` item +8 modifier, +0xC expiry date); modifier manager VA `0x0125A69C`, name at +0x30 | `docs/symbols.md` (2026-10-17) | C (static) | law timers, automatic favours |
 
 **RTTI classes that anchor each mechanic** (not studied yet; GH-2):
 
@@ -254,8 +257,26 @@ E:\tools\ghidra_12.1.4_PUBLIC\support\analyzeHeadless.bat E:\v2re\ghidra v2game 
   -process v2game.exe -noanalysis -scriptPath <folder> -postScript <Script>.java
 ```
 
-Current candidate: **0.3.0 (LAW-2 Bill prototype)**, installed on E:,
-automatic gates passed; **done, not tested in game**. Accepted DLL 0.2.8
+Current candidate: **0.4.4 (TPL-0: the Templates tab is hidden in Build
+Navy)**, installed on E:, automatic gates passed, **done, not tested in
+game** (`docs/report-tpl-0-visual-1017.md` §10). 0.4.3 is installed and
+confirmed in game, including recruitment through the panel (P41, P42). 0.4.1's
+owner-chain anchor (P40) is confirmed in game. On 0.4.0 the
+user accepted nine-regiment recruitment and save/reload
+(`docs/report-tpl-0-runtime-1017.md`); the panel was detached at the upper
+left. The 0.4.0 DLL is retained in `E:\v2re\logs\tgcx-tpl-place-1017\`. The complete 0.3.5 DLL/submod rollback
+is retained privately.
+`NEXT.md` and `docs/instructions-tpl-0.md` give the current steps.
+
+Previous candidate: **0.3.5 (LAW-2 visible buttons, Reforms tab per board 1,
+`tgcx_` decisions hidden, DLL popups skipped)** on top of 0.3.4, whose look
+the user accepted; installed on E:, automatic gates passed, **done, not
+tested in game** (`docs/report-law-2-reforms-1017.md`; U-7 is the check).
+The user selected army templates next: `docs/instructions-tpl-0.md`. Before it: **0.3.3 placement/layering repair accepted**. The user's 0.3.0
+screenshot failed the visual check; 0.3.1 was off-screen. 0.3.2 live evidence exposed the
+render-coordinate and scene-order errors; 0.3.3 corrects those
+with reference-engine/GPU regression coverage. See
+`docs/report-law-2-live-1016.md`. Accepted DLL 0.2.8
 hover/header baseline is retained privately for rollback.
 0.2.6 native seat hover works in game and is the retained working baseline.
 Remaining extended U-5 coverage is unconfirmed; LAW-2 is now selected.
@@ -321,7 +342,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P35**).
+number (**the next one is P43**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -368,6 +389,14 @@ number (**the next one is P35**).
 
 - **P33** Negate a compound generated gate as one `AND`; `NOT` directly over several children tests none of them
 - **P34** Conditional event options were all displayed in game; select one ordinary result event in the firing effect, and do not simulate option hiding
+- **P35** A child render subtree inherits parent coordinates/order; use native foreground promotion on opening and actual render translation for the Bill chart
+- **P36** Check stored position and native render conversion together; the 0.3.2 absolute-setter recommendation was superseded by live evidence in P37
+- **P37** Render +0xFC/+0x100 are centred inputs; use matrix +0x84/-0x88 for pixels, positive screen coordinates for the packed setter, and scene append rather than prepend (0.3.3 visual layout accepted)
+- **P38** The native decision click skips `potential`/`allow`: every decision the DLL sends guards its own effect
+- **P39** The engine validates decision `potential`/`allow` in `CExecuteDecisionCommand` (`FUN_00906B40`): hide `tgcx_` decisions in the DLL's list filter, not in script (corrects P38's scope)
+- **P40** An inner matrix (`+0x84/-0x88`) is relative to its owner (`+0xE4`); only children of the renderer scene are in screen pixels: sum the chain (TPL-0 0.4.1)
+- **P41** A `textSpriteType` (e.g. `GFX_button_standard_177`) on a bare button neither draws nor binds: use plain `spriteType`s
+- **P42** Showing a window re-shows its whole subtree: a cached child show/hide state is stale after the parent is shown
 
 ## 9. Decisions
 
@@ -383,6 +412,7 @@ number (**the next one is P35**).
 | D8 | Event range | 420 000 000 – 420 999 999 | closed (agent, 2026-10-12): empty in TGC v2.3.4 and v2.5.2 (`tgc_scan.py`) |
 | **D9** | Interface route | **hybrid, case by case**: each element chooses A (draw on top) or B (real game element) using the criteria in `docs/technical-plan.md` §9.1, and the card records the choice | **closed** (user, 2026-10-12) |
 | **D11** | Law details (favours) | **virtual purchases only, lasting the bill** (not TGC's real seat shifts); favours **accrue automatically like diplomatic points** (the DLL sends the monthly tick; a decision is the no-DLL fallback); the rate comes **from prestige plus stability, militancy, consciousness, voting pop and monarch/leader support** (initial values in `docs/law-design.md` §5) | **closed** (user, 2026-10-12) |
+| **D12** | Army templates | **local file** written by the DLL (an interface preference, not in the save; recruiting still uses the engine command, R5); **names from the composition**; **native windows** (route B); short of soldier pops, **recruit what fits** and report the rest; a **"Conform to template"** button on stacks in the field (template picked per click; missing regiments built, then marched and merged by engine commands; extras detached into a new stack) | **closed** (user, 2026-10-17); `docs/report-tpl-0-research-1017.md` §4 |
 | **D10** | Language | **English for everything**: code, comments, docs, file names, commit messages, in-game text and chat. Nothing is written in Spanish. All existing files were translated on 2026-10-12 | **closed** (user, 2026-10-12) |
 
 ---

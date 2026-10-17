@@ -30,6 +30,8 @@ static const char* tgcx_gui_stage="not read";
 static void tgcx_ClearHover();
 static void tgcx_BillReset(bool destroyed);
 static void tgcx_BillTick();
+static void tgcx_FavourTick();
+static void tgcx_TplTick();
 static void tgcx_BillAfterEntity(uintptr_t renderer,uintptr_t entity);
 
 static void __cdecl tgcx_ShowPolitics(uintptr_t view) {
@@ -555,7 +557,7 @@ __declspec(naked) static void tgcx_OrderedEntityThunk() {
 // Final presentation supplies sampling and diagnostics only; never paints over completed UI.
 static void tgcx_BeforePresentImpl(uintptr_t renderer) {
     __try {
-        tgcx_BillTick();
+        tgcx_BillTick();tgcx_FavourTick();tgcx_TplTick();
         ++tgcx_present_count;
         if(!tgcx_politics || GetTickCount()-tgcx_chart_tick>1000) tgcx_chart_drawn=false;
         DWORD previous=tgcx_last_sample;tgcx_OnFramePump();

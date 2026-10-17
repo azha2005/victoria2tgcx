@@ -319,3 +319,277 @@ Private evidence: `tgcx-law2-decision-click-1013.txt`,
 `tgcx-law2-politics-observer-abi-1013.txt` and
 `tgcx-law2-politics-observer-fields-1013.txt`, all under E:\v2re\logs.
 No decompiled bodies or binary material are retained in git.
+
+
+## LAW-2 initial position model (2026-10-16, superseded by live correction below)
+
+0.3.0 screenshot/logs confirm discovery, labels, three bindings, ordered
+chart and Count callback entry, but visual placement/layering failed.
+0.3.1 foreground correction was then tested by the user and was off-screen.
+0.3.2 absolute-position/drag correction is checked, installed, not tested
+in game. Do not infer acceptance from immediate placement fixtures.
+
+| site/field | VA | RVA | evidence |
+|---|---|---|---|
+| FUN_009E3070 | 0x009E3070 | 0x5E3070 | window slot 44, ECX this, no arguments, RET; unlinks inner +0x494 and inserts before engine active scene sentinel |
+| FUN_009E3D20 | 0x009E3D20 | 0x5E3D20 | window slot 38, ECX this, two integer x/y stack arguments, RET 8; writes packed absolute +0x250 and calls inner +0xCC with same x/y |
+| FUN_009F8FD0 | 0x009F8FD0 | 0x5F8FD0 | inner +0x80 unlink: previous/next +0xD4/+0xD8, owner +0xE4; clears links |
+| inner primary table | 0x00E38350 | 0xA38350 | constructor FUN_009E16C0 supplies the inner object, owning render translation and scene links |
+| inner unlink slot | 0x00E383D0 | 0xA383D0 | pointer to FUN_009F8FD0, relocation-aware guard |
+| inner position slot | 0x00E3841C | 0xA3841C | pointer to FUN_00A1FEB0, relocation-aware guard |
+| FUN_00A1FEB0 | 0x00A1FEB0 | 0x61FEB0 | writes integer input x/y as floats at inner +0xFC/+0x100 and updates render transform |
+
+The packed centred setter FUN_009E3BA0 stores the input unchanged but
+adds screen centre only to immediate inner translation. For foreground
+Bill placement use the absolute setter above; test persistent +0x250 as
+well as immediate translation. At 2560x1440 both should be (864,380).
+Native dragging changes actual translation; the chart reads it rather than
+independently centring. Raise only on opening; hide with Politics. Logical
+GUI/observer ownership and simulation remain unchanged.
+
+Private bounded exports under `E:\v2re\logs\tgcx-law2-position-1016\checks\`:
+`tables.txt`, `window.txt`, `attach.txt`, `foreground-tables.txt`, `scene.txt`,
+`refresh.txt`, `absolute-abi.txt`. Reference functions are mapped as data
+and copied into owned executable fixture memory; the position target is a
+fixture callback. Integrated native drag/click/visual acceptance remains
+pending U-7. Four new guards give 42 runtime / 74 total file gates.
+
+
+## LAW-2 live coordinate and scene-order correction (2026-10-16)
+
+**This supersedes the preceding absolute-setter recommendation.** Live
+read-only 0.3.2 data: Politics +0x250=(768,470), inner +0xFC/+0x100=(2048,1190),
+world matrix +0x84/+0x88=(768,-470). Bill stored/input=(864,380), matrix
+=(-416,340), matching the off-screen screenshot. Raw inputs are centred
+render coordinates; matrix X and negative matrix Y are screen pixels.
+
+FUN_009E3070 (RVA 0x5E3070) inserts before active list head, drawing under
+Politics. Use FUN_009E2FC0 (VA 0x009E2FC0, RVA 0x5E2FC0), window slot 11:
+it unlinks then appends inner via +0x74 / FUN_009F9050 (RVA 0x5F9050).
+Attach slot VA 0x00E383C4 / RVA 0xA383C4 is guarded. Native append is this
+in ECX, no stack arguments, RET. Raise only on opening, leave later dialogs.
+
+Packed FUN_009E3BA0 gets positive absolute pixel x/y, persists it and adds
+screen centre to native render input. Chart reads actual matrix translation.
+0.3.3 screenshot confirms centred (864,380) placement at 2560x1440, correct
+chart and foreground order. Native fixture now uses actual container topology
+and live projection convention. 42 runtime / 74 file gates. See
+`report-law-2-live-1016.md` and `report-law-2-visual-1016.md`.
+
+## LAW-2 timed modifiers and modifier table (2026-10-17)
+
+Static evidence (C static), with the reference SHA and the guards passing.
+The output is in `E:\v2re\logs\tgcx-law2-controls-1017\modifier-1.txt` and
+`modifier-2.txt`. Six runtime guards were added (48 in total). The runtime
+read is not yet confirmed in game.
+
+| function/site | VA | RVA | Confirmed static behaviour |
+|---|---|---|---|
+| `FUN_008CD8C0` | `0x008CD8C0` | `0x4CD8C0` | `has_country_modifier` evaluate: walks the country's timed list at `+0x4D8` (node +0 item, +8 next; compares item +8 to the modifier), then the permanent list at `+0x4E8`; guard at RVA `0x4CD8E2` |
+| `CTimedModifier` primary vtable | `0x00DF9978` | `0x9F9978` | type of the timed-list items; destructor `FUN_008321B0` |
+| `FUN_0044E340` | `0x0044E340` | `0x4E340` | saves item +0xC through the date formatter `FUN_0043ACD0`: the modifier's date (expiry, in game hours) |
+| `FUN_0044E240` | `0x0044E240` | `0x4E240` | loading sets item +8 from the name lookup |
+| `FUN_005661B0` | `0x005661B0` | `0x1661B0` | modifier lookup by name: hash `(h + signed c) * 61` modulo buckets +4, table +8; node +0 object, +4 next; name std::string at object +0x30 (length +0x40, capacity +0x44) |
+| `FUN_0044EC00` | `0x0044EC00` | `0x4EC00` | sets the modifier manager global at VA `0x0125A69C` (RVA `0xE5A69C`) |
+| `FUN_008CD650` | `0x008CD650` | `0x4CD650` | `has_country_modifier` parse: the lookup above, with an "Unknown modifier" error |
+
+## LAW-2 Reforms tab, Decisions list and decision message (2026-10-17)
+
+Static evidence (C static), with the reference SHA. The output is in
+`E:\v2re\logs\tgcx-law2-reforms-1017\` (`refs-*.txt`, `dec-*.txt`,
+`dis-*.txt`). Fourteen runtime guards were added (62 in total). The hooks
+are installed by DLL 0.3.5 but not yet confirmed in game.
+
+| function/site | VA | RVA | Confirmed static behaviour |
+|---|---|---|---|
+| `FUN_006DC990` | `0x006DC990` | `0x2DC990` | reform click: prologue `55 8BEC 83E4F8`; element std::string at +0x14 is `POLITICSVIEW_POLITICAL_REFORM<key>` or `POLITICSVIEW_SOCIAL_REFORM<key>`; builds `CSetPolitical/SocialReformCommand` and posts it via `(g_world+0xB24)` slot `0x44` → `+0x38` → slot `0x18`; `RET 4` (guard also at `0x2DCCEE`) |
+| `FUN_006DA930` | `0x006DA930` | `0x2DA930` | reform rows: frame -0x3C option, -0x1C group, -0x18 country, -0x11 enable byte; current law at country +0x860 (political) / +0x850 (social) indexed by group +0x50; row button vtable +0xB8 enable / +0xBC disable; hook site `0x2DB22D` `cmp byte [ebp-0x11],0; mov edx,[eax]` (guards `0x2DB00E`, `0x2DB02D`, `0x2DB0AE`) |
+| `FUN_00975ED0` | `0x00975ED0` | `0x575ED0` | issue option name: std::string at option +0x34 (guard `0x575F15`) |
+| `FUN_006DB2E0` | `0x006DB2E0` | `0x2DB2E0` | Decisions list: two loops test each decision (+0x18 enabled, `potential`, `allow`); sites `0x2DB52A` (`TEST AL,AL; JZ 0x6DB59D; MOV ECX,[EBP-0x80]`) and `0x2DB5E8` (`JZ 0x6DB649`) |
+| `FUN_005C2AD0` | `0x005C2AD0` | `0x1C2AD0` | decision name: std::string at decision +8 (guard `0x1C2B15`) |
+| `FUN_00906B40` | `0x00906B40` | `0x506B40` | `CExecuteDecisionCommand` slot 14 (validity): enabled flag, `potential`, `allow` (P39) |
+| `FUN_00906F00` | `0x00906F00` | `0x506F00` | "decision taken" message poster: message by value, `RET 0x8C`; gate byte VA `0x00F07DA6` (RVA `0xB07DA6`) = 0 takes the early exit at `0x0090752D`, which still destroys the argument; called at `0x00906691` (RVA `0x506691`) in the player branch of decision execute `FUN_00905C00` (guards `0x506690`, `0x506F55`, `0x507542`) |
+| GUI window vtable | `0x00E3C0D8` | `0xA3C0D8` | slot 6 position setter `0x5E3BA0`, 13 button lookup `0x5E4C80`, 15 text `0x5E4D00`, 17 icon `0x5E4D40`, 27 window `0x5E4A20` (RVAs) |
+
+## TPL-0: building a brigade (2026-10-17)
+
+Static evidence, read-only Ghidra (`DecompileAt.java`, `tgcx_Disasm.java`,
+`tgcx_FindRefs.java`). The output is in
+`E:\v2re\logs\tgcx-tpl-research-1017\` (`refs-1.txt`, `refs-2.txt`,
+`dec-1.txt` to `dec-4.txt`, `dis-1.txt` to `dis-5.txt`). 25 runtime guards
+(87 in total) and five research guards were added to `tools/check_exe.py`
+(`check_exe.py` ALL OK, `gen_signatures.py --check` ALL OK). The DLL
+module `dll/tgcx/tgcx_templates.h` calls the constructor, the queue and the
+three read-only helpers below; it is fixture-tested but not yet wired into
+the game: no runtime confirmation.
+
+Data the scan reads (all guarded): player country `g_countryManager`
+(`0x012587E4`, +0 count, +4 array) by `g_world+0xB60`; country tag +0x1C
+(passed as the constructor's tag, I), index +0x20, owned province ids
++0x9D8..+0x9DC, unit types `+0xBCC → +0x310[index]`; provinces at
+`g_world+0xACC` by id, province id +0x58; unit type DB `0x0125FDD8`
+(+0xC..+0x10, index +0x24, name std::string +8); pop type DB `0x0131BB34`
+(+0xC..+0x10, soldier flag +0x42).
+
+### The command
+
+| function/site | VA | RVA | Confirmed static behaviour |
+|---|---|---|---|
+| `CConstructUnitCommand` vtable | `0x00E00CF4` | `0xA00CF4` | 15 slots (`rtti-classes.md`); guarded whole (slots 0-7, 8-14) |
+| `FUN_0057D1B0` | `0x0057D1B0` | `0x17D1B0` | constructor, `__stdcall (mem, unitType*, provinceId, pop*, countryTag, countryId)`, returns `this` in EAX, `RET 0x18` (six stack arguments, `mem` included). Object 0x68 bytes: +0x2C/+0x30 command id `0x5CA`, +0x3C tag, +0x40 country id, +0x44 province id, +0x48/+0x50/+0x58 three fresh object ids (`DAT_01258A90+0x1268`, counter `DAT_01258A9C`), +0x60 unit type, +0x64 pop (may be 0: the naval AI path passes 0) |
+| `FUN_00AAE9AF` | `0x00AAE9AF` | `0x6AE9AF` | `operator new`, cdecl, caller pops (`push 0x68; call; add esp,4`) |
+| command queue | — | `0x33261B` | `(g_world+0xB24)->vtbl[0x44/4]()` → result `+0x38` → `vtbl[0x18/4](cmd)`; the same queue the reform and decision commands use. The queue owns the command afterwards |
+| slot 6 `FUN_0057D2F0` | `0x0057D2F0` | `0x17D2F0` | execute: builds a `CMilitaryConstruction` (`FUN_00491620`), copies ids, tag, country, unit type (+0x88) and the pop's id (+0x90/+0x94), adds it to the province; for the player refreshes the build view (`(g_world+0xB24)` slot `0x124`, `FUN_00740050`) |
+| slot 7 `FUN_0057D5F0` | `0x0057D5F0` | `0x17D5F0` | returns `0x5CA` |
+| slot 2 / 4 | `0x0057D600` / `0x0057D780` | — | write / read (save and network): province as `%d`, ids, pop id; read resolves the unit type by name into `country+0xBCC → +0x310[index]` |
+| slot 13 `FUN_0057D970` | `0x0057D970` | `0x17D970` | clone (new 0x68 object via `FUN_0057D0F0`, copies every field) |
+| **slot 14 `FUN_0057DA20`** | `0x0057DA20` | `0x17DA20` | **validity**: `FUN_005141D0` with ECX = unit type (+0x60), EAX = pop (+0x64), stack country (`g_countryManager` by +0x40) and province (`g_world+0xACC` by +0x44). The engine re-checks at execution, as `FUN_00906B40` does for decisions (P39) |
+| `FUN_005141D0` | `0x005141D0` | `0x1141D0` | can-build predicate, `RET 8`: province controller (+0x134) is the country (+0x20); unit index (+0x24) ≥ 3; unlocked (`country+0xBCC → +0x2DC` byte by index); unit active (+0x42); land (+0x39): province +0x4C < +0x50, and with a pop, free regiments > 0 (below); naval (+0x3A): port/naval-base checks; province +0x10C slot 0x24 ≠ 1 |
+| `FUN_00965870` | `0x00965870` | `0x565870` | regiments a pop supports, `__stdcall (pop, flag)`, `RET 8`: 0 below the minimum size; otherwise `size(+0x58) / per-regiment size + 1`, the per-regiment size scaled by the pop's province state (+0x64 → +0x190: 1, 2, other) from `g_economyDefines+0x20` (+0x10, +0x14, +0x30, +0x34, +0x38) |
+| `FUN_00965930` | `0x00965930` | `0x565930` | regiments a pop already has, EAX = pop, one stack byte (0): its regiment vector (+0x3C..+0x40) plus constructions in its province (+0x64 → +0xD8) whose pop id (+0x90/+0x94) is the pop's (+8/+0xC) |
+
+Free regiments of a pop = `FUN_00965870(pop,0) - FUN_00965930(pop,0)`. A
+command queued beyond that is refused by slot 14 when it executes, so a
+template recruit must spread its regiments over pops itself.
+
+### The build view
+
+| function/site | VA | RVA | Confirmed static behaviour |
+|---|---|---|---|
+| `CBuildUnitView` vtable | `0x00E12A14` | `0xA12A14` | 6 slots: 0 deleting destructor `FUN_007340E0`, 1 update `FUN_00734E00`, 3 `FUN_00737370`, 4 tooltip `FUN_007361F0` |
+| `FUN_00733B80` | `0x00733B80` | `0x333B80` | constructor (callers `FUN_006AEED0`, `FUN_0073DA70`): +0x60 GUI window, +0x68 owner, +0x6C optional single province, +0x74 country id, +0x78 land (1) / naval (0), +0xC4 selected folder, +0xC8/+0xCC remembered folder (land/naval), +0xD8 folder headers (0x10 each), +0xE8 rows (0x18 each), +0xF8 queue (0x28 each); windows `cell_window_list`, `cell_window_queue`, scrollbars `external_scroll_slider_list/_queue`, button `cancel_all_units` |
+| `FUN_00734120` | `0x00734120` | `0x334120` | destructor body (not a constructor, as the first findings said) |
+| glue at view+4 → `FUN_00737260` | `0x00737260` | `0x337260` | close button (`windowclose_build_unit_entry` sound) |
+| glue at view+0x30 → `FUN_00737390` | `0x00737390` | `0x337390` | folder tab click: the element name's number (`unit_folder_<n>`, `atoi` after 12 characters) becomes +0xC4; rows and queue rebuilt (+0x160 dirty) |
+| glue at view+0x164 → `FUN_00734600` | `0x00734600` | `0x334600` | "cancel all" confirmation dialog (`FUN_0072FF00`) |
+| `FUN_007353D0` | `0x007353D0` | `0x3353D0` | row list: for each owned province (`country+0x9D8`, or only +0x6C), land: `FUN_004B81D0` lists (pop, unit type) pairs and the row keeps free regiments `FUN_00965870 - FUN_00965930`; only unit types whose folder (+0x28) is the selected one; grouped under province-state headers (`province+0x16C`) |
+| `FUN_004B81D0` | `0x004B81D0` | `0xB81D0` | which pops qualify: the owner (`province+0x12C`) has `+0xBB8` = 0; every pop type with +0x42 set (the soldier type); every pop of that type in the province (`province+0x194`, 0x10 per type, next pop at +0x27C); every land unit type (index ≥ 3) passing `FUN_00514030(country, province, out)` |
+| `FUN_00735ED0` | `0x00735ED0` | `0x335ED0` | queue: constructions in each owned province (`+0xD8`), land or naval by unit type +0x39/+0x3A |
+| `CUnitBuildItem` entry `FUN_007304F0` | `0x007304F0` | `0x3304F0` | list entry (`build_unit_entry[_wide]`); `build_button`/`build_button_group` both call `FUN_007319B0`; its 0x14-byte items at +0x28..+0x2C; country tag/id at +0x38/+0x3C |
+| `FUN_007319B0` | `0x007319B0` | `0x3319B0` | build click: for each item, EDI = item, push entry, `call FUN_00732520` |
+| `FUN_00732520` | `0x00732520` | `0x332520` | UI recruit, custom ABI: EDI = item (+0 pop key 8 bytes, registry split at `0x1269`; +8 unit type; +0xC province; +0x10 must be 0), one stack argument (the entry), `RET 4`. Builds 1 command, or, for a land unit with a pop when the input check `(g_world+0xB24)+0x1C` slot `0x28` is true (inferred: a modifier key), as many as the pop has free regiments |
+| AI recruit | `0x0081EC90`, `0x0081EDB0` | `0x41EC90`, `0x41EDB0` | the same constructor: naval with pop 0; land picks a soldier pop with free regiments that passes `FUN_005141D0`, one command per call |
+| `CCreateUnitCommand` vtable | `0x00E00D34` | `0xA00D34` | constructor `FUN_0057DB30` (not studied) |
+
+Inferred, not confirmed: `country+0xBCC → +0x310[index]` is the country's
+unit stats (the tooltip prints +0xA0 and +0xA4, likely build time and a
+second figure); `+0xBB8` on the country blocks every row.
+
+
+### TPL-0 native panel hooks (2026-10-17, C static)
+
+Scoped read-only Ghidra evidence is retained privately under
+`E:/v2re/logs/tgcx-tpl-panel-1017/` (`tgcx_tpl_panel_dec.txt`,
+`tgcx_tpl_panel_dis.txt`). Base is `0x400000`; every RVA below is VA minus
+that base. No new simulation function is invoked beyond the recruit path
+already documented above.
+
+| Guard / function | VA | RVA | Evidence and use |
+|---|---|---|---|
+| CBuildUnitView six-slot table | `0x00E12A14` | `0xA12A14` | 24 guarded bytes; slot 0 deleting destructor FUN_007340E0, slot 1 update FUN_00734E00. Replaced in memory only, with both originals retained; failed second replacement restores the first. |
+| Update reads root/visibility | `0x00734E24` | `0x334E24` | EDI=ECX, root at view+0x60, root visible at +0x67; update thunk captures the live view and tail-jumps to the original. |
+| Constructor close/root/scope | `0x00733C0C` | `0x333C0C` | Writes close byte +0x5C, root +0x60, optional province +0x6C. Panel hides when closed; only the generated large root has our button/window. |
+| Native folder handler land flag | `0x007374D3` | `0x3374D3` | Tests view+0x78 (land), sets native dirty byte +0x160. Our code reads land, never changes selected folder or dirtiness. |
+| Native destructor | `0x007340E0` | `0x3340E0` | ECX=view; calls body FUN_00734120; optional delete flag on stack; returns this, RET 4. Tail-jump thunk preserves original stack/ABI. |
+
+GUI lookup, string/text setters, foreground append, packed setter, show/hide
+and render-matrix offsets reuse the confirmed Bill path. The Templates
+anchor is root matrix (+0x84, -0x88) + (5,69), with a 652x528 child and an
+inherited right queue. Reference-engine fixtures confirm this placement;
+actual build-view runtime capture and input remain U-8 work.
+
+Button glue reuses the guarded Politics observer table. At VA 0x006DFFA0
+(RVA 0x2DFFA0), deletion notification tests glue+0x20 and returns RET 4 when
+zero. The handler at VA 0x00737D00 (RVA 0x337D00) reads callback +8 and owner
++4; our owner is a stable panel context, not a fake game view. All other
+callback slots remain zero. Observer storage is kept intact through native
+GUI destruction. These are static ABI observations, not live acceptance.
+
+
+2026-10-17 runtime update: U-8 confirms native build-view capture, template
+input and nine-regiment command recruitment for ENG; save/reload retains
+the queue and composition. `report-tpl-0-runtime-1017.md` scopes acceptance.
+The screenshots disprove correct panel placement: the root translation used
+above is not sufficient for the nested Military view. Determine the full
+screen conversion and add a translated-parent fixture before claiming it
+correct. No new address or transform interpretation is promoted here.
+
+## External research cross-check (2026-10-17)
+
+Source: Discord Cheat Engine notes/tables (`v2moddingsv/`, not in git) and
+smedley_kernel (LGPL-3.0, `models/v2/classes/CCountry.toml`). Full account:
+`report-research-discord-1017.md`. All 59 smedley `CCountry` RVAs land on
+function starts in our build. **C** below means our own Ghidra decompile
+(`DecompileAt.java`, 2026-10-17) shows the access; **I (ext.)** is a
+third-party Cheat Engine reading not yet traced by us. No signature is in
+`tools/check_exe.py` yet: nothing here is used by our code.
+
+### Functions (`CCountry` methods, smedley names)
+
+| VA | RVA | name | conf | evidence |
+|---|---|---|---|---|
+| `0x005366F0` | `0x1366F0` | `CCountry::SetResearchPoints` | C | writes `+0xE3C`; clamp from `0x538150` |
+| `0x00538150` | `0x138150` | `CCountry::daily_research_points` | I | smedley; called by the above |
+| `0x00539380` | `0x139380` | `CCountry::SetLeadership` | C | writes int64 `+0x7D0/+0x7D4`. smedley's `SetPrimaryCulture` at the same RVA is wrong |
+| `0x005341A0` | `0x1341A0` | `CCountry::AddPrestige` | C | `+0xEA0 += delta`, positive scaled by `(1000+[[+0xBCC]+0x288])/1000`, floor 0 |
+| `0x0050E760` | `0x10E760` | `CCountry::AddLeader` | C | prepends node to `+0xBD4` list; optional history entry |
+| `0x00513C80` | `0x113C80` | `CCountry::AddUnit` | C | appends node to `+0x7B4` list |
+| `0x00508330` | `0x108330` | `CCountry::RefreshSubUnits` | C | iterates `+0x7B4` |
+| `0x005238D0` | `0x1238D0` | `CCountry::PayBackLoan` | C | thiscall; walks `+0xE8C/+0xE90`, subtracts from `+0xE78/+0xE7C` |
+| `0x00527D10` | `0x127D10` | `CCountry::RearrangeUpperHouse` | C | rewrites the int64 vector `+0x8C0/+0x8C4` (`CUpperHouse+0x10/+0x14`) |
+| `0x00542370` | `0x142370` | `CCountry::Westernize` | C | sets `+0x12D0`=1, fires `on_civilize`. smedley's `WithdrawFromTreasury` at the same RVA is wrong |
+| `0x005114D0` | `0x1114D0` | `CCountry::AddTimedModifier` | I/C | smedley; reads today `g_world+0xB0C` for the expiry; `+0x4D8` link not re-traced |
+| `0x00508590` / `0x0050C2A0` | `0x108590` / `0x10C2A0` | `CCountry::DailyUpdate` / `MonthlyUpdate` | I | smedley; function starts only |
+| `0x00522910` / `0x00522820` | `0x122910` / `0x122820` | `CCountry::TakeLoan` / `TakeLoanFrom` | I | smedley; function starts only |
+
+The other smedley `CCountry` RVAs are in its TOML; add them here
+when a card reads one.
+
+### Structures
+
+| structure | offset | field | type | conf | evidence |
+|---|---|---|---|---|---|
+| `CCountry` | `+0x198` | industrial score | int64, 2¹⁵ | C | V2DLL §4.7; CT agrees |
+| `CCountry` | `+0x1A0` | military score | int64, 2¹⁵ | I (ext.) | CT |
+| `CCountry` | `+0x1A8` / `+0x1AC` | plurality / revanchism | int32 thousandths | I (ext.) | CT |
+| `CCountry` | `+0x7B4/+0x7B8/+0x7BC` | unit list head / tail / count; 16-byte node `+0` unit, `+4` prev, `+8` next | list | C | `AddUnit`, `RefreshSubUnits` |
+| `CCountry` | `+0x7D0` | leadership points | int64, 2¹⁵ | C | `SetLeadership`; CT |
+| `CCountry` | `+0xBD4/+0xBD8/+0xBDC` | leader list head / tail / count; 16-byte node `+0` leader, `+4` prev, `+8` next | list | C | `AddLeader` (upgrades the earlier I) |
+| `CCountry` | `+0xE3C` | research points | int32 thousandths | C | `SetResearchPoints`; CT |
+| `CCountry` | `+0xE8C/+0xE90` | loans: `CLoan*` vector begin / end | vector | C | `PayBackLoan`; CT |
+| `CCountry` | `+0xEA0` | prestige | int32 thousandths | C | `AddPrestige`; Discord "prestige int32/10³" |
+| `CCountry` | `+0x15A0` | suppression points | int32 thousandths | I (ext.) | CT |
+| loan | `+0x10` / `+0x18` | interest rate / amount | int64, 2¹⁵ | I (ext.) | CT |
+| pop | `+0x58` / `+0x5C` / `+0x60` | size / start-of-month size / employed | int32 | I (ext.) | CT |
+| pop | `+0x118` / `+0x120` / `+0x128` | consciousness / militancy / literacy | int64, 2¹⁵ | I (ext.) | CT |
+| pop | `+0x278` / `+0x27C` | previous / next pop | pointer | C (`+0x27C`), I (ext.) (`+0x278`) | our `FUN_004B81D0`; CT |
+| army | `+0x40` / `+0xDC` / `+0x114` | regiment count / province / name (MSVC string, inline under 16 chars) | int32 / ptr / string | I (ext.) | CT |
+| regiment | `+0x30` / `+0x34` / `+0x38` / `+0x3C` / `+0x40` | pop / experience (thousandths) / type / strength / organisation (thousandths) | mixed | I (ext.) | CT |
+| regiment type | `+0x28` | icon index | int32 | I (ext.) | CT |
+| good | `+0x30` | base price | int64, 2¹⁵ | I (ext.) | CT |
+| static | RVA `0xA45C28` / `0xA45C30` | max / min relative price: doubles 163840.5 / 6554.1 (5.0 / 0.2 in 2¹⁵ units) | double | C (value read from the file) | CT names; PE read 2026-10-17 |
+| static | RVA `0xE587F4` | good count | int32 | I (ext.) | CT; `.data`, next to `g_countryManager` |
+| static | RVA `0xE5B9E0` / `0xE5D758` | price delta / owner income share upper limit | int64 | I (ext.) | CT |
+
+RGO, factory, artisan, province and ship field lists are in the report's
+source files and not copied here until a chart card needs them.
+
+## GUI inner tree and screen conversion (2026-10-17, TPL-0 0.4.1)
+
+Decompiled with `DecompileAt.java` (private
+`E:\v2re\logs\tgcx-tpl-place-1017.txt`). Supersedes the 0.4.0 Templates
+anchor above (P40).
+
+| site/field | VA | RVA | conf | evidence |
+|---|---|---|---|---|
+| inner `+0xE4` | — | — | C | owner; written by `FUN_009F9050`, cleared by `FUN_009F8FD0` |
+| inner `+0xDC/+0xE0` | — | — | C | first/last child; same functions |
+| inner `+0xD4/+0xD8` | — | — | C | previous/next sibling |
+| inner `+0x54` (16 dwords), translation `+0x84/+0x88` | — | — | C | rebuilt by `FUN_00A1FEB0` from `+0xFC/+0x100`, **in the owner's frame** |
+| `FUN_009F9050` | `0x009F9050` | `0x5F9050` | C | thiscall(child, owner): unlink child, append to the owner's list |
+| scene | renderer `+0x6B9E0` | — | C/R | promotion target of `FUN_009E2FC0`; its children's translations are screen pixels (Bill 0.3.3 accepted) |
+| `build_unit_view_large` root | view `+0x60` | — | R | owner chain of 2 levels through the Military window; 0.4.1 log at 2560x1440: root local (336,20), screen (1104,490) |
+
+Screen position of any inner = Σ (`+0x84`, `-0x88`) over the chain up to
+the scene. 0.4.1 logs the live values (`Templates anchor:`) when it opens
+the panel; the 2026-10-17 log confirms it (`report-tpl-0-visual-1017.md`).

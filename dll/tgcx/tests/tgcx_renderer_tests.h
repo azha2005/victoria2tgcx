@@ -475,15 +475,19 @@ static void tgcx_RendererTests(const tgcx_Snapshot& live_sample) {
     tgcx_Expect(SUCCEEDED(device->Reset(&parameters)),"Bill fixture viewport Reset");
     tgcx_BillModel bill={};bill.valid=true;bill.yes=40;bill.no=25;bill.abstain=35;
     for(unsigned i=0;i<tgcx_ideology_count;++i) {
-        if(strcmp(tgcx_ideology_candidates[i],"conservative")==0)bill.bloc[i]={85,0,25,25,35,60,-1,false};
-        else if(strcmp(tgcx_ideology_candidates[i],"liberal")==0)bill.bloc[i]={10,10,10,0,0,0,2,false};
-        else if(strcmp(tgcx_ideology_candidates[i],"reactionary")==0)bill.bloc[i]={5,0,5,0,0,0,-2,true};
+        if(strcmp(tgcx_ideology_candidates[i],"conservative")==0)bill.bloc[i]={85,0,25,25,35,60,25,85,-1,false};
+        else if(strcmp(tgcx_ideology_candidates[i],"liberal")==0)bill.bloc[i]={10,10,10,0,0,0,0,0,2,false};
+        else if(strcmp(tgcx_ideology_candidates[i],"reactionary")==0)bill.bloc[i]={5,0,5,0,0,0,0,5,-2,true};
     }
-    tgcx_GuiRect bill_gui={0,0,1200,800};D3DVIEWPORT9 bill_view={11,17,180,140,0,1};
+    // Deliberately away from screen centre: the chart must use its supplied
+    // native window transform, not reconstruct a different origin.
+    tgcx_GuiRect bill_gui={100,80,1200,800};D3DVIEWPORT9 bill_view={11,17,180,140,0,1};
+    D3DVIEWPORT9 bill_full={0,0,1200,800,0,1};device->SetViewport(&bill_full);
+    device->Clear(0,nullptr,D3DCLEAR_TARGET,0xFF30352C,1,0);
     RECT bill_clip={7,9,19,27};device->SetViewport(&bill_view);device->SetScissorRect(&bill_clip);
     device->SetRenderState(D3DRS_SCISSORTESTENABLE,FALSE);device->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
     device->SetTextureStageState(0,D3DTSS_TEXTURETRANSFORMFLAGS,D3DTTFF_COUNT2);
-    device->Clear(0,nullptr,D3DCLEAR_TARGET,0xFF30352C,1,0);device->BeginScene();
+    device->BeginScene();
     tgcx_Expect(tgcx_DrawBillChart(device,bill,sample,bill_gui)==S_OK,"Bill projected seats render on real GPU");
     device->EndScene();D3DVIEWPORT9 bill_restored={};RECT bill_restored_clip={};
     device->GetViewport(&bill_restored);device->GetScissorRect(&bill_restored_clip);
@@ -492,6 +496,70 @@ static void tgcx_RendererTests(const tgcx_Snapshot& live_sample) {
     tgcx_Expect(bill_restored.X==11 && bill_restored.Y==17 && bill_restored.Width==180 && bill_restored.Height==140 &&
         EqualRect(&bill_restored_clip,&bill_clip) && scissor==FALSE && alpha==FALSE && transform==D3DTTFF_COUNT2,
         "Bill restores inherited viewport, clip, blend and texture-transform state");
+    IDirect3DSurface9* bill_target=nullptr;IDirect3DSurface9* bill_pixels=nullptr;
+    device->GetRenderTarget(0,&bill_target);
+    device->CreateOffscreenPlainSurface(1200,800,D3DFMT_X8R8G8B8,D3DPOOL_SYSTEMMEM,&bill_pixels,nullptr);
+    bool bill_readback=bill_target && bill_pixels && SUCCEEDED(device->GetRenderTargetData(bill_target,bill_pixels));
+    tgcx_Expect(bill_readback,"Bill real GPU readback");
+    if(bill_readback) {
+        D3DLOCKED_RECT pixels={};bool locked=SUCCEEDED(bill_pixels->LockRect(&pixels,nullptr,D3DLOCK_READONLY));
+        tgcx_Expect(locked,"Bill GPU pixels lock");
+        if(locked) {
+            unsigned aye=0,nay=0,abstain=0,outside=0;
+            for(int y=0;y<800;++y)for(int x=0;x<1200;++x) {
+                DWORD color=reinterpret_cast<DWORD*>(static_cast<char*>(pixels.pBits)+y*pixels.Pitch)[x]&0xFFFFFF;
+                // Without our textures only the chart patch, seats and legend are drawn.
+                bool inside=x>=bill_gui.left+64 && x<bill_gui.left+340 && y>=bill_gui.top+205 && y<bill_gui.top+357;
+                if(!inside && color!=0x30352C)++outside;
+                if(inside) { if(color==0x3F8F2F)++aye;if(color==0xB8322A)++nay;if(color==0xE4E0D0)++abstain; }
+            }
+            tgcx_Expect(aye>300 && nay>300 && abstain>300,"all Bill vote colours appear inside the native chart area");
+            tgcx_Expect(outside==0,"Bill chart leaves every pixel outside its native chart area unchanged");
+            bill_pixels->UnlockRect();
+        }
+    }
+    if(bill_target)bill_target->Release();if(bill_pixels)bill_pixels->Release();
+    // Our staged textures: the background patches hidden/disabled buttons and
+    // the chart's marker; a disabled button gets the atlas's greyed sprite.
+    {
+        auto dds=[](int width,int height,DWORD color,unsigned char* out) {
+            memset(out,0,128);memcpy(out,"DDS ",4);
+            uint32_t header[]={124,0x100F,static_cast<uint32_t>(height),static_cast<uint32_t>(width),static_cast<uint32_t>(width*4),0,1};
+            memcpy(out+4,header,sizeof(header));
+            uint32_t format[]={32,0x41,0,32,0x00FF0000,0x0000FF00,0x000000FF,0xFF000000,0x1000};
+            memcpy(out+76,format,sizeof(format));
+            for(int p=0;p<width*height;++p)memcpy(out+128+4*p,&color,4);
+        };
+        size_t bg_size=128+tgcx_bill_width*tgcx_bill_height*4,atlas_size=128+tgcx_bill_atlas_size[0]*tgcx_bill_atlas_size[1]*4;
+        auto* bg=static_cast<unsigned char*>(malloc(bg_size));auto* atlas=static_cast<unsigned char*>(malloc(atlas_size));
+        dds(tgcx_bill_width,tgcx_bill_height,0xFF102030,bg);dds(tgcx_bill_atlas_size[0],tgcx_bill_atlas_size[1],0xFF405060,atlas);
+        tgcx_Expect(tgcx_BillTextureFromDds(device,bg,bg_size,&tgcx_bill_bg) && tgcx_BillTextureFromDds(device,atlas,atlas_size,&tgcx_bill_atlas),
+            "staged DDS layout loads into managed textures");
+        tgcx_BillTexture truncated={};
+        tgcx_Expect(!tgcx_BillTextureFromDds(device,bg,bg_size-1,&truncated) && !truncated.texture,"truncated DDS refused");
+        tgcx_bill_texture_device=device;
+        free(bg);free(atlas);
+        tgcx_BillView bill_view_state={};bill_view_state.vote={"tgcx_call_vote",0,true,false};bill_view_state.audience={"tgcx_audience",10,false,false};
+        device->SetViewport(&bill_full);device->Clear(0,nullptr,D3DCLEAR_TARGET,0xFF30352C,1,0);
+        device->BeginScene();
+        tgcx_Expect(tgcx_DrawBillChart(device,bill,sample,bill_gui,&bill_view_state)==S_OK,"Bill overlay with textures renders on real GPU");
+        device->EndScene();
+        IDirect3DSurface9* overlay_target=nullptr;IDirect3DSurface9* pixels=nullptr;
+        device->GetRenderTarget(0,&overlay_target);
+        device->CreateOffscreenPlainSurface(1200,800,D3DFMT_X8R8G8B8,D3DPOOL_SYSTEMMEM,&pixels,nullptr);
+        D3DLOCKED_RECT locked={};
+        if(overlay_target && pixels && SUCCEEDED(device->GetRenderTargetData(overlay_target,pixels)) && SUCCEEDED(pixels->LockRect(&locked,nullptr,D3DLOCK_READONLY))) {
+            auto at=[&](int x,int y){return reinterpret_cast<DWORD*>(static_cast<char*>(locked.pBits)+(bill_gui.top+y)*locked.Pitch)[bill_gui.left+x]&0xFFFFFF;};
+            const auto& vote=tgcx_bill_buttons[TGCX_B_VOTE];const auto& audience=tgcx_bill_buttons[TGCX_B_AUDIENCE];
+            tgcx_Expect(at(tgcx_bill_chart_patch[0]+1,tgcx_bill_chart_patch[1]+1)==0x102030,"chart marker is covered by the Bill background");
+            tgcx_Expect(at(audience.x+audience.w/2,audience.y+audience.h/2)==0x102030,"a hidden button is covered by the Bill background");
+            tgcx_Expect(at(vote.x+vote.w/2,vote.y+vote.h/2)==0x405060,"a disabled button gets the greyed atlas sprite");
+            tgcx_Expect(at(-1,10)==0x30352C && at(tgcx_bill_width,10)==0x30352C,"nothing is drawn outside the Bill");
+            pixels->UnlockRect();
+        } else tgcx_Expect(false,"Bill textured readback");
+        if(overlay_target)overlay_target->Release();if(pixels)pixels->Release();
+        tgcx_BillReleaseTextures();
+    }
     bill.valid=false;
     tgcx_Expect(tgcx_DrawBillChart(device,bill,sample,bill_gui)==S_FALSE,"invalid Bill model draws nothing");
     tgcx_Expect(device->Release()==0,"all device resources/references released");factory->Release();DestroyWindow(window);FreeLibrary(graphics);

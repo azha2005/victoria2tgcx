@@ -25,6 +25,11 @@ TEXT_DELTA = 0xC00
 
 # (RVA, expected bytes, where it comes from)
 SIGNATURES = [
+    # TPL-0 native panel, scoped read-only Ghidra on 2026-10-17.
+    (0xA12A14, "E0407300004E7300D0CF580070737300F061730030C4A300", "TPL-0 CBuildUnitView vtable, destructor and update slots"),
+    (0x334E24, "8BF98B47608A406733DB3AC30F847F050000", "TPL-0 build-view root +0x60 and visibility +0x67"),
+    (0x333C0C, "885E5C894660C6466401894E68895E6C", "TPL-0 build-view close +0x5C, root +0x60, scope +0x6C"),
+    (0x3374D3, "807E7800C6866001000001740E8B8EC4000000898EC80000", "TPL-0 build-view land +0x78 and dirty +0x160"),
     (0xA0E48C, "C0D06000A0FF6D00007D7300504472003034750090E17900", "LAW-2 CButtonObserverGlue<CPoliticsView> table"),
     (0x5E4C80, "558BEC568BF1578B7D088D866C020000508D8E7C02000051", "LAW-2 native button lookup"),
     (0x5CD610, "8BC18B500885D274088B480C034804FFE2C3CCCCCCCCCCCC", "LAW-2 button observer native trampoline"),
@@ -36,6 +41,33 @@ SIGNATURES = [
     (0x8ED0, "558BEC538B5D0C568BF18B4D08578B79103BFB730A6818DADE00", "LAW-2 native std::string assign"),
     (0x65ECC0, "558BEC64A1000000006AFF6818D9B300508B450864892500", "LAW-2 native GUI text SetText ESI ABI"),
     (0x2DCE10, "558BEC83E4F864A1000000006AFF68A90EBA00508B450864", "LAW-2 native decision click handler"),
+    # 2026-10-17, LAW-2 controls: has_country_modifier (FUN_008CD8C0) walks the
+    # timed list at CCountry+0x4D8 (node item +0, next +8; item modifier +8);
+    # the modifier manager (FUN_005661B0) hashes (h+c)*61, name at +0x30/+0x40.
+    (0x4CD8E2, "8B86D804000085C074128D6424008B108B4008394A08", "LAW-2 timed country modifier list walk"),
+    (0x9F9978, "B0218300F0299A00", "LAW-2 CTimedModifier primary vtable"),
+    (0x1661D6, "7E0E0FBE1C1103C3416BC03D3BCF7CF233D2F776048B46088B1C9085DB744D8B", "LAW-2 modifier manager name hash"),
+    (0x1661F5, "8B038B4D0883C030837DFC107202", "LAW-2 modifier name string at +0x30"),
+    (0x166234, "0F95C085C074128B5B0485DB75B3", "LAW-2 modifier manager bucket next +4"),
+    (0x4EC00, "558BECA19CA62501568B7508", "LAW-2 modifier manager global"),
+    # 2026-10-17, LAW-2 Reforms tab: FUN_006DA930 builds each reform row and
+    # enables its button (+0xB8) from a byte at [ebp-0x11]; FUN_006DC990 is the
+    # row click; FUN_006DB2E0 lists the decisions (name std::string at +8);
+    # FUN_00906F00 posts the player's "decision taken" message (gate 0x00F07DA6).
+    (0x2DC990, "558BEC83E4F864A1000000006AFF68ACE0B6005064892500", "LAW-2 native reform click handler"),
+    (0x2DCCEE, "5B8BE55DC20400", "LAW-2 native reform click RET 4"),
+    (0x2DB00E, "8B55C48B45E48B4DE85250518DBD54FFFFFFE8FBA9E4FF84C0", "LAW-2 reform row frame: option -0x3C, group -0x1C, country -0x18"),
+    (0x2DB02D, "8B55C48B42508B55E88B9250080000", "LAW-2 reform row social current law +0x850"),
+    (0x2DB0AE, "8B55E88B46508B92600800008B4DE48B49508B0C8A3B4150", "LAW-2 reform row political current law +0x860"),
+    (0x2DB22D, "807DEF008B108BC874088B82B8000000EB068B82BC000000", "LAW-2 reform row enable byte [ebp-0x11]"),
+    (0x575F15, "8B038B4D0883C034837DFC107202", "LAW-2 issue option name std::string +0x34"),
+    (0x2DB52A, "84C0746F8B4D808B51248B521883C1248D85A4FDFFFF50FFD2", "LAW-2 decision list first loop"),
+    (0x2DB5E8, "84C0745D8B4D808B51248B521883C1248D85A4FDFFFF50FFD2", "LAW-2 decision list second loop"),
+    (0x1C2B15, "8B038B4D0883C008837DFC107202", "LAW-2 decision name std::string +8"),
+    (0x506690, "50E86A0800008D4C2454E83124B0FF", "LAW-2 player decision message call"),
+    (0x506F00, "558BEC6AFF684C62B90064A100000000", "LAW-2 decision message poster entry"),
+    (0x506F55, "803DA67DF000000F84CB050000", "LAW-2 decision message gate byte"),
+    (0x507542, "8BE55DC28C00", "LAW-2 decision message poster RET 0x8C"),
 
     (0x1D74BE, "B8E8030000", "PATCH_ALLIED_REINFORCE_150, mov eax,1000"),
     (0x282EC0, "558BEC6AFF", "FUN_00682EC0, daily sync check (OOS)"),
@@ -56,6 +88,10 @@ SIGNATURES = [
     (0x4FD801, "A13C8A2501E8C5630700", "ideology manager lookup operand"),
     (0x5793C0, "558BEC83E4F8518B41142B4110535633", "CUpperHouse vector begin/end"),
     (0x5E3BA0, "558BEC83EC0C8B9190000000", "GUI centred position setter"),
+    (0x5E2FC0, "568BF18B8E940400008B018B9080000000FFD28B8E940400", "LAW-2 native window scene append method"),
+    (0xA383C4, "50909F00", "LAW-2 window render subtree append slot"),
+    (0xA383D0, "D08F9F00", "LAW-2 window render subtree unlink slot"),
+    (0xA3841C, "B0FEA100", "LAW-2 window render subtree position slot"),
     (0x5E4450, "568BF18B8E48020000C6466701", "GUI show flag"),
     (0x5E4030, "568BF18B8E48020000C6466700", "GUI hide flag"),
     (0x59A520, "FF868CBC060080BEA0BC06000074258B", "FUN_0099A520 final engine Present entry"),
@@ -70,6 +106,33 @@ SIGNATURES = [
     (0xA3BDA8, "700B9E00", "pie entity hit-test slot +0x50, FUN_009E0B70"),
     (0x5E0B70, "558BEC83E4F883EC08568BF18B8E68010000", "pie hit-test ECX/float arguments, x87 result, RET 32"),
     (0x5E0C90, "558BEC83E4F883EC18660F6E4508660F6E4D0C", "pie slice EAX/int arguments, AL result, RET 16"),
+    # TPL-0, 2026-10-17 (docs/symbols.md): one brigade is queued as the UI does,
+    # operator new(0x68), CConstructUnitCommand ctor, post via g_world+0xB24.
+    (0x17D1B0, "558BEC6AFF689B61B40064A10000000050648925000000005153568B7508", "TPL-0 CConstructUnitCommand ctor entry"),
+    (0x17D1EF, "B8CA05000089462C894630", "TPL-0 CConstructUnitCommand id 0x5CA at +0x2C/+0x30"),
+    (0x17D20E, "8B451C8B551833C966894E288B4D10894640", "TPL-0 ctor args: country id +0x40, tag, province id +0x44"),
+    (0x17D2C6, "8B450C894660894E648B4DF48BC65E64890D000000005B8BE55DC21800", "TPL-0 ctor unit type +0x60, pop +0x64, returns this, RET 0x18"),
+    (0xA00CF4, "30C17200F0299A0000D65700902A9A0080D75700C0104000F0D25700F0D55700", "TPL-0 CConstructUnitCommand vtable slots 0-7"),
+    (0xA00D14, "F0977D0010279A0020279A0030279A00D0CF580070D9570020DA5700", "TPL-0 CConstructUnitCommand vtable slots 8-14"),
+    (0x17DA45, "8955F88B51408B1496508B41648B496052E87567F9FF84C00F95C0", "TPL-0 command validity slot 14: can-build(unit, pop, country, province)"),
+    (0x3325D0, "6A68E8D8C3370083C404", "TPL-0 UI recruit: cdecl operator new(0x68)"),
+    (0x6AE9AF, "8BFF558BEC83EC10EB0DFF7508E8468C0000", "TPL-0 FUN_00AAE9AF operator new entry"),
+    (0x33261B, "8B018B5044FFD28B48388B018B501856FFD2FF4C240C759D", "TPL-0 command queue: (g_world+0xB24) slot 0x44, +0x38, slot 0x18"),
+    (0x1141D0, "558BEC51538B5D08568BF18B4D0C578BF88B81340100003B4320", "TPL-0 FUN_005141D0 can-build: ECX unit, EAX pop, stack country, province"),
+    (0x114284, "B0015F5E5B595DC20800", "TPL-0 FUN_005141D0 AL result, RET 8"),
+    (0x11424B, "6A008BC7E8DC1645006A00578BF0E8121645003BF0", "TPL-0 free regiments: FUN_00965930(EAX pop, 0), FUN_00965870(pop, 0)"),
+    (0x565870, "558BECA1DC862501538B5D08568B7358", "TPL-0 FUN_00965870 regiments a pop supports"),
+    (0x56589D, "5F5E33C05B5DC20800", "TPL-0 FUN_00965870 RET 8"),
+    (0x565930, "558BEC83E4F883EC0C807D0800535657", "TPL-0 FUN_00965930 regiments a pop already has"),
+    (0x5659E6, "5F5E5B8BE55DC20400", "TPL-0 FUN_00965930 RET 4"),
+    (0x0B8285, "833DD8FD2501008B1534BB31018955F0", "TPL-0 unit type DB 0x0125FDD8 and pop type DB 0x0131BB34"),
+    (0x0B82C3, "8B45F08B70108B1DD8FD25018BC82B710C", "TPL-0 pop type vector +0xC/+0x10"),
+    (0x0B8313, "807842000F842C0100008B4D088B91940100008B45EC8B0410", "TPL-0 soldier pop type +0x42, province pops +0x194"),
+    (0x0B8343, "8B907C0200008945E88B43102B430C", "TPL-0 next pop +0x27C, unit type vector +0xC/+0x10"),
+    (0x0B838B, "8B730C8B14968B80CC0B00008B52248B80100300008B3490807E3900", "TPL-0 unit index +0x24, country +0xBCC +0x310 unit, land +0x39"),
+    (0x335416, "81C1D809000057894DDC", "TPL-0 country owned provinces +0x9D8"),
+    (0x335773, "8B88CC0A00008B0491", "TPL-0 province by id at g_world+0xACC"),
+    (0x41EEB5, "8B5E1C8945F083FB1072058B4608EB038D4608", "TPL-0 unit type name std::string +8"),
 ]
 
 
@@ -108,6 +171,12 @@ RESEARCH_SIGNATURES = [
     (0x572B20, "558BEC518B450C5356578BF93DE70200", "FUN_00972B20, ideology parser"),
     (0x4FE3C0, "558BEC83EC088B45088B50088B400C8B", "FUN_008FE3C0, country social movement trigger"),
     (0x4FE6E0, "558BEC83EC088B45088B50088B400C8B", "FUN_008FE6E0, country political movement trigger"),
+    # TPL-0 research (docs/symbols.md): the native recruit path and row choice.
+    (0x332520, "558BEC83E4F864A1000000006AFF687BFBB9005064892500", "FUN_00732520, UI recruit entry (TPL-0 research)"),
+    (0x33253E, "837F100053560F85E90000008B078B4F04", "FUN_00732520, EDI item +0x10 must be 0, pop key +0/+4 (TPL-0 research)"),
+    (0x3325E8, "8B55088B723C8B52388B4F0C8B4958565253518B4F085150E8ABABE4FF8BF0", "FUN_00732520, ctor arguments from item and entry (TPL-0 research)"),
+    (0x332640, "8BE55DC20400", "FUN_00732520 RET 4 (TPL-0 research)"),
+    (0x3319E0, "8B7E2803FB56E8350B000083C314FF4C240C75EC", "FUN_007319B0, build button walks 0x14-byte items (TPL-0 research)"),
 ]
 
 

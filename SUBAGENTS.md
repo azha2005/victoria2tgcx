@@ -93,7 +93,7 @@ update §4.
 
 ## 4. Cards
 
-### Card status (as of 2026-10-12)
+### Card status (as of 2026-10-17)
 
 | ID | Title | Status | Instructions |
 |---|---|---|---|
@@ -109,15 +109,16 @@ update §4.
 | LAW-0 | One bill with favours and affinity, end to end (`press_rights`) | **done** (2026-10-12, U-3 passed) | `docs/instructions-law-0.md`; `docs/report-law-0-1012.md` |
 | U-3 | Play the LAW-0 bill (with a save/load halfway) | **done** (2026-10-12) | `docs/instructions-law-0.md` step 6 |
 | LAW-1 | Catalogue for 23 groups / 46 direction entries | **short script smoke accepted**; broader engine coverage unconfirmed; 25 catalogue/10 installer tests pass | `docs/instructions-law-1.md`; `docs/report-law-1-report-fix-1013.md` |
-| LAW-2 | Bill GUI and command bridge | **prototype 0.3.0 installed, done, not tested in game**; full actions/automatic favours unfinished | `docs/instructions-law-2.md`; `docs/report-law-2-bill-1013.md` |
-| U-7 | Bill prototype visual/Count evidence | **pending**, brief check only | `docs/instructions-u-7.md` |
+| LAW-2 | Bill GUI and command bridge | 0.3.4 look accepted; **0.3.5: visible buttons, Reforms tab, Decisions filter, no DLL popups; done, not tested in game** (U-7 pending) | `docs/instructions-law-2.md`; `docs/report-law-2-reforms-1017.md` |
+| U-7 | Bill prototype visual/Count evidence | 0.3.3 placement and 0.3.4 look accepted; **0.3.5 check pending**, brief check only | `docs/instructions-u-7.md` |
+| U-8 | First live template recruit and visual check | recruit/save-reload (0.4.0) and placement (0.4.1) accepted; **0.4.2 short visual check next**; extended checks open | `docs/instructions-u-8.md` |
 | U-6 | LAW-1 catalogue game evidence | **short smoke passed**; user requests moving on, extended coverage unconfirmed | `docs/instructions-u-6.md` |
 | DLL-0 | Our own `lua51.dll` proxy that logs signatures and the upper house | **done, tested in game** (U-4, 2026-10-12); installed on E:\; cadence coverage remains to verify in DLL-1 | `docs/instructions-dll-0.md`; `docs/report-dll-0-1012.md` |
 | U-4 | Install DLL-0, play a few days, send the log | **done** (2026-10-12): screenshots/log match, clean errors, save/load | `docs/instructions-u-4.md`; `docs/report-u-4-1012.md` |
 | DLL-1 | Renderer, cadence and Politics visibility | **working prototype, tested in game (0.2.4)**; extended coverage outstanding | `docs/instructions-dll-1.md`; U-5 report |
 | U-5 | Combined renderer/hemicycle acceptance | **functional hover checkpoint passed**; 0.2.8 header accepted; extended integration coverage remains | `docs/instructions-u-5.md`; `docs/report-u-5-1012.md` |
 | GH-3 | GUI: element positions and creation on the fly | after GH-1 | to be written |
-| GH-4 | Engine commands: `CConstructUnitCommand` and how it is sent | after GH-1; REA candidate noted | to be written; `docs/rea-for-templates.md` |
+| GH-4 | Engine commands: CConstructUnitCommand and posting | **TPL-0 static research/guards and recruit runtime-confirmed**; extended U-8 cases open | `docs/symbols.md`; TPL-0 reports |
 | GH-5 | Save/load: the save's name, the moment | after GH-1 | to be written |
 | HEMI-1 | Hemicycle (user DLL-2 alias) | **working prototype, tested in game (0.2.4)**; visual polish outstanding | `docs/instructions-dll-2.md`; U-5 report |
 | HEMI-3 | Match hover with rendered ideology | **0.2.8 hover/header accepted in game** | `docs/instructions-hemi-3.md`; `docs/report-hemi-3-seam-1012.md` |
@@ -126,7 +127,9 @@ update §4.
 | GOV-0 | Data: 1836 rulers and generals' portraits | ready to start (no RE, in parallel) | `docs/instructions-gov-0.md` |
 | GOV-1 | Rulers by script | waits for GOV-0, SUB-0 | — |
 | GOV-2 | Ruler portrait/name (DLL) | DLL-1 prototype available; waits for GOV-1; not selected | — |
-| TPL-1 | Army templates | DLL-1 prototype available; waits for GH-4; not selected | REA/RE references retained |
+| TPL-0 | Native Templates panel, local library and first recruit | **0.4.0 recruit/save-reload accepted; 0.4.1 placement confirmed; 0.4.2 details installed, done, not tested in game** | `docs/instructions-tpl-0.md`; `docs/report-tpl-0-visual-1017.md` |
+| TPL-1 | Conform an existing army to a template | D12 approved; after TPL-0/U-8 acceptance, scoped research required | `docs/instructions-tpl-1.md` |
+| TPL-2 | Replace regiments lost to rebellion automatically | **on hold** (user, 2026-10-17): TPL-1 Conform already restores the lost regiments | `docs/instructions-tpl-2.md` |
 
 ### I — Infrastructure
 

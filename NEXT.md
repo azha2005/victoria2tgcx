@@ -1,71 +1,102 @@
 # NEXT - what comes next
 
-2026-10-13 (22). **LAW-2 Bill prototype 0.3.0 installed on E:, done, not
-tested in game.** LAW-1's short Present/Count/save-reload path is accepted
-by the user; extended coverage is not inferred. Finish the law mechanic
-before economy, rulers or templates. Read `docs/report-law-2-bill-1013.md`,
-`docs/instructions-law-2.md` and `docs/instructions-u-7.md`.
+2026-10-17 (28). **TPL-0 0.4.1 placement confirmed in game** (log: root
+local 336,20 → screen 1104,490, P40). The user found the details still off
+board 5; **0.4.2 (native sprites, selection ring, empty-row covers,
+miniatures, board texts, footer Delete) is installed on E:: done, not
+tested in game.** Read `docs/report-tpl-0-visual-1017.md`.
+**0.4.2 game check: all good except Recruit, which did not draw or click
+(P41).** The fix is staged in `E:/v2re/logs/tgcx-tpl-place-1017/stage`;
+**0.4.3 is installed and confirmed in game.** Recruit through the panel
+works and reopening shows the right sprites (report §9-10). Its only
+defect: the Templates tab covered the last Build Navy folder. **0.4.4**
+hides the tab in navy mode. **It is installed on E:: done, not tested in
+game** (rollback `before-044-dll`, `before-044-submod`). Check: Build Navy shows no Templates tab, Build Army
+still does, and clicks on queue entries still work. External
+research: `docs/report-research-discord-1017.md`.
 
-## Current result
+## Current baseline
 
-- Native Bill child with live law, vote/favours/bloc/affinity/promise data.
-  Open/Close/Count wired; Count queues the native engine decision command.
-  Projected chart draws in native GUI order. Native tooltip slot untouched.
-- Purchases, promises, audience, withdrawal, vote and manual favour collection
-  remain in Decisions. Automatic favour ticking and the full Bill controls
-  are unfinished. The mechanic itself has not changed.
-- 25 catalogue, 3 GUI, 10 script installer tests, LAW-0 byte identity,
-  reference/TGC/signature gates and native/real-GPU/eight DLL installer/Lua
-  tests pass. 70 file gates, 38 runtime guards. Catalogue 37,775,061 bytes.
-- Generated GUI comes from installed TGC plus our own fragment. No copied
-  TGC GUI or art enters git. Private layout preview is not a game screenshot.
-- Only the user launches/exits the game. Preserve existing uncommitted work.
-  No new mechanic, commit or subagent is selected. Next pitfall is P35.
+- The Military screen's large Build Army view has a final Templates tab,
+  template list, New/Delete, composition editor and Recruit. The native
+  Being built queue remains. Eleven land types; eight editor rows/page;
+  four templates/page, twelve local slots, 128 regiments maximum.
+- Local preferences use composition names and Windows Documents under
+  `Paradox Interactive/Victoria II/TGC252_TGCX/tgcx_templates.txt` (D12).
+  Editing writes atomically; invalid files remain untouched.
+- Recruiting only sends CConstructUnitCommand through the engine queue;
+  it recruits what fits and reports orders queued/left out. A further
+  template batch waits for game time to advance.
+- 91 runtime signatures, native/reference-window/GPU fixtures and 8 DLL
+  installer/Lua tests pass. Four new Templates GUI/installer tests pass.
+  Existing law gates pass (27 catalogue, 8 Bill GUI, 10 submod installer,
+  LAW-0, executable and TGC scan).
+- All pre-existing installed submod files are byte-identical to 0.3.5.
+  U-8 now confirms the nine-regiment queue and template after save/reload;
+  proxy command counts match and copied error/system-error logs are empty.
+  LAW-2 0.3.5 still needs U-7; the 0.3.4 look was accepted. HEMI-3's accepted
+  baseline remains. Static layout previews are not game evidence.
+- 0.4.1 fixed the anchor (`tgcx_TplRootScreen`), confirmed in game. 0.4.2
+  changes only the Templates GUI layout/assets and labels; all gates pass.
+  Installed DLL SHA-256 `bdc3fbf9...c9a24c`.
+- Only the user launches/exits the game. Preserve uncommitted changes.
+  No commit, push or subagent unless asked. The next pitfall is P43.
 
 ## Next session in order
 
-1. U-7: user loads an active bill, Counts once in Decisions, opens Politics,
-   checks the Bill and its Count/Close/Open controls. One screenshot and a
-   brief description suffice. Do not repeat the extended U-6 assignment.
-2. After normal exit retain game/DLL logs; use `tools/tgcx_check_laws.py`
-   for seven script/GUI gates and a snapshot. Actual GUI/command execution
-   and native text placement need evidence; fixtures alone cannot close U-7.
-3. Fix concrete failures and keep rollback. Once the GUI path works, finish
-   LAW-2: bloc buys/promises, lot selector, audience, withdraw/vote and
-   accurate Crown/debt status. Reuse native decision dispatch and fresh
-   script eligibility; never write simulation fields directly.
-4. Add automatic favour collection through the engine command path,
-   persisted script timer and manual fallback. Handle save/load and
-   duplicate commands without a second scheduler changing game state.
-5. Apply Bill mockup polish and recorded deviations. Earlier online mockup
-   update remains awaiting browser access. Do not replace actual GUI work
-   with another mockup or label the whole mechanic complete prematurely.
-6. Write an immutable report with observed evidence, archive/rewrite NEXT,
-   update statuses and step-by-step instructions for the next cards.
+1. **U-8 short 0.4.4 check** (player): Build Navy shows no Templates tab,
+   Build Army still does, and clicks on Units Being Built entries and
+   their cancel button still work through the panel. Recruit and the
+   reopen sprites are already confirmed on 0.4.3.
+2. **TPL-0 acceptance** (coordinator): `docs/instructions-tpl-0.md`.
+   Compare with board 5 against the retained deviations (report §4), fix
+   the queue hit area if needed. Then the remaining U-8 cases: close and
+   reopen Military, a one-regiment template, a partial recruit, and a
+   reload in a fresh process.
+3. **U-7 / LAW-2**, still pending: use their existing instructions for the
+   short Reforms/buttons/Decisions/monthly-popup check. Prioritize a real
+   LAW-2 regression if one appears; do not mark it accepted from the
+   Templates test.
+4. **TPL-1**, after TPL-0 acceptance: follow
+   `docs/instructions-tpl-1.md`. Read-only research of the stack panel and
+   move/merge/detach/transfer commands, then the Conform Changes planner.
+   D12 already chooses per-click template selection, missing regiments
+   built/marched/merged and extras detached. Save/reload tracking still
+   needs a verified design; no direct simulation writes.
+5. Close under ROADMAP section 7: report, archive/revise NEXT, current
+   step-by-step instructions for each next card and updated statuses.
 
-## Installation and rollback
+## Evidence and rollback
 
-Current source: `E:\v2re\logs\tgcx-law2-bill-stage-1013`.
-Script rollback: `E:\v2re\logs\tgcx-before-law2-submod-1013`.
-DLL/log rollback: `E:\v2re\logs\tgcx-before-law2-1013` (accepted 0.2.8).
-LAW-1 smoke evidence: `E:\v2re\logs\tgcx-law1-smoke-accepted-1013`.
-Install/build/native gates and verification: `tgcx-law2-*-1013` private logs.
-Seven-gate bundle: `E:\v2re\logs\tgcx-law-check-20261013T053026919692Z`.
-Its copied game logs predate the prototype; no new game evidence is inferred.
-Rollback commands are in U-7; restore both script and DLL after normal exit.
+Private roots: `E:/v2re/logs/tgcx-tpl-place-1017/` (0.4.1: `before-dll/` is the 0.4.0 DLL) and `E:/v2re/logs/tgcx-tpl-panel-1017/` (0.4.0 staging and the 0.3.5 rollback).
 
-Installed DLL SHA-256:
-`43bb3e7d3d0133b3bdb316fe9dd4253923297143ad0b113724534be5ed2f6ca5`.
-Accepted 0.2.8 rollback SHA-256:
-`61824e4bc1b72fc5792533ede1cd14ea3f759c458c59d35407cef973db0ccdc5`.
+| What | Where / value |
+|---|---|
+| Staged source | `stage/` |
+| Rollback 0.3.5 DLL | `before-dll/lua51.dll`, SHA `bec50bb7...0bbc7` |
+| Complete rollback submod source | `before-submod/` |
+| Installed 0.4.4 DLL SHA-256 | `39aafb4729eb6da004c2d12f37c0207481813c9a3ec6bfcbb092e968079272fb` |
+| Rollback 0.4.3 | `tgcx-tpl-place-1017/before-044-dll/lua51.dll` (`215aa405...c88d4`) + `before-044-submod/` |
+| Rollback 0.4.2 | `before-043-dll/lua51.dll` (`bdc3fbf9...c9a24c`) + `before-043-submod/` |
+| 0.4.2/0.4.3 game evidence | `work/tgcx-u8-042/`, `work/tgcx-u8-043/` |
+| Rollback 0.4.1 | `tgcx-tpl-place-1017/before-042-dll/lua51.dll` (`350299ef...eb8ca`) + `before-042-submod/` |
+| Rollback 0.4.0 DLL | `tgcx-tpl-place-1017/before-dll/lua51.dll`, SHA `2dcbf718...39d1b` |
+| 0.4.1 game evidence | `work/tgcx-u8-0411/` |
+| Generated buildunit GUI SHA-256 (0.4.4) | `269e603ecaa08b1aa60c7d3e3beb0eb89ae7ed608af7747e564ef794bed89df7` |
+| Accepted functional evidence | `work/tgcx-u8-1017/`: original screenshots, log, preferences and manifest |
+| Static visual QA | `tgcx_tpl_preview.png`, `tgcx_tpl_comparison.png`; not game evidence |
 
-| card | status | instructions/evidence |
+Roll back to 0.4.1, 0.4.0 or 0.3.5 after user exit; exact commands
+are in U-8. Original Lua remains verified as `lua51_real.dll`.
+
+| Card | Status | Instructions/evidence |
 |---|---|---|
-| LAW-1 | script smoke accepted; broader native/mechanic coverage unconfirmed | instructions-law-1.md; report-law-2-bill-1013.md |
-| U-6 | short smoke passed; extended list not assigned again | instructions-u-6.md |
-| LAW-2 | prototype installed, done, not tested in game; full controls/ticking unfinished | instructions-law-2.md; report-law-2-bill-1013.md |
-| U-7 | brief Bill visual/Count check pending | instructions-u-7.md |
-| HEMI-3 | accepted 0.2.8 retained; behavior carried into unconfirmed 0.3.0 | existing reports |
-| U-5 | extended integration coverage unconfirmed | instructions-u-5.md |
-| GOV-0 / GH-1 step 5 | available, not selected | existing instructions |
+| TPL-0 / GH-4 | 0.4.0 function accepted; 0.4.1 placement confirmed; 0.4.2 details installed, not tested in game | instructions-tpl-0.md; report-tpl-0-visual-1017.md |
+| U-8 | recruit/save-reload (0.4.0) and placement (0.4.1) accepted; 0.4.2 short check next; extended cases open | instructions-u-8.md |
+| TPL-1 | D12 approved; research/implementation queued after U-8 | instructions-tpl-1.md |
+| TPL-2 | on hold (user, 2026-10-17): Conform (TPL-1) covers it | instructions-tpl-2.md |
+| LAW-2 / U-7 | 0.3.5 controls/reforms pending game check | existing instructions/reports |
+| LAW-1 / U-6 | short smoke accepted; extended coverage unconfirmed | existing instructions/reports |
+| HEMI-3 / U-5 | 0.2.8 accepted; extended integration unconfirmed | existing instructions/reports |
+| GOV-0 | available, not selected | existing instructions |
 | COMPAT-0 | deferred D1 | existing instructions |

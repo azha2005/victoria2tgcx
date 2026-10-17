@@ -525,3 +525,155 @@ ties and no quorum. UK introduction and repeated Count each emit one event.
 These are script regression checks; corrected in-game presentation and the
 larger inline-count script load remain pending. See
 `report-law-1-report-fix-1013.md`.
+
+### P35 - Child-window render coordinates and foreground order
+
+**Found:** 2026-10-16, U-7 screenshot of 0.3.0. The Bill was displaced
+above-left of Politics, its chart painted over bloc/Crown content, and
+native party labels/button drew across its lower controls. Empty game
+error logs and passing offscreen GPU fixtures did not validate the native
+window hierarchy.
+
+**Cause:** the Bill's inner render subtree remained attached to Politics.
+Its position setter used screen-centred coordinates, while the chart
+independently reconstructed a screen-centred origin. The native scene
+hierarchy still supplied the parent's transform and draw order.
+
+**Correction:** use native foreground method FUN_009E3070 (RVA 0x5E3070)
+on opening, then the native position setter. Keep logical GUI ownership
+and observers. Read actual inner render translation for chart placement.
+Do not raise on ordinary ticks, which could cover later native dialogs;
+hide the detached Bill when Politics closes or its visibility read fails.
+
+**Verification:** 0.3.1 reference-engine foreground/unlink/position/show/
+hide fixtures and deliberately displaced real-GPU chart pixel checks pass.
+Installed on E:; repair game acceptance pending. See
+`report-law-2-layout-1016.md`. No fixture replaces the user screenshot.
+
+### P36 - Immediate centred rendering is not persistent absolute placement
+
+2026-10-16, 0.3.1 game check. Native FUN_009E3BA0 (RVA 0x5E3BA0)
+stores packed input unchanged at window +0x250, but adds screen centre
+only when setting the immediate inner render translation. Supplying
+(-416,-340) produced an initially centred chart log and later left most
+of the detached Bill off-screen. The fixture had checked only that first
+render translation, missing the persistent negative position.
+
+Use FUN_009E3D20 (RVA 0x5E3D20), this in ECX, integer x/y on the stack,
+RET 8. It sets both persistent packed absolute position and inner render
+translation to the same values. Check both after placement, across screen
+sizes, and after user movement. 0.3.2 uses this setter and enables native
+background dragging; automatic gates pass, integrated game check pending.
+See `report-law-2-position-1016.md`.
+
+
+### P37 - Native render inputs are not pixels; prepend is not foreground
+
+Live 0.3.2 inspection corrected the preceding P35/P36 implementation advice.
+Raw inner +0xFC/+0x100 include renderer screen-centre coordinates. Read
+world matrix +0x84 / negative +0x88 for pixels. Use the packed setter with
+positive absolute screen x/y, not negative half-window offsets or the
+unconverted absolute setter. The prior P36 absolute-setter recommendation
+is superseded. FUN_009E3070 inserts before active head; FUN_009E2FC0 plus
+inner FUN_009F9050 appends after Politics. Test actual root-container list
+order and projection, not a guessed sentinel/position callback model.
+0.3.3 visual layout is accepted by the user's screenshot; broader interaction
+coverage remains separate. `report-law-2-live-1016.md`,
+`report-law-2-visual-1016.md`.
+
+
+### P38 - The native decision click skips potential and allow
+
+**Cause:** `FUN_006DCE10`, the Politics decision click the DLL reuses,
+strips the `POLITICSVIEW_DECISION` prefix and executes the named decision for
+the player. It does not test the decision's `potential` or `allow`.
+
+**Symptom:** a stale or repeated button press (the vote during the debate,
+a second collection in a month, an audience already granted) runs the
+effect anyway.
+
+**Fix:** every decision the DLL sends checks its own conditions inside its
+effect.
+- Purchases and promises use the fresh guard.
+- `tgcx_audience`, `tgcx_withdraw`, `tgcx_call_vote` and
+  `tgcx_collect_favours` wrap their effect in their `potential` plus
+  `allow` (`CatalogGen.DLL_SENT`).
+- The DLL may grey out a button, but the script decides.
+
+`report-law-2-controls-1017.md`.
+
+### P39 - The engine validates decision potential and allow
+
+**Cause:** the decision click (P38) does not test `potential`/`allow`, but
+the command it posts does. `CExecuteDecisionCommand` slot 14,
+`FUN_00906B40`, evaluates the decision's enabled flag (+0x18), `potential`
+and `allow` before executing.
+
+**Symptom:** a decision hidden from the list by `potential = { always = no }`
+(or by any trigger that is false for the player) also rejects the commands
+the DLL sends for it. Hiding the 46 bill presentations and the Bill's own
+decisions in script would silently break every Bill control.
+
+**Fix:**
+- keep the decisions' real `potential`/`allow`;
+- hide them in the DLL, in the Decisions list builder `FUN_006DB2E0`
+  (by the `tgcx_` name prefix), only while the Bill GUI is usable;
+- without the DLL the list is unchanged (R6);
+- P38's own-guard rule still holds for stale presses.
+
+`report-law-2-reforms-1017.md`.
+
+### P40 - An inner matrix is relative to its owner
+
+**Cause:** a GUI window's inner object (`window+0x494`) stores its matrix
+translation `+0x84/-0x88` in its owner's frame (`+0xE4`). Only the direct
+children of the renderer scene (`renderer+0x6B9E0`) are in screen pixels.
+Politics and the Bill are such children, so P37's "matrix = pixels" held
+there by coincidence.
+
+**Symptom:** TPL-0 0.4.0 read the build root's matrix as screen pixels. The
+build root is a child of the Military window, so the promoted panel opened
+at the upper left, shifted by Military's (768,470), with its title on the
+top bar.
+
+**Fix:**
+- add the translations along the owner chain up to the scene; refuse a
+  chain that does not reach it;
+- every placement fixture includes a translated parent;
+- log the live chain when the panel opens.
+
+`report-tpl-0-placement-1017.md`.
+
+### P41 - A textSpriteType does not make a bare button
+
+**Cause:** `GFX_button_standard_177` is declared as a `textSpriteType`.
+Vanilla only puts it on buttons that also carry `buttonText`.
+
+**Symptom:** TPL-0 0.4.2 used it, without `buttonText`, for Recruit
+Template. In game the button art did not draw and the click did nothing;
+only our text box over it showed.
+
+**Fix:**
+- bare buttons use only plain `spriteType`s (here a generated copy of the
+  same art);
+- `test_templates_gui.py` refuses any `quadTextureSprite` that names a
+  `textSpriteType` or `corneredTileSpriteType`.
+
+`report-tpl-0-visual-1017.md` §8.
+
+### P42 - Showing a window re-shows its whole subtree
+
+**Cause:** the native window show (slot 8) also makes every child window
+visible again. TPL-0 0.4.2 cached each child's last show/hide state and
+skipped the call when it matched.
+
+**Symptom:** the first opening was right. After leaving Templates for
+another folder and coming back, every unit icon of every row (the last
+declared one on top), every empty-row cover and the ring were all visible:
+one wrong icon in every place, including empty ones, and the blue row art
+hidden under the covers.
+
+**Fix:** clear the visibility cache whenever the panel window is shown
+(0.4.3), so the next labels pass re-hides what must be hidden.
+
+`report-tpl-0-visual-1017.md` §9.

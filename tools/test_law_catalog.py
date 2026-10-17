@@ -426,6 +426,51 @@ class CatalogTests(unittest.TestCase):
         c.run(self.events[EV_CATALOG_COUNT]["option"][1:])
         self.assertEqual(c.vars["tgcx_gui_active"], 0)
 
+    def test_bill_sent_decisions_recheck_their_own_conditions(self):
+        # The native decision click does not test potential/allow; the effect must.
+        c = self.country(house={"conservative": .85, "liberal": .10, "reactionary": .05},
+                         government="hms_government", ruling="liberal")
+        self.present(c, "press_rights", "censored_press")
+        self.assertEqual(c.vars["tgcx_gui_crown_veto"], 1)
+        self.assertEqual(c.vars["tgcx_gui_crown_signs"], 0)
+        self.assertEqual(c.vars["tgcx_gui_ruling"], self.gen.all_ideologies.index("liberal") + 1)
+        self.assertEqual(c.vars["tgcx_gui_government"],
+                         (self.gen.limited + self.gen.full).index("hms_government") + 1)
+        law = c.laws["press_rights"]
+        c.run(self.decisions["tgcx_call_vote"]["effect"])      # still in debate
+        self.assertEqual(c.laws["press_rights"], law)
+        self.assertIn("tgcx_law_active", c.flags)
+        c.vars["tgcx_favours"] = 5
+        c.run(self.decisions["tgcx_audience"]["effect"])       # cannot pay
+        self.assertEqual(c.vars["tgcx_favours"], 5)
+        self.assertNotIn("tgcx_crown_signs", c.flags)
+        c.vars["tgcx_favours"] = 100
+        self.click(c, "tgcx_audience")
+        self.assertEqual((c.vars["tgcx_favours"], c.vars["tgcx_gui_crown_signs"]), (90, 1))
+        c.run(self.decisions["tgcx_audience"]["effect"])       # repeated command
+        self.assertEqual(c.vars["tgcx_favours"], 90)
+        self.click(c, "tgcx_withdraw")
+        self.assertNotIn("tgcx_law_active", c.flags)
+        c.mods.discard("tgcx_bill_cooldown")
+        c.run(self.decisions["tgcx_withdraw"]["effect"])       # no bill: no new cooldown
+        self.assertNotIn("tgcx_bill_cooldown", c.mods)
+
+    def test_favour_collection_counts_ticks_and_breaks_down_its_rate(self):
+        c = self.country(house={"liberal": .6, "conservative": .4}, ruling="liberal", prestige=60)
+        c.vars["tgcx_favours"] = 0
+        self.click(c, "tgcx_collect_favours")
+        self.assertEqual(c.vars["tgcx_favours_ticks"], 1)
+        self.assertEqual(c.vars["tgcx_gui_legislature"], 1)      # the Reforms tab may offer bills
+        parts = {p: c.vars[f"tgcx_gui_rate_{p}"] for p in self.gen.RATE_PARTS}
+        self.assertEqual(c.vars["tgcx_rate"], int(self.gen.n("rate_base")) + sum(parts.values()))
+        self.assertEqual((parts["prestige"], parts["house"]), (1, 1))
+        favours = c.vars["tgcx_favours"]
+        c.run(self.decisions["tgcx_collect_favours"]["effect"])  # duplicate within the month
+        self.assertEqual((c.vars["tgcx_favours"], c.vars["tgcx_favours_ticks"]), (favours, 1))
+        c.mods.discard("tgcx_favours_tick")
+        self.click(c, "tgcx_collect_favours")
+        self.assertEqual(c.vars["tgcx_favours_ticks"], 2)
+
     def test_reports_select_one_event_without_conditional_options(self):
         # The game screenshot showed all option triggers ignored. Do not teach
         # the interpreter a UI capability that the real engine did not provide.

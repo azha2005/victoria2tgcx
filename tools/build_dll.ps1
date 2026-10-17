@@ -9,6 +9,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Signature generation failed' }
     python tools/tgcx_bill_gui.py --header
     if ($LASTEXITCODE -ne 0) { throw 'Bill catalogue generation failed' }
+    python tools/tgcx_templates_gui.py --header
+    if ($LASTEXITCODE -ne 0) { throw 'Templates catalogue generation failed' }
     & (Join-Path $tgcxVs 'MSBuild\Current\Bin\MSBuild.exe') dll/tgcx/tgcx.vcxproj /t:Rebuild /p:Configuration=Release /p:Platform=Win32 /nologo /verbosity:minimal
     if ($LASTEXITCODE -ne 0) { throw 'DLL build failed' }
 } finally { Pop-Location }
