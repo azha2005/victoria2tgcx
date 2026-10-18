@@ -43,6 +43,8 @@
 
 ## 1. Status by stage (as of 2026-10-18)
 
+MOD-1 update (2026-10-18): **0.7.0 installed and passed the game check (2026-10-18)** (`docs/report-mod-1-1018.md`). Signature gates are per module (stages; drawing+laws; Templates; Conform), V2DLL's sites are logged FOREIGN and block nothing, and the logic is `tgcx.dll` behind a `lua51.dll` loader, with a `V2Mod_Init` export for V2DLL (D16). Installed on E: 2026-10-18 (0.6.5 backed up to `before-070-dll`).
+
 U-7/U-8 update (2026-10-18): **U-8 extended cases all passed on 0.6.3; U-8 complete** (`docs/report-u-8-extended-1018.md`). **U-7 partly passed** on the 0.3.5 law layer: buttons, bill flow, purchases, Decisions tab, monthly tick and popup filter work; the Reforms tab does not re-evaluate rows (F1), the top-bar tooltip lists `tgcx_` decisions (F2), the load test is still installed (F3), long names overflow the Bill (`docs/report-u-7-1018.md`). D14 decided; LAW-3 next.
 
 TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted in game**. Automatic gates and installed hashes pass; paired 0.6.2 rollback retained. User reports "works"; current 0.6.3 log has no guarded GUI read fault. Extended coverage and new screenshot comparison remain unconfirmed. See `docs/report-tpl-1-visual-1017.md` and `docs/instructions-tpl-1-063-check.md`.
@@ -156,6 +158,14 @@ When closing, in this order:
    session** that lacks a current one, and add them to `docs/README.md`.
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
+
+2026-10-18 (V2D-1): with V2DLL `de66ee61` installed and TGCX first on the command line, V2DLL loaded tgcx.dll 0.7.0 (`ModLoader … -> ok`); 146 OK + 7 FOREIGN (exactly V2DLL's sites), Direct3DCreate9 chained through V2DLL, slot 10 left alone, all modules on through ~11 months of play. TGCX script also worked with TGCX listed first (narrows P19). E: restored byte-identical to 0.7.0. Left: ask V2DLL for a load setting or a search of every `-mod=` (D16). `docs/report-v2d-1-1018.md`.
+
+2026-10-18 (MOD-1 game check): the user played England on 0.7.0, "everything works rather normally"; log clean: 153 OK, all modules on, Bill/Reforms/hemicycle/Templates/Conform active, four P47 slot frees (first live confirmation). MOD-1 done; V2DLL path untested.
+
+2026-10-18 (MOD-1 install): after a normal exit, backed up 0.6.5 (`lua51.dll` `9528c982…` and its record) to `before-070-dll` and installed 0.7.0; installed hashes equal the stage, record card `MOD-1`. Game check next.
+
+2026-10-18 (MOD-1): built 0.7.0 (`docs/report-mod-1-1018.md`): per-module gates, Direct3DCreate9 chaining, slot 10 no longer asserted, `tgcx.dll` + `lua51.dll` loader, installer handles both and the 0.6.5 rollback. Gates green (153 signatures, tgcx_tests ALL OK, installer 11/11, check_exe). Staged in `E:\v2re\logs\tgcx-mod1-1018\stage-070\`; not installed. Repaired four control-character paths in AGENTS/NEXT/symbols.
 
 2026-10-18 (MOD-0 run 1 / P47): run 1 played a year as France; the command line is `-mod=mod/TGC_v2.5.2.mod -mod=mod/TGCX.mod`. Conform stopped: unit-panel slots leaked (P47). 0.6.5 frees them and logs a full table; built, tests pass, installed after a normal exit (backup `before-065-dll`), not yet tested in game (`docs/report-tpl-1-slots-1018.md`).
 

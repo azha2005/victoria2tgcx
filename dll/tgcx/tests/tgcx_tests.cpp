@@ -67,6 +67,18 @@ static void tgcx_FixtureTests() {
     memory[tgcx_signatures[5].rva+11]^=1;
     tgcx_Expect(!tgcx_CheckSignatures(), "wrong relocated pointer rejected");
     memory[tgcx_signatures[5].rva+11]^=1;
+    // MOD-1: a drawing-only site (scalar hover CALL) gates drawing and laws.
+    memory[0x2D52C6]^=1;
+    tgcx_Expect(!tgcx_CheckSignatures() && !tgcx_DrawingSignatures(), "MOD-1: changed hover site gates drawing and laws");
+    memory[0x2D52C6]^=1;
+    // MOD-1: a site V2DLL owns is FOREIGN: it blocks nothing.
+    memory[0x35BB50]^=1;
+    tgcx_Expect(tgcx_CheckSignatures() && tgcx_DrawingSignatures(), "MOD-1: changed V2DLL-owned site logged FOREIGN, blocks nothing");
+    memory[0x35BB50]^=1;
+    // MOD-1: a Templates-only site blocks Templates, not drawing and laws.
+    memory[0x17D1B0]^=1;
+    tgcx_Expect(!tgcx_CheckSignatures() && tgcx_DrawingSignatures(), "MOD-1: Templates signature does not gate drawing and laws");
+    memory[0x17D1B0]^=1;
     memory[tgcx_frame_call_rva+1]^=1;
     tgcx_Expect(!tgcx_PatchFramePumpCall(), "wrong CALL target not patched");
     memory[tgcx_frame_call_rva+1]^=1;
@@ -223,6 +235,43 @@ static void tgcx_LoaderProbe(const wchar_t* proxy_path) {
     FreeLibrary(module);
 }
 
+// MOD-1: tgcx.dll loaded the way V2DLL loads a plugin, with a fake V2ModAPI v1.
+// The host is not v2game.exe, so initialisation stops at the SHA-256 gate.
+static unsigned int tgcx_v2_logs=0;
+static char tgcx_v2_last[256];
+static void __cdecl tgcx_FakeV2Log(const char* format, ...) {
+    va_list args;va_start(args,format);
+    _vsnprintf_s(tgcx_v2_last,sizeof(tgcx_v2_last),_TRUNCATE,format,args);
+    va_end(args);++tgcx_v2_logs;
+}
+static void tgcx_PluginProbe(const wchar_t* path) {
+    HMODULE module=LoadLibraryW(path);
+    if (!module) { printf("LoadLibrary failed %lu\n",GetLastError()); tgcx_Expect(false,"tgcx.dll loads"); return; }
+    using V2ModInitFn=int (__cdecl*)(const V2ModAPI*);
+    using InitFn=int (__cdecl*)(const char*);
+    auto v2_init=reinterpret_cast<V2ModInitFn>(GetProcAddress(module,"V2Mod_Init"));
+    auto init=reinterpret_cast<InitFn>(GetProcAddress(module,"tgcx_Init"));
+    tgcx_Expect(v2_init && init,"plugin exports V2Mod_Init and tgcx_Init undecorated");
+    if (!v2_init || !init) return;
+    tgcx_Expect(GetFileAttributesW(L"Logs\\tgcx.log")==INVALID_FILE_ATTRIBUTES,"plugin DllMain installs nothing and writes no log");
+    V2ModAPI api={};
+    api.size=sizeof(api);api.apiVersion=1;api.gameBase=static_cast<uint32_t>(reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr)));
+    api.modFolder="mod/TGCX";api.Log=&tgcx_FakeV2Log;
+    tgcx_Expect(v2_init(nullptr)==0,"V2Mod_Init rejects a null API");
+    V2ModAPI short_api=api;short_api.size=sizeof(api)-4;
+    tgcx_Expect(v2_init(&short_api)==0,"V2Mod_Init rejects a short API struct");
+    V2ModAPI later=api;later.apiVersion=2;
+    tgcx_Expect(v2_init(&later)==0,"V2Mod_Init rejects another API version");
+    tgcx_Expect(tgcx_v2_logs==0 && GetFileAttributesW(L"Logs\\tgcx.log")==INVALID_FILE_ATTRIBUTES,
+                "rejected API calls neither initialise nor log");
+    tgcx_Expect(v2_init(&api)==0,"V2Mod_Init on a host that is not v2game.exe initialises nothing");
+    tgcx_Expect(tgcx_v2_logs==1 && strstr(tgcx_v2_last,"TGCX: not initialised"),"V2Mod_Init reports through V2DLL's Log");
+    tgcx_Expect(init("second loader")==0,"a second loader is ignored");
+    tgcx_Expect(v2_init(&api)==0 && tgcx_v2_logs==2,"a second V2Mod_Init is ignored and still reports");
+    // The log is open until tgcx.dll unloads; FreeLibrary is safe because nothing was patched.
+    FreeLibrary(module);
+}
+
 #include "tgcx_renderer_tests.h"
 #include "tgcx_bill_tests.h"
 #include "tgcx_reforms_tests.h"
@@ -235,11 +284,12 @@ static void tgcx_LoaderProbe(const wchar_t* proxy_path) {
 int wmain(int argc, wchar_t** argv) {
     setvbuf(stdout,nullptr,_IONBF,0);
     if (argc==3 && wcscmp(argv[1],L"probe")==0) tgcx_LoaderProbe(argv[2]);
+    else if (argc==3 && wcscmp(argv[1],L"plugin")==0) tgcx_PluginProbe(argv[2]);
     else if (argc==2) {
         tgcx_log=CreateFileW(L"tgcx_fixture.log",GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,0,nullptr);
         tgcx_HashTests(argv[1]); tgcx_BillTests();tgcx_ReformTests();tgcx_TemplateTests();tgcx_TplGuiTests();tgcx_ConformTests();tgcx_ConformNativeTests();tgcx_ConformGuiTests();tgcx_BillWindowTests(argv[1]);tgcx_FixtureTests();
         if (tgcx_log!=INVALID_HANDLE_VALUE) CloseHandle(tgcx_log);
-    } else { printf("usage: tgcx_tests <reference exe> | probe <proxy>\n"); return 2; }
+    } else { printf("usage: tgcx_tests <reference exe> | probe <proxy> | plugin <tgcx.dll>\n"); return 2; }
     printf("tgcx_tests: %s\n", tgcx_failures ? "FAIL" : "ALL OK");
     return tgcx_failures ? 1 : 0;
 }

@@ -23,7 +23,10 @@
 
 ## Current baseline
 
-- **0.6.3** (DLL and submod) installed on E:, accepted in game. It carries
+- **Installed on E: (2026-10-18): DLL 0.7.0** (MOD-1: `lua51.dll` loader
+  `2805cfcd…7144` + `tgcx.dll` `ec9ed8b9…36d7`) over the 0.6.4 submod;
+  game check passed. Rollback: 0.6.5 in `before-070-dll`. 0.6.4 passed U-11.
+- Earlier: **0.6.3** (DLL and submod), accepted in game. It carries
   the 0.3.5 law layer unchanged (`country_politics.gui` `41cb9356…b8ce`,
   144 guards OK).
 - Stage: `E:\v2re\logs\tgcx-tpl1-1017\stage-063`; DLL
@@ -37,7 +40,7 @@
 1. **LAW-3, Reforms tab and decisions fixes:** **built and staged
    2026-10-18 (0.6.4), done, not tested in game**
    (`docs/report-law-3-1018.md`). Stage:
-   `E:2re\logs	gcx-law3-1018\stage-064\` with `lua51-0.6.4.dll`.
+   `E:\v2re\logs\tgcx-law3-1018\stage-064\` with `lua51-0.6.4.dll`.
    Install after the user's normal game exit, backups `before-064-dll` and
    `before-064-submod`.
 2. **U-11, short game check of LAW-3:** **passed 2026-10-18** with one small
@@ -52,7 +55,11 @@
    **MOD-0 in progress:** `docs/instructions-mod-0.md`. Run 1 passed
    except that Conform stopped after about a year (P47). Fix staged as
    **0.6.5** (`docs/report-tpl-1-slots-1018.md`), **installed 2026-10-18**
-   (backup `E:2re\logs	gcx-law3-1018efore-065-dll`); runs 2-3 next. MOD-1 instructions are written from the MOD-0 report.
+   (backup `E:\v2re\logs\tgcx-law3-1018\before-065-dll`); runs 2-3 next. 
+   **MOD-1 built 2026-10-18 (0.7.0)**, installed, game check passed
+   (`docs/report-mod-1-1018.md`): per-module gates, `tgcx.dll` behind a
+   `lua51.dll` loader. **Installed 2026-10-18** after a normal exit
+   (0.6.5 backed up to `before-070-dll`); **game check passed** the same day (report §6). Stage `E:\v2re\logs\tgcx-mod1-1018\stage-070\`.
 5. Close under ROADMAP §7. The next pitfall is **P48**.
 
 Only the user launches and exits the game. Install only after a normal
@@ -62,6 +69,9 @@ exit, with paired backups. No commit, push or subagents unless asked.
 
 | Card | Status | Instructions/evidence |
 |---|---|---|
+| V2D-1 | **passed** 2026-10-18: V2DLL `de66ee61` loaded tgcx.dll 0.7.0 (`-> ok`), 7 FOREIGN, all modules on; E: restored to 0.7.0 | instructions-v2d-1.md; report-v2d-1-1018.md |
+| MOD-1 | 0.7.0 installed on E:, **passed the game check** 2026-10-18; plugin entry checked without the game (step A) | instructions-mod-1.md; report-mod-1-1018.md |
+| MOD-0 | run 1 done (P47 found, fixed in 0.6.5); runs 2-3 open | instructions-mod-0.md; report-tpl-1-slots-1018.md |
 | LAW-3 | 0.6.4 installed and **passed U-11** 2026-10-18; G1 open | instructions-law-3.md; report-law-3-1018.md |
 | U-11 | **passed** 2026-10-18 (G1 open) | instructions-u-11.md; report-u-11-1018.md | instructions-u-11.md |
 | LAW-2 / U-7 | 0.3.5 checked in game 2026-10-18: partly passed; failures go to LAW-3 | instructions-law-2.md; report-u-7-1018.md |

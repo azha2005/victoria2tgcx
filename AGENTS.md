@@ -258,9 +258,18 @@ E:\tools\ghidra_12.1.4_PUBLIC\support\analyzeHeadless.bat E:\v2re\ghidra v2game 
   -process v2game.exe -noanalysis -scriptPath <folder> -postScript <Script>.java
 ```
 
-Installed: **0.6.4 (LAW-3: Reforms rows follow the D14 offer,
+Installed: **0.7.0 (MOD-1: per-module signature gates; `tgcx.dll` with all
+the logic behind a `lua51.dll` loader; `V2Mod_Init` for V2DLL)**, installed on E:
+2026-10-18 and **passed the game check** (rollback 0.6.5 in `before-070-dll`), staged in
+`E:\v2re\logs\tgcx-mod1-1018\stage-070\`
+(`docs/report-mod-1-1018.md`). Since 0.7.0 `install_dll.py` installs both
+files; a single-file build is still accepted as a rollback.
+
+Before it: **0.6.5 (P47: Conform unit-panel slots freed;
+`docs/report-tpl-1-slots-1018.md`)**, backup `before-065-dll`. Before it,
+**0.6.4 (LAW-3: Reforms rows follow the D14 offer,
 top-bar alert filter, load test out of the default install, Bill text
-fitted)** in `E:2re\logs	gcx-law3-1018\stage-064\`, **U-11 passed in game
+fitted)** in `E:\v2re\logs\tgcx-law3-1018\stage-064\`, **U-11 passed in game
 2026-10-18** (`docs/report-u-11-1018.md`; G1 open). Rollback
 `before-064-*`.
 

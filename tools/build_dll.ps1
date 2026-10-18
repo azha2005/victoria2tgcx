@@ -14,5 +14,8 @@ try {
     python tools/tgcx_conform_gui.py --header
     if ($LASTEXITCODE -ne 0) { throw 'Conform layout generation failed' }
     & (Join-Path $tgcxVs 'MSBuild\Current\Bin\MSBuild.exe') dll/tgcx/tgcx.vcxproj /t:Rebuild /p:Configuration=Release /p:Platform=Win32 /nologo /verbosity:minimal
-    if ($LASTEXITCODE -ne 0) { throw 'DLL build failed' }
+    if ($LASTEXITCODE -ne 0) { throw 'tgcx.dll build failed' }
+    # MOD-1 (D16): lua51.dll is only the Lua forwards plus the tgcx.dll loader.
+    & (Join-Path $tgcxVs 'MSBuild\Current\Bin\MSBuild.exe') dll/tgcx/loader/tgcx_loader.vcxproj /t:Rebuild /p:Configuration=Release /p:Platform=Win32 /nologo /verbosity:minimal
+    if ($LASTEXITCODE -ne 0) { throw 'lua51.dll loader build failed' }
 } finally { Pop-Location }

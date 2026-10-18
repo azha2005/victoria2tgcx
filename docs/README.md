@@ -38,6 +38,8 @@
 | `instructions-law-2.md` | 0.3.5 buttons, Reforms tab and Decisions filter; what to do after U-7 |
 | `instructions-law-3.md` | LAW-3: Reforms rows refresh, top-bar tooltip filter, load test removed, D14 offer rule with board 1, Bill text overflow (0.6.4) |
 | `instructions-u-11.md` | short game check of LAW-3 0.6.4 and rollback |
+| `instructions-v2d-1.md` | V2D-1 (MOD-1 step B, D16): one-off in-game run with the real V2DLL loading `tgcx.dll` as `v2dll_mod.dll`; [user] decides |
+| `instructions-mod-1.md` | MOD-1 (D15, D16): per-module signature gates, drawing hooks chain, `tgcx.dll` behind a `lua51.dll` loader |
 | `instructions-mod-0.md` | MOD-0 (D15): read-only launcher check with several mods: `-mod=` arguments, three mods, a dependency not ticked |
 | `instructions-u-7.md` | short 0.3.5 game check (Reforms tab, Bill buttons, Decisions tab, a month with no popup) and rollback |
 | `instructions-u-8.md` | first live template recruit, queue, local library, save/reload and side-by-side comparison on 0.4.0 |
@@ -71,6 +73,8 @@ statuses remain historical evidence. HEMI-2 0.2.5 works in game and is retained.
 |---|---|---|
 | `report-modular-scope-1018.md` | 2026-10-18 | splitting TGCX into QoL/cosmetic/laws and more bases: generators measured on vanilla, HPM, TGC v2.3.4/v2.5.2, DoDFF; launcher facts; one DLL with modules; MOD-0..MOD-5 order; D15 |
 | `report-u-7-1018.md` | 2026-10-18 | U-7 on 0.6.3 (0.3.5 law layer): partly passed; F1 rows not re-evaluated, F2 top-bar tooltip, F3 load test, F4 offer rule decided (D14), Bill text overflow; P46 |
+| `report-v2d-1-1018.md` | 2026-10-18 | V2DLL `de66ee61` loaded tgcx.dll 0.7.0 as its mod plugin in game: passed; 7 FOREIGN sites, D3D chaining, all modules on |
+| `report-mod-1-1018.md` | 2026-10-18 | per-module gates and one logic DLL: 0.7.0 built and staged, not tested in game |
 | `report-tpl-1-slots-1018.md` | 2026-10-18 | Conform stopped after a long game: leaked unit-panel slots (P47); 0.6.5 fix staged |
 | `report-u-11-1018.md` | 2026-10-18 | U-11 on 0.6.4: F1, F2, F3 and D14 pass in game; G1 » missing in Arial12 bold; G2 Withdraw cooldown is by design; G3 log tally after a new game |
 | `report-law-3-1018.md` | 2026-10-18 | LAW-3 0.6.4: Reforms rows rebuilt on offer change, alert filter, load test out of the default install, D14 offer rule and board 1, Bill text fitted; done, not tested in game |

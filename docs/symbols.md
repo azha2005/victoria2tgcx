@@ -704,7 +704,7 @@ placement refuses otherwise (unverified in game, U-10).
 
 ## LAW-3: Reforms refresh, reform delay and the decisions alert (2026-10-18, static)
 
-Ghidra listings in `E:2re\logs	gcx-law3-1018\` (outside git). RVA = VA - 0x400000.
+Ghidra listings in `E:\v2re\logs\tgcx-law3-1018\` (outside git). RVA = VA - 0x400000.
 
 | What | VA | RVA | conf | Evidence |
 |---|---|---|---|---|

@@ -167,8 +167,9 @@ static void tgcx_RendererTests(const tgcx_Snapshot& live_sample) {
     auto* iat=reinterpret_cast<uintptr_t*>(tgcx_base+0x1200);
     HMODULE graphics=LoadLibraryExW(L"d3d9.dll",nullptr,LOAD_LIBRARY_SEARCH_SYSTEM32);
     tgcx_Expect(graphics!=nullptr,"system D3D9 module loaded before IAT fixture");if(!graphics)return;
-    *iat=reinterpret_cast<uintptr_t>(&tgcx_FakeShow);
-    tgcx_Expect(!tgcx_InstallRenderer(),"foreign Direct3D IAT target rejected before Politics patches");
+    static uintptr_t data_target=0;
+    *iat=reinterpret_cast<uintptr_t>(&data_target);
+    tgcx_Expect(!tgcx_InstallRenderer() && *iat==reinterpret_cast<uintptr_t>(&data_target),"non-executable Direct3D IAT target rejected before Politics patches");
     *iat=reinterpret_cast<uintptr_t>(GetProcAddress(graphics,"Direct3DCreate9"));
     const uint32_t functions[]={0x2D2C10,0x2D2C40,0x2D2B00,0x2D2DD0};
     const uintptr_t targets[]={reinterpret_cast<uintptr_t>(&tgcx_FakeShow),reinterpret_cast<uintptr_t>(&tgcx_FakeHide),
@@ -178,16 +179,26 @@ static void tgcx_RendererTests(const tgcx_Snapshot& live_sample) {
         uint32_t displacement=static_cast<uint32_t>(targets[i]-(tgcx_base+functions[i]+5));memcpy(code+1,&displacement,4);
     }
     *reinterpret_cast<unsigned char*>(tgcx_base+0x599F22)^=1;
-    tgcx_Expect(!tgcx_InstallRenderer() && *iat==reinterpret_cast<uintptr_t>(GetProcAddress(graphics,"Direct3DCreate9")) &&
-        *reinterpret_cast<uintptr_t*>(tgcx_base+0xA0E460)==tgcx_base+0x2D2C10 &&
-        *reinterpret_cast<unsigned char*>(tgcx_base+0x59A520)==0xFF,
-        "changed ordered Draw bytes reject both native stages and roll back IAT/view hooks");
+    tgcx_Expect(!tgcx_InstallNativeStages() && *reinterpret_cast<unsigned char*>(tgcx_base+0x59A520)==0xFF,
+        "changed ordered Draw bytes reject both native stages");
     *reinterpret_cast<unsigned char*>(tgcx_base+0x599F22)^=1;
+    tgcx_Expect(tgcx_InstallNativeStages() && *reinterpret_cast<unsigned char*>(tgcx_base+0x59A520)==0xE9 &&
+        *reinterpret_cast<unsigned char*>(tgcx_base+0x599F22)==0xE9,"MOD-1: both native stages install on their own, before drawing");
+    // MOD-1: another module's Direct3DCreate9 hook is chained, not refused; a failed hover rolls it back.
+    *iat=reinterpret_cast<uintptr_t>(&tgcx_FakeShow);
     *reinterpret_cast<unsigned char*>(tgcx_base+0x2D52C6)^=1;
-    tgcx_Expect(!tgcx_InstallRenderer() && *reinterpret_cast<uintptr_t*>(tgcx_base+0xA3BDA8)==tgcx_base+0x5E0B70 &&
-        *iat==reinterpret_cast<uintptr_t>(GetProcAddress(graphics,"Direct3DCreate9")),"changed hover CALL rejects renderer and retains original pie");
+    tgcx_Expect(!tgcx_InstallRenderer() && !tgcx_drawing_enabled && *reinterpret_cast<uintptr_t*>(tgcx_base+0xA3BDA8)==tgcx_base+0x5E0B70 &&
+        *iat==reinterpret_cast<uintptr_t>(&tgcx_FakeShow) && tgcx_create9_original==reinterpret_cast<tgcx_Create9Fn>(&tgcx_FakeShow) &&
+        *reinterpret_cast<uintptr_t*>(tgcx_base+0xA0E460)==tgcx_base+0x2D2C10,
+        "changed hover CALL rejects drawing, retains original pie and rolls back a chained IAT and the view hooks");
     *reinterpret_cast<unsigned char*>(tgcx_base+0x2D52C6)^=1;
-    tgcx_Expect(tgcx_InstallRenderer() && *iat==reinterpret_cast<uintptr_t>(&tgcx_Create9),"guarded startup installs IAT, both native stages and three Politics lifecycle callbacks");
+    *iat=reinterpret_cast<uintptr_t>(GetProcAddress(graphics,"Direct3DCreate9"));
+    // MOD-1: slot 10 (tooltip) owned by another DLL no longer blocks drawing, and stays untouched.
+    auto* tooltip=reinterpret_cast<uintptr_t*>(tgcx_base+0xA0E480);uintptr_t native_tip=*tooltip;
+    *tooltip=reinterpret_cast<uintptr_t>(&tgcx_FakeTip);
+    tgcx_Expect(tgcx_InstallRenderer() && tgcx_drawing_enabled && *iat==reinterpret_cast<uintptr_t>(&tgcx_Create9) &&
+        *tooltip==reinterpret_cast<uintptr_t>(&tgcx_FakeTip),"guarded startup installs IAT and three Politics lifecycle callbacks; foreign slot 10 left alone");
+    *tooltip=native_tip;
     // Replace original native bodies only after their installation guards pass in our owned fixture.
     const uint32_t hover_functions[]={0x5E0C90,0x5E0B70};
     const uintptr_t hover_targets[]={reinterpret_cast<uintptr_t>(&tgcx_FakeSlice),reinterpret_cast<uintptr_t>(&tgcx_FakeBounds)};

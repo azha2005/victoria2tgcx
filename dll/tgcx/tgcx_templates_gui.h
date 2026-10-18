@@ -328,10 +328,10 @@ static void tgcx_TplTick() {
         tgcx_TplPanelTick(&p);
     }
 }
-static void tgcx_InstallTemplatesGui() {
-    static const uint32_t rvas[]={0xA12A14,0x334E24,0x333C0C,0x3374D3,0xA0E48C,0x5E4C80,0x5E4A20,0x5E4D00,
+static const uint32_t tgcx_tpl_gui_rvas[]={0xA12A14,0x334E24,0x333C0C,0x3374D3,0xA0E48C,0x5E4C80,0x5E4A20,0x5E4D00,
         0x8ED0,0x65ECC0,0x5E4450,0x5E4030,0x5E2FC0,0x5E3BA0,0xA383C4,0xA383D0,0xA3841C};
-    if(!tgcx_RequireSignatures(rvas,_countof(rvas))) {tgcx_Log("Templates GUI rejected: guards");return;}
+static void tgcx_InstallTemplatesGui() {
+    if(!tgcx_RequireSignatures(tgcx_tpl_gui_rvas,_countof(tgcx_tpl_gui_rvas))) {tgcx_Log("Templates GUI rejected: guards");return;}
     tgcx_InstallTemplates();if(!tgcx_templates_installed)return;
     tgcx_tpl_update_original=tgcx_base+0x334E00;tgcx_tpl_destroy_original=tgcx_base+0x3340E0;
     auto* table=reinterpret_cast<uintptr_t*>(tgcx_base+0xA12A14);

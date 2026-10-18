@@ -203,10 +203,10 @@ static tgcx_TplResult tgcx_TplRecruitWith(const tgcx_TplGlobals& g,const tgcx_Tp
 }
 
 // Every RVA the recruit reads or calls (check_exe.SIGNATURES, TPL-0).
-static void tgcx_InstallTemplates() {
-    static const uint32_t rvas[]={0x17D1B0,0x17D1EF,0x17D20E,0x17D2C6,0xA00CF4,0xA00D14,0x17DA45,0x3325D0,0x6AE9AF,0x33261B,
+static const uint32_t tgcx_tpl_rvas[]={0x17D1B0,0x17D1EF,0x17D20E,0x17D2C6,0xA00CF4,0xA00D14,0x17DA45,0x3325D0,0x6AE9AF,0x33261B,
         0x1141D0,0x114284,0x565870,0x56589D,0x565930,0x5659E6,0x11424B,0x0B8285,0x0B82C3,0x0B8313,0x0B8343,0x0B838B,0x335416,0x335773,0x41EEB5};
-    if(!tgcx_RequireSignatures(rvas,_countof(rvas))) { tgcx_Log("Templates rejected: guards; nothing is recruited");return; }
+static void tgcx_InstallTemplates() {
+    if(!tgcx_RequireSignatures(tgcx_tpl_rvas,_countof(tgcx_tpl_rvas))) { tgcx_Log("Templates rejected: guards; nothing is recruited");return; }
     tgcx_tpl_can_build_fn=tgcx_base+0x1141D0;tgcx_tpl_supports_fn=tgcx_base+0x565870;tgcx_tpl_has_fn=tgcx_base+0x565930;
     tgcx_tpl_new_fn=tgcx_base+0x6AE9AF;tgcx_tpl_ctor_fn=tgcx_base+0x17D1B0;
     tgcx_templates_installed=true;tgcx_Log("Templates ready: CConstructUnitCommand via the engine queue");

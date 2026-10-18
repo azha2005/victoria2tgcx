@@ -388,19 +388,19 @@ static void tgcx_CfTick() {
     tgcx_CfPanelsTick();
 }
 
+static const uint32_t tgcx_cf_rvas[]={
+    0x1DE80F,0x1DE83E,0x1DE878,0x1DE897,0x1DE8D3,0x092342,                     // Move
+    0x1E13F3,0x1E143B,0x1E1450,0x1E1580,0x26EC40,0x426A1F,                     // Merge
+    0x1E1F1E,0x1E1F4D,0x1E1F67,0x1E1F81,0x1E1FBC,0x3944FF,                     // Transfer
+    0x17DB6E,0x17DB8D,0x17DBA5,0x17DBBE,0x17DBE7,0x39DBD7,0x39DB84,0x39DB98,   // Create and kind
+    0x39DB4C,0x39DB56,0x39DB70,0x5C12D0,                                       // new id under the lock
+    0xA03394,0xA033B4,0xA03514,0xA03534,0xA03554,0xA03574,0xA00D34,0xA00D54,   // command vtables
+    0x5C16D6,0x5C1D47,0x5C1D65,0x39DBC5,0x39DC05,0x1DE8B2,                     // registry, stack fields
+    0x17D283,0x17D334,0x17D35B,                                                // recruit ids
+    0x398B3F,0xA16850,0xA16870,0xA168B0,0x398AE8,0x3993B0};                    // CUnitView
 static void tgcx_InstallConform() {
-    static const uint32_t rvas[]={
-        0x1DE80F,0x1DE83E,0x1DE878,0x1DE897,0x1DE8D3,0x092342,                     // Move
-        0x1E13F3,0x1E143B,0x1E1450,0x1E1580,0x26EC40,0x426A1F,                     // Merge
-        0x1E1F1E,0x1E1F4D,0x1E1F67,0x1E1F81,0x1E1FBC,0x3944FF,                     // Transfer
-        0x17DB6E,0x17DB8D,0x17DBA5,0x17DBBE,0x17DBE7,0x39DBD7,0x39DB84,0x39DB98,   // Create and kind
-        0x39DB4C,0x39DB56,0x39DB70,0x5C12D0,                                       // new id under the lock
-        0xA03394,0xA033B4,0xA03514,0xA03534,0xA03554,0xA03574,0xA00D34,0xA00D54,   // command vtables
-        0x5C16D6,0x5C1D47,0x5C1D65,0x39DBC5,0x39DC05,0x1DE8B2,                     // registry, stack fields
-        0x17D283,0x17D334,0x17D35B,                                                // recruit ids
-        0x398B3F,0xA16850,0xA16870,0xA168B0,0x398AE8,0x3993B0};                    // CUnitView
     if(!tgcx_templates_installed) { tgcx_Log("Conform rejected: templates not installed");return; }
-    if(!tgcx_RequireSignatures(rvas,_countof(rvas))) { tgcx_Log("Conform rejected: guards; nothing conformed");return; }
+    if(!tgcx_RequireSignatures(tgcx_cf_rvas,_countof(tgcx_cf_rvas))) { tgcx_Log("Conform rejected: guards; nothing conformed");return; }
     tgcx_cf_move_fn=tgcx_base+0x1DE7D0;tgcx_cf_merge_fn=tgcx_base+0x1E13B0;tgcx_cf_transfer_fn=tgcx_base+0x1E1EE0;
     tgcx_cf_create_fn=tgcx_base+0x17DB30;tgcx_cf_lock_fn=tgcx_base+0x5C12D0;
     tgcx_cf_refresh_original=tgcx_base+0x39B800;tgcx_cf_destroy_original=tgcx_base+0x399290;

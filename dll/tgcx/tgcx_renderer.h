@@ -22,6 +22,8 @@ public:
 
 static uintptr_t tgcx_politics=0, tgcx_show_original=0, tgcx_hide_original=0;
 static uintptr_t tgcx_destroy_original=0;
+// MOD-1: drawing (hemicycle, hover, Bill) has its own gate; the stages tick without it.
+static bool tgcx_drawing_enabled=false;
 static DWORD tgcx_chart_tick=0;
 static bool tgcx_chart_drawn=false;
 static DWORD tgcx_guard_log_tick=0;
@@ -505,7 +507,7 @@ static bool tgcx_InstallHover() {
     return true;
 }
 static void tgcx_AfterEntityImpl(uintptr_t renderer,uintptr_t entity) {
-    if(!tgcx_politics || tgcx_render_failed || InterlockedCompareExchange(&tgcx_render_busy,1,0)!=0) return;
+    if(!tgcx_drawing_enabled || !tgcx_politics || tgcx_render_failed || InterlockedCompareExchange(&tgcx_render_busy,1,0)!=0) return;
     __try {
         if(renderer && (*reinterpret_cast<uintptr_t*>(renderer)==tgcx_base+0xA38324 ||
             *reinterpret_cast<uintptr_t*>(renderer)==tgcx_base+0xA19B8C) &&
@@ -561,7 +563,7 @@ static void tgcx_BeforePresentImpl(uintptr_t renderer) {
         tgcx_BillTick();tgcx_FavourTick();tgcx_TplTick();tgcx_CfTick();
         ++tgcx_present_count;
         if(!tgcx_politics || GetTickCount()-tgcx_chart_tick>1000) tgcx_chart_drawn=false;
-        DWORD previous=tgcx_last_sample;tgcx_OnFramePump();
+        DWORD previous=tgcx_last_sample;if(tgcx_drawing_enabled)tgcx_OnFramePump();
         bool report=tgcx_politics && (!tgcx_guard_logged || GetTickCount()-tgcx_guard_log_tick>=10000);
         if(report && !tgcx_chart_drawn) {
             tgcx_GuiRect gui={};
@@ -600,10 +602,6 @@ static bool tgcx_InstallNativeStages() {
     if(!VirtualProtect(draw_site,7,PAGE_EXECUTE_READWRITE,&draw_protection))return false;
     if(!VirtualProtect(final_site,6,PAGE_EXECUTE_READWRITE,&final_protection)) {
         VirtualProtect(draw_site,7,draw_protection,&ignored);return false;
-    }
-    if(!tgcx_InstallHover()) {
-        VirtualProtect(draw_site,7,draw_protection,&ignored);VirtualProtect(final_site,6,final_protection,&ignored);
-        tgcx_Log("Renderer rejected: native scalar hover guards or installation failed; original pie retained");return false;
     }
     tgcx_present_resume=tgcx_base+0x59A526;tgcx_entity_resume=tgcx_base+0x599F29;
     unsigned char final_patch[6]={0xE9,0,0,0,0,0x90},draw_patch[7]={0xE9,0,0,0,0,0x90,0x90};
@@ -666,27 +664,41 @@ static bool tgcx_InstallRenderer() {
             }
         }
         HMODULE graphics=GetModuleHandleW(L"d3d9.dll");
-        uintptr_t expected=reinterpret_cast<uintptr_t>(graphics?GetProcAddress(graphics,"Direct3DCreate9"):nullptr);
-        if(!slot || !expected || *slot!=expected)return false;
+        uintptr_t native=reinterpret_cast<uintptr_t>(graphics?GetProcAddress(graphics,"Direct3DCreate9"):nullptr);
+        if(!slot || !native || !tgcx_ExecutablePointer(*slot))return false;
+        uintptr_t expected=*slot;
+        // MOD-1: another DLL (V2DLL) may already hook Direct3DCreate9; chain through it.
+        if(expected!=native) {
+            HMODULE owner=nullptr;char name[MAX_PATH]="unknown";
+            if(GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                  reinterpret_cast<LPCSTR>(expected),&owner) && owner)GetModuleFileNameA(owner,name,sizeof(name));
+            tgcx_Log("Direct3DCreate9 already hooked by %s; chaining",name);
+        }
         uintptr_t* view=reinterpret_cast<uintptr_t*>(tgcx_base+0xA0E458);
         tgcx_show_original=tgcx_base+0x2D2C10;tgcx_hide_original=tgcx_base+0x2D2C40;
         tgcx_destroy_original=tgcx_base+0x2D2B00;
-        if(view[1]!=tgcx_destroy_original || view[2]!=tgcx_show_original || view[4]!=tgcx_hide_original || view[10]!=tgcx_base+0x2D2DD0)return false;
+        if(view[1]!=tgcx_destroy_original || view[2]!=tgcx_show_original || view[4]!=tgcx_hide_original) {
+            tgcx_Log("Drawing rejected: CPoliticsView slots 1/2/4 are not native");return false;
+        }
+        // Slot 10 (tooltip) is never written by TGCX (P27); another DLL may own it.
+        if(view[10]!=tgcx_base+0x2D2DD0)tgcx_Log("CPoliticsView slot 10 is not native (FOREIGN); left alone");
         // All replacements compare-and-swap the validated original; independent failures are logged and reversible.
         bool destroy=tgcx_ReplacePointer(view+1,tgcx_destroy_original,reinterpret_cast<uintptr_t>(&tgcx_DestroyThunk));
         bool show=tgcx_ReplacePointer(view+2,tgcx_show_original,reinterpret_cast<uintptr_t>(&tgcx_ShowThunk));
         bool hide=tgcx_ReplacePointer(view+4,tgcx_hide_original,reinterpret_cast<uintptr_t>(&tgcx_HideThunk));
         tgcx_create9_original=reinterpret_cast<tgcx_Create9Fn>(expected);
         bool create=destroy&&show&&hide&&tgcx_ReplacePointer(slot,expected,reinterpret_cast<uintptr_t>(&tgcx_Create9));
-        bool final_present=create && tgcx_InstallNativeStages();
-        if(!final_present) {
+        bool hover=create && tgcx_InstallHover();
+        if(!hover) {
+            if(create)tgcx_Log("Drawing rejected: native scalar hover guards or installation failed; original pie retained");
             if(create)tgcx_ReplacePointer(slot,reinterpret_cast<uintptr_t>(&tgcx_Create9),expected);
             if(destroy)tgcx_ReplacePointer(view+1,reinterpret_cast<uintptr_t>(&tgcx_DestroyThunk),tgcx_destroy_original);
             if(show)tgcx_ReplacePointer(view+2,reinterpret_cast<uintptr_t>(&tgcx_ShowThunk),tgcx_show_original);
             if(hide)tgcx_ReplacePointer(view+4,reinterpret_cast<uintptr_t>(&tgcx_HideThunk),tgcx_hide_original);
             return false;
         }
-        tgcx_Log("Renderer installed: Direct3DCreate9 IAT_RVA=%06X; ordered GUI draw, final native Present, Politics lifecycle and scalar hover guarded; native tooltip untouched",static_cast<unsigned int>(reinterpret_cast<uintptr_t>(slot)-tgcx_base));
+        tgcx_drawing_enabled=true;
+        tgcx_Log("Drawing installed: Direct3DCreate9 IAT_RVA=%06X; Politics lifecycle and scalar hover guarded; native tooltip untouched",static_cast<unsigned int>(reinterpret_cast<uintptr_t>(slot)-tgcx_base));
         return true;
     } __except(EXCEPTION_EXECUTE_HANDLER) {return false;}
 }

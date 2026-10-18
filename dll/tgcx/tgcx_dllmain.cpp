@@ -12,9 +12,7 @@
 #include <algorithm>
 #include "tgcx_signatures.h"
 #include "tgcx_sha256.h"
-#ifndef TGCX_TEST
-#include "tgcx_exports.h"
-#endif
+// MOD-1: the Lua forwards live in the loader (loader/tgcx_loader.cpp), not here.
 
 static_assert(sizeof(void*) == 4, "Victoria II requires Win32");
 static uintptr_t tgcx_base = 0;
@@ -73,12 +71,24 @@ static bool tgcx_CheckSignature(const tgcx_Signature& signature) {
     } __except (EXCEPTION_EXECUTE_HANDLER) { return false; }
 }
 
+// Sites V2DLL patches (report-v2dll-mod-slot-1018.md §3.2). TGCX writes none of them,
+// so a mismatch there is logged and never blocks a module (MOD-1).
+static const uint32_t tgcx_foreign_rvas[]={0x285727,0x35BB50,0x1D74BE,0x282EC0,0x233826,0x1D77A0,0xA0E480};
+// Native ordered-draw and final-Present stages: every module ticks from them.
+static const uint32_t tgcx_stage_rvas[]={0x59A520,0x599F22};
+template<size_t N> static bool tgcx_Listed(uint32_t rva, const uint32_t (&list)[N]) {
+    for (uint32_t entry : list) if (entry == rva) return true;
+    return false;
+}
+
+// Logs every signature; true when all but the foreign ones match.
 static bool tgcx_CheckSignatures() {
     bool ok = true;
     for (const auto& signature : tgcx_signatures) {
         bool match = tgcx_CheckSignature(signature);
-        tgcx_Log("%s RVA 0x%06X %s", match ? "OK" : "BAD", signature.rva, signature.name);
-        ok = match && ok;
+        bool foreign = !match && tgcx_Listed(signature.rva, tgcx_foreign_rvas);
+        tgcx_Log("%s RVA 0x%06X %s", match ? "OK" : foreign ? "FOREIGN" : "BAD", signature.rva, signature.name);
+        ok = (match || foreign) && ok;
     }
     return ok;
 }
@@ -285,49 +295,101 @@ static bool tgcx_PatchFramePumpCall() {
 #include "tgcx_conform_native.h"
 #include "tgcx_conform_gui.h"
 
+// MOD-1: drawing and laws (hemicycle, hover, Bill, Reforms) need every signature
+// that neither V2DLL, the stages nor Templates/Conform own; those gate themselves.
+static bool tgcx_DrawingSignatures() {
+    for (const auto& signature : tgcx_signatures) {
+        uint32_t rva=signature.rva;
+        if (tgcx_Listed(rva, tgcx_foreign_rvas) || tgcx_Listed(rva, tgcx_stage_rvas) || tgcx_Listed(rva, tgcx_tpl_rvas) ||
+            tgcx_Listed(rva, tgcx_tpl_gui_rvas) || tgcx_Listed(rva, tgcx_cf_rvas)) continue;
+        if (!tgcx_CheckSignature(signature)) return false;
+    }
+    return true;
+}
+
+// from V2DLL: V2ModAPI.h (upstream 9821c27), plugin API v1 layout; personal use, D6/R8.
+struct V2ModAPI {
+    uint32_t size; uint32_t apiVersion; uint32_t gameBase; const char* modFolder;
+    void (__cdecl* Log)(const char* fmt, ...);
+    int (__cdecl* PatchSlot)(uint32_t rvaVtable, int slotIndex, void* replacement, void** outOriginal);
+    int (__cdecl* StealToTrampoline)(uint32_t rva, unsigned steal, unsigned char* tramp, int trampSize,
+                                     const unsigned char* expect, void* hook, void** orig, const char* tag);
+};
+
 #ifndef TGCX_TEST
-BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
-    if (reason == DLL_PROCESS_ATTACH) {
-        // /MT needs thread notifications; do not call DisableThreadLibraryCalls.
-        wchar_t exe[MAX_PATH], directory[MAX_PATH], log_path[MAX_PATH];
-        DWORD count=GetModuleFileNameW(nullptr, exe, _countof(exe));
-        if (!count || count >= _countof(exe)) return TRUE;
-        wcscpy_s(directory, exe);
-        wchar_t* slash=wcsrchr(directory, L'\\');
-        if (!slash) return TRUE;
-        *slash=0;
-        if (swprintf_s(log_path, L"%s\\Logs", directory) < 0) return TRUE;
-        CreateDirectoryW(log_path, nullptr);
-        if (swprintf_s(log_path, L"%s\\Logs\\tgcx.log", directory) < 0) return TRUE;
-        tgcx_log=CreateFileW(log_path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, 0, nullptr);
-        if (tgcx_log == INVALID_HANDLE_VALUE) return TRUE;
-        tgcx_base=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
-        tgcx_Log("TGCX TPL-1 0.6.5 base=%08X preferred=%08X simulation_writes=engine_commands_only", tgcx_base, tgcx_preferred_base);
-        char digest[65]={};
-        bool hash_ok=tgcx_HashFile(exe, digest) && strcmp(digest,tgcx_exe_sha256)==0;
-        tgcx_Log("%s sha256 %s", hash_ok ? "OK" : "BAD", digest[0] ? digest : "unavailable");
-        if (!hash_ok) {
-            tgcx_Log("Unsupported executable: no game addresses read, no hooks installed; Lua forwarding remains active");
-            return TRUE;
-        }
-        if (!tgcx_CheckSignatures()) {
-            tgcx_Log("Signature mismatch: no hooks installed; Lua forwarding remains active");
-            return TRUE;
-        }
-        if (!IsProcessorFeaturePresent(PF_XMMI_INSTRUCTIONS_AVAILABLE)) {
-            tgcx_Log("FXSAVE unavailable: no hooks installed");
-            return TRUE;
-        }
-        // Prevent a late FreeLibrary from leaving the patched call pointing into an unloaded DLL.
-        HMODULE pinned=nullptr;
-        if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
-                              reinterpret_cast<LPCWSTR>(instance), &pinned)) {
-            tgcx_Log("Cannot pin DLL: no hooks installed");
-            return TRUE;
-        }
-        if (!tgcx_InstallRenderer()) tgcx_Log("Renderer hook rejected; original pie retained");
-        else { tgcx_bill_enabled=true;tgcx_bill_decision_fn=tgcx_base+0x2DCE10;tgcx_InstallReforms();tgcx_InstallTemplatesGui();tgcx_InstallConform(); }
-    } else if (reason == DLL_PROCESS_DETACH && tgcx_log != INVALID_HANDLE_VALUE) {
+static volatile LONG tgcx_initialized=0;
+
+// Runs once, whichever loader calls first (our lua51.dll or V2DLL's plugin API). D16.
+static bool tgcx_Initialize(const char* origin) {
+    if (InterlockedCompareExchange(&tgcx_initialized, 1, 0) != 0) {
+        tgcx_Log("Initialisation from %s ignored: already initialised", origin);
+        return false;
+    }
+    wchar_t exe[MAX_PATH], directory[MAX_PATH], log_path[MAX_PATH];
+    DWORD count=GetModuleFileNameW(nullptr, exe, _countof(exe));
+    if (!count || count >= _countof(exe)) return false;
+    wcscpy_s(directory, exe);
+    wchar_t* slash=wcsrchr(directory, L'\\');
+    if (!slash) return false;
+    *slash=0;
+    if (swprintf_s(log_path, L"%s\\Logs", directory) < 0) return false;
+    CreateDirectoryW(log_path, nullptr);
+    if (swprintf_s(log_path, L"%s\\Logs\\tgcx.log", directory) < 0) return false;
+    tgcx_log=CreateFileW(log_path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, 0, nullptr);
+    if (tgcx_log == INVALID_HANDLE_VALUE) return false;
+    tgcx_base=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+    tgcx_Log("TGCX MOD-1 0.7.0 tgcx.dll loaded_by=%s base=%08X preferred=%08X simulation_writes=engine_commands_only", origin, tgcx_base, tgcx_preferred_base);
+    char digest[65]={};
+    bool hash_ok=tgcx_HashFile(exe, digest) && strcmp(digest,tgcx_exe_sha256)==0;
+    tgcx_Log("%s sha256 %s", hash_ok ? "OK" : "BAD", digest[0] ? digest : "unavailable");
+    if (!hash_ok) {
+        tgcx_Log("Unsupported executable: no game addresses read, no hooks installed; Lua forwarding remains active");
+        return false;
+    }
+    if (!tgcx_CheckSignatures()) tgcx_Log("Signature mismatch: each module checks its own signatures below");
+    if (!IsProcessorFeaturePresent(PF_XMMI_INSTRUCTIONS_AVAILABLE)) {
+        tgcx_Log("FXSAVE unavailable: no hooks installed");
+        return false;
+    }
+    // Prevent a late FreeLibrary from leaving patched code pointing into an unloaded DLL.
+    HMODULE pinned=nullptr;
+    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+                          reinterpret_cast<LPCWSTR>(&tgcx_Initialize), &pinned)) {
+        tgcx_Log("Cannot pin tgcx.dll: no hooks installed");
+        return false;
+    }
+    if (!tgcx_InstallNativeStages()) {
+        tgcx_Log("Module gate stages: BAD (ordered draw/final Present); no module installed");
+        return false;
+    }
+    bool drawing=tgcx_DrawingSignatures();
+    tgcx_Log("Module gate drawing+laws: signatures %s", drawing ? "OK" : "BAD");
+    if (drawing && tgcx_InstallRenderer()) {
+        tgcx_bill_enabled=true;tgcx_bill_decision_fn=tgcx_base+0x2DCE10;tgcx_InstallReforms();
+    } else tgcx_Log("Drawing and laws disabled: original pie, no Bill or Reforms tab");
+    tgcx_InstallTemplatesGui();
+    tgcx_InstallConform();
+    tgcx_Log("Modules: drawing+laws=%u templates=%u conform=%u", tgcx_drawing_enabled, tgcx_tpl_gui_enabled, tgcx_cf_enabled);
+    return true;
+}
+
+// Our loader (lua51.dll) calls this right after LoadLibrary.
+extern "C" __declspec(dllexport) int __cdecl tgcx_Init(const char* loader) {
+    return tgcx_Initialize(loader && *loader ? loader : "unknown loader") ? 1 : 0;
+}
+
+// V2DLL's plugin entry. TGCX uses only size, version and Log: its own hooks are guarded as above.
+extern "C" __declspec(dllexport) int __cdecl V2Mod_Init(const V2ModAPI* api) {
+    if (!api || api->size < sizeof(V2ModAPI) || api->apiVersion != 1) return 0;
+    bool ok=tgcx_Initialize("V2DLL plugin API v1");
+    if (api->Log) api->Log("TGCX: %s; see Logs\\tgcx.log", ok ? "initialised" : "not initialised");
+    return ok ? 1 : 0;
+}
+
+BOOL WINAPI DllMain(HINSTANCE, DWORD reason, LPVOID) {
+    // /MT needs thread notifications; do not call DisableThreadLibraryCalls.
+    // Nothing is installed here: a loader calls tgcx_Init or V2Mod_Init.
+    if (reason == DLL_PROCESS_DETACH && tgcx_log != INVALID_HANDLE_VALUE) {
         CloseHandle(tgcx_log); tgcx_log=INVALID_HANDLE_VALUE;
     }
     return TRUE;
