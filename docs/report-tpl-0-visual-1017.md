@@ -196,3 +196,16 @@ hidden. **Done, not tested in game.**
 - DLL `39AAFB47…72FB` installed. Rollback: `before-044-dll\lua51.dll`
   (0.4.3, `215AA405…88D4`).
 - **Done, not tested in game.**
+
+## 11. 0.4.4 accepted in game (same day)
+
+The user ran the 0.4.4 short check: "works flawlessly. checked the button
+too".
+- Build Navy has no Templates tab; Build Army still has it.
+- Queue entries in Units Being Built, and their cancel button, respond
+  through the panel.
+
+With §9-10 (Recruit and reopen on 0.4.3), the **U-8 short check is
+accepted**. Extended U-8 cases remain unconfirmed: close and reopen
+Military, a one-regiment template, a partial recruit, and a reload in a
+fresh process. The user moved on to TPL-1 (Conform).

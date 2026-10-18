@@ -39,6 +39,8 @@ GENERATED = {
                                                         os.path.join(SRC, NAME, "tgcx_bill_layout.txt")),
     os.path.join("interface", "buildunit.gui"): (os.path.join("interface", "buildunit.gui"),
                                                 os.path.join(SRC, NAME, "tgcx_templates_layout.txt")),
+    os.path.join("interface", "unitpanel.gui"): (os.path.join("interface", "unitpanel.gui"),
+                                                os.path.join(SRC, NAME, "tgcx_conform_layout.txt")),
 }
 
 
@@ -53,6 +55,8 @@ def foreign_files(folder):
                 if f == "country_politics.gui" and b"# >>> tgcx_bill" not in Path(dirpath, f).read_bytes():
                     bad.append(os.path.relpath(os.path.join(dirpath, f), folder))
                 if f == "buildunit.gui" and b"# >>> tgcx_templates" not in Path(dirpath, f).read_bytes():
+                    bad.append(os.path.relpath(os.path.join(dirpath, f), folder))
+                if f == "unitpanel.gui" and b"# >>> tgcx_conform" not in Path(dirpath, f).read_bytes():
                     bad.append(os.path.relpath(os.path.join(dirpath, f), folder))
                 continue
             if not re.sub(r"^[0-9_]+(?=tgcx_)", "", f.lower()).startswith(PREFIX):
@@ -93,10 +97,11 @@ def generate(tgc, dest, source=SRC):
         block = os.path.join(source, os.path.relpath(block, SRC))
         bill_gui = rel == os.path.join("interface", "country_politics.gui")
         templates_gui = rel == os.path.join("interface", "buildunit.gui")
-        if (bill_gui or templates_gui) and not os.path.isfile(block):
+        conform_gui = rel == os.path.join("interface", "unitpanel.gui")
+        if (bill_gui or templates_gui or conform_gui) and not os.path.isfile(block):
             continue  # The script-only/default LAW-0 source has no GUI fragment.
         base = os.path.join(tgc, tgc_rel)
-        if templates_gui and not os.path.isfile(base):
+        if (templates_gui or conform_gui) and not os.path.isfile(base):
             from tgcx_bill_gui import game_root
             base = str(game_root(tgc) / tgc_rel)
         if not os.path.isfile(base):
@@ -111,8 +116,10 @@ def generate(tgc, dest, source=SRC):
         out = os.path.join(dest, rel)
         os.makedirs(os.path.dirname(out), exist_ok=True)
         with open(out, "wb") as f:
-            if bill_gui or templates_gui:
-                if templates_gui:
+            if bill_gui or templates_gui or conform_gui:
+                if conform_gui:
+                    from tgcx_conform_gui import inject
+                elif templates_gui:
                     from tgcx_templates_gui import inject
                 else:
                     from tgcx_bill_gui import inject

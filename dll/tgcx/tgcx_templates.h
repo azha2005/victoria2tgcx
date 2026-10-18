@@ -162,13 +162,20 @@ static int tgcx_TplUnitByName(const tgcx_TplCountry& c,const char* name) {
 // ---------------------------------------------------------------- recruiting
 
 struct tgcx_TplResult { bool scanned;unsigned queued,missing,failed; };
-static bool tgcx_TplSendOrder(const tgcx_TplGlobals& g,const tgcx_TplNative& n,const tgcx_TplCountry& c,const tgcx_TplOrder& o) {
+// Told about each posted order with the command's ids, read before posting:
+// +0x48 construction (I), +0x50 the stack the regiment will appear in (TPL-1).
+typedef void(*tgcx_TplQueued)(void* context,int unit,int province_id,const uint32_t construction[2],const uint32_t stack[2]);
+static bool tgcx_TplSendOrder(const tgcx_TplGlobals& g,const tgcx_TplNative& n,const tgcx_TplCountry& c,const tgcx_TplOrder& o,
+                              tgcx_TplQueued queued=nullptr,void* context=nullptr) {
     const tgcx_TplPop& pop=c.pops[o.pop];
     __try {
         void* command=n.make_command(c.unit[o.unit],pop.province_id,pop.pop,c.tag,c.index);
         // Only a real CConstructUnitCommand goes to the queue; the queue owns it after posting.
         if(!command || tgcx_TplRead<uintptr_t>(reinterpret_cast<uintptr_t>(command))!=g.command_vtable)return false;
+        uint32_t construction[2],stack[2];
+        memcpy(construction,reinterpret_cast<char*>(command)+0x48,8);memcpy(stack,reinterpret_cast<char*>(command)+0x50,8);
         if(!n.post(command))return false;
+        if(queued)queued(context,o.unit,pop.province_id,construction,stack);
         tgcx_Log("Template regiment %s province=%d pop=%08X command=%08X tag=%.4s",
             c.name[o.unit],pop.province_id,static_cast<uint32_t>(pop.pop),static_cast<uint32_t>(reinterpret_cast<uintptr_t>(command)),
             reinterpret_cast<const char*>(&c.tag));
@@ -176,7 +183,8 @@ static bool tgcx_TplSendOrder(const tgcx_TplGlobals& g,const tgcx_TplNative& n,c
     } __except(EXCEPTION_EXECUTE_HANDLER) { return false; }
 }
 // counts[unit index] regiments; recruit what fits and report the rest (D12).
-static tgcx_TplResult tgcx_TplRecruitWith(const tgcx_TplGlobals& g,const tgcx_TplNative& n,const int* counts) {
+static tgcx_TplResult tgcx_TplRecruitWith(const tgcx_TplGlobals& g,const tgcx_TplNative& n,const int* counts,
+                                          tgcx_TplQueued queued=nullptr,void* context=nullptr) {
     static tgcx_TplCountry country;static tgcx_TplPlan plan;
     tgcx_TplResult r={};
     int wanted[tgcx_tpl_units];unsigned total=0;
@@ -186,7 +194,7 @@ static tgcx_TplResult tgcx_TplRecruitWith(const tgcx_TplGlobals& g,const tgcx_Tp
     tgcx_TplMakePlan(wanted,country.pops,country.pop_count,&plan);
     r.missing+=plan.missing;
     for(unsigned i=0;i<plan.count;++i) {
-        if(tgcx_TplSendOrder(g,n,country,plan.orders[i]))++r.queued;
+        if(tgcx_TplSendOrder(g,n,country,plan.orders[i],queued,context))++r.queued;
         else { ++r.failed;tgcx_Log("Template regiment %s not queued (command refused)",country.name[plan.orders[i].unit]);break; }
     }
     if(r.failed)r.missing+=plan.count-r.queued;
@@ -203,7 +211,7 @@ static void tgcx_InstallTemplates() {
     tgcx_tpl_new_fn=tgcx_base+0x6AE9AF;tgcx_tpl_ctor_fn=tgcx_base+0x17D1B0;
     tgcx_templates_installed=true;tgcx_Log("Templates ready: CConstructUnitCommand via the engine queue");
 }
-static tgcx_TplResult tgcx_TplRecruit(const int* counts) {
+static tgcx_TplResult tgcx_TplRecruit(const int* counts,tgcx_TplQueued queued=nullptr,void* context=nullptr) {
     if(!tgcx_templates_installed) { tgcx_TplResult r={};return r; }
-    return tgcx_TplRecruitWith(tgcx_TplLiveGlobals(),tgcx_tpl_native,counts);
+    return tgcx_TplRecruitWith(tgcx_TplLiveGlobals(),tgcx_tpl_native,counts,queued,context);
 }

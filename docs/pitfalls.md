@@ -677,3 +677,61 @@ hidden under the covers.
 (0.4.3), so the next labels pass re-hides what must be hidden.
 
 `report-tpl-0-visual-1017.md` §9.
+
+### P43 - A field named after the argument it is passed as is not identified
+
+**Cause:** the native new-stack button passes stack `+0xC0`, `+0xC4` and
+`+0xDC`→`+0x58` to `CCreateUnitCommand`. The research named the first one
+"province" from its position. It was never checked against any other
+reader.
+
+**Symptom:** the U-9 probe logged "province 4280902" for every army. That
+is `0x415246`, the string "FRA": `+0xC0` is the owner's tag. The Conform
+driver would have sent Moves to a non-province and never merged.
+
+**Fix:** the province is `+0xDC` (province object) → `+0x58` (id). Two
+other readers confirm it: Move's constructor stores it as the start
+(`+0x8C`), and the AI merge compares it. It is guarded (0.5.1). Name a
+field only from a reader that uses it as that thing, and probe it in game
+before building on it.
+
+`report-tpl-1-research-1017.md` §11.
+
+### P44 - A GUI name lookup searches only the host's direct children
+
+**Cause:** the native find-by-name methods (button slot 13, window slot 27,
+text slot 15) look only among the host window's own children; they do not
+descend into nested windows.
+
+**Symptom:** on 0.6.0 the Conform button drew and clicked, but nothing
+happened. The DLL probed for `tgcx_cf_open` on the unit panel, and that
+button is inside the `tgcx_cf_tab` window, so the lookup returned nothing.
+The panel was never set up, and the log had no "Conform native window
+found" line.
+
+**Fix:** look each element up on the window that directly contains it.
+Probe for our GUI with an off-screen marker button that is a direct child
+of the native window, as TPL-0's `tgcx_tpl_marker` does (0.6.1,
+`tgcx_cf_marker`). `test_conform_gui.py` checks the marker's level.
+
+`report-tpl-1-window-1017.md` §6.
+
+### P45 - A command's size comes from its native allocation, not from its fields
+
+**Cause:** the `CMergeCommand` size was recorded as `0x48`, but every
+native caller allocates `0x4C` (`push 0x4C; call operator new` at RVA
+`0x26EC40` and `0x426A1F`). The ctor writes a byte at `+0x48`, one byte
+past a `0x48` block.
+
+**Symptom:** on 0.6.1 the game crashed with heap corruption
+(`0xC0000374`) right after the first Conform Merge ("stack 6891 joins
+597"). The fault surfaced later, in a native free, while the merged
+stack's map avatar was being destroyed. The fixture had asserted the same
+wrong size, so it passed.
+
+**Fix:** 0.6.2 allocates `0x4C`, and both native pushes are guarded. Take
+the size of any object the DLL allocates for the engine from a native
+`push size; call new` next to a ctor call, and guard that push. Never
+infer the size from the last field the ctor writes.
+
+`report-tpl-1-window-1017.md` §7.

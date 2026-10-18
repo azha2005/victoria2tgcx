@@ -121,6 +121,16 @@ static void tgcx_TemplateTests() {
     r=tgcx_TplRecruitWith(g,stub,tpl);
     tgcx_Expect(!r.queued && r.failed==1 && !tgcx_tpl_s_posted,"Templates never post a command with the wrong vtable");
     tgcx_tpl_s_vtable=0x5150;
+    // the TPL-1 observer: each posted order's construction (+0x48) and future stack (+0x50) ids
+    struct Seen { unsigned n;int unit[8],province[8];uint32_t cons[8],stack[8]; } seen={};
+    auto observe=[](void* ctx,int unit,int province,const uint32_t c[2],const uint32_t st[2]) {
+        auto* v=static_cast<Seen*>(ctx);if(v->n<8){v->unit[v->n]=unit;v->province[v->n]=province;v->cons[v->n]=c[1];v->stack[v->n]=st[1];++v->n;}
+    };
+    for(unsigned i=0;i<16;++i){put(tgcx_tpl_s_commands[i],0x4C,0x100+i);put(tgcx_tpl_s_commands[i],0x54,0x200+i);}
+    tgcx_tpl_s_made=tgcx_tpl_s_posted=0;tgcx_tpl_s_post_limit=2;
+    r=tgcx_TplRecruitWith(g,stub,tpl,observe,&seen);
+    tgcx_Expect(seen.n==2 && seen.cons[0]==0x100 && seen.stack[0]==0x200 && seen.stack[1]==0x201,"Templates observer gets the ids of posted orders only");
+    tgcx_Expect(seen.unit[0]>=3 && seen.province[0]>=101,"Templates observer gets the unit and province");
 
     // ---- native thunk ABIs against fakes (P31)
     tgcx_tpl_can_build_fn=reinterpret_cast<uintptr_t>(&tgcx_TplFakeCanBuild);

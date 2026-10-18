@@ -10,9 +10,8 @@ tested in game.** Read `docs/report-tpl-0-visual-1017.md`.
 **0.4.3 is installed and confirmed in game.** Recruit through the panel
 works and reopening shows the right sprites (report §9-10). Its only
 defect: the Templates tab covered the last Build Navy folder. **0.4.4**
-hides the tab in navy mode. **It is installed on E:: done, not tested in
-game** (rollback `before-044-dll`, `before-044-submod`). Check: Build Navy shows no Templates tab, Build Army
-still does, and clicks on queue entries still work. External
+hides the tab in navy mode and is **accepted in game** ("works flawlessly",
+queue clicks included; report §11). **TPL-1 (Conform) research started:** the engine commands for create/transfer/move/merge are mapped (`docs/report-tpl-1-research-1017.md`); save/reload is **D13 = A** (session tracking; re-Conform after a reload). Research §3.1, §3.2 and §3.4 is done (report §8). Signatures, the pure planner/tracker, the native command wrappers, the daily driver and the `CUnitView` hooks are done in DLL **0.5.0** (0.5.0 installed on E:; **U-9 passed**, except the province field, P43, fixed in **0.5.1**: **installed on E:**, 0.5.0 backed up in `before-051-dll`; report §9-11). 0.5.1 is confirmed in game (user). **The Conform button and window (board 6) are done in DLL 0.6.0: built and staged in `E:/v2re/logs/tgcx-tpl1-1017/stage-060`, on 0.6.0 the button did nothing (P44); 0.6.1 fixed that and opened the window, then crashed after a Merge (P45); **0.6.2 (Merge size 0x4C, hover, build-only per revised D13) is installed on E:** (backups `before-062-*` for 0.6.1) and **works in game** (user, report §8: builds march and merge, extras detach, no crash). Next (user): make the Conform GUI look more like Victoria II's own, and fix the guarded GUI read fault (report §8) (backups `before-061-*` for 0.6.0, `before-060-*` for 0.5.1), **not tested in game** (`docs/report-tpl-1-window-1017.md`). Next: the player runs **U-10** (`docs/instructions-u-10.md`). External
 research: `docs/report-research-discord-1017.md`.
 
 ## Current baseline
@@ -44,6 +43,9 @@ research: `docs/report-research-discord-1017.md`.
 
 ## Next session in order
 
+0. **U-10, Conform in game** (coordinator installs after a normal exit,
+   then the player checks): `docs/instructions-u-10.md`. Back up 0.5.1 and
+   the submod first. Fix what the game shows before anything else.
 1. **U-8 short 0.4.4 check** (player): Build Navy shows no Templates tab,
    Build Army still does, and clicks on Units Being Built entries and
    their cancel button still work through the panel. Recruit and the
@@ -93,7 +95,7 @@ are in U-8. Original Lua remains verified as `lua51_real.dll`.
 |---|---|---|
 | TPL-0 / GH-4 | 0.4.0 function accepted; 0.4.1 placement confirmed; 0.4.2 details installed, not tested in game | instructions-tpl-0.md; report-tpl-0-visual-1017.md |
 | U-8 | recruit/save-reload (0.4.0) and placement (0.4.1) accepted; 0.4.2 short check next; extended cases open | instructions-u-8.md |
-| TPL-1 | D12 approved; research/implementation queued after U-8 | instructions-tpl-1.md |
+| TPL-1 | U-9 passed on 0.5.0; 0.5.1 confirmed; Conform window in 0.6.0, staged, not installed, not tested in game | instructions-tpl-1.md, instructions-u-10.md, report-tpl-1-window-1017.md |
 | TPL-2 | on hold (user, 2026-10-17): Conform (TPL-1) covers it | instructions-tpl-2.md |
 | LAW-2 / U-7 | 0.3.5 controls/reforms pending game check | existing instructions/reports |
 | LAW-1 / U-6 | short smoke accepted; extended coverage unconfirmed | existing instructions/reports |

@@ -257,9 +257,14 @@ E:\tools\ghidra_12.1.4_PUBLIC\support\analyzeHeadless.bat E:\v2re\ghidra v2game 
   -process v2game.exe -noanalysis -scriptPath <folder> -postScript <Script>.java
 ```
 
-Current candidate: **0.4.4 (TPL-0: the Templates tab is hidden in Build
-Navy)**, installed on E:, automatic gates passed, **done, not tested in
-game** (`docs/report-tpl-0-visual-1017.md` §10). 0.4.3 is installed and
+Current candidate: **0.6.0 (TPL-1: the Conform button and window, board
+6)**, built and staged (`E:2re\logs	gcx-tpl1-1017\stage-060\`), **installed
+on E: (2026-10-17), not tested in game** (`docs/report-tpl-1-window-1017.md`;
+U-10 is the check, `docs/instructions-u-10.md`). Its rollback is 0.5.1
+(`before-060-dll\`, `before-060-submod\`), confirmed in game (U-9).
+
+Before it: **0.4.4 (TPL-0: the Templates tab is hidden in Build
+Navy)**, installed on E:, **accepted in game** (`docs/report-tpl-0-visual-1017.md` §10). 0.4.3 is installed and
 confirmed in game, including recruitment through the panel (P41, P42). 0.4.1's
 owner-chain anchor (P40) is confirmed in game. On 0.4.0 the
 user accepted nine-regiment recruitment and save/reload
@@ -342,7 +347,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P43**).
+number (**the next one is P46**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -397,6 +402,9 @@ number (**the next one is P43**).
 - **P40** An inner matrix (`+0x84/-0x88`) is relative to its owner (`+0xE4`); only children of the renderer scene are in screen pixels: sum the chain (TPL-0 0.4.1)
 - **P41** A `textSpriteType` (e.g. `GFX_button_standard_177`) on a bare button neither draws nor binds: use plain `spriteType`s
 - **P42** Showing a window re-shows its whole subtree: a cached child show/hide state is stale after the parent is shown
+- **P43** A field named after the argument slot it fills is not identified: stack `+0xC0` is the tag; the province is `+0xDC`→`+0x58` (U-9)
+- **P44** A GUI name lookup searches only the host's direct children: probe with a top-level marker button (0.6.0 Conform did nothing)
+- **P45** A command's allocation size comes from a native `push size; call new`, never from its last field: Merge is 0x4C, not 0x48 (0.6.1 heap-corruption crash)
 
 ## 9. Decisions
 
@@ -413,6 +421,7 @@ number (**the next one is P43**).
 | **D9** | Interface route | **hybrid, case by case**: each element chooses A (draw on top) or B (real game element) using the criteria in `docs/technical-plan.md` §9.1, and the card records the choice | **closed** (user, 2026-10-12) |
 | **D11** | Law details (favours) | **virtual purchases only, lasting the bill** (not TGC's real seat shifts); favours **accrue automatically like diplomatic points** (the DLL sends the monthly tick; a decision is the no-DLL fallback); the rate comes **from prestige plus stability, militancy, consciousness, voting pop and monarch/leader support** (initial values in `docs/law-design.md` §5) | **closed** (user, 2026-10-12) |
 | **D12** | Army templates | **local file** written by the DLL (an interface preference, not in the save; recruiting still uses the engine command, R5); **names from the composition**; **native windows** (route B); short of soldier pops, **recruit what fits** and report the rest; a **"Conform to template"** button on stacks in the field (template picked per click; missing regiments built, then marched and merged by engine commands; extras detached into a new stack) | **closed** (user, 2026-10-17); `docs/report-tpl-0-research-1017.md` §4 |
+| **D13** | Conform across save/reload | **A: session tracking, re-Conform after a reload**. Within a session the DLL marches and merges each finished regiment automatically. After a reload, pressing Conform on the stack again finds the finished, unattached regiments of the missing types nearby and offers to bring them. Nothing is persisted (B, a local file, and C, no automatic march, were rejected). Marches use **safe paths**, like the native rally point (user, same day). **Revised (user, 2026-10-17, after U-10 on 0.6.1): Conform always builds the missing regiments; it never takes finished regiments from nearby stacks.** After a reload, regiments still being built for an earlier Conform are no longer tracked: they finish as their own stacks, and a new Conform builds again | **closed** (user, 2026-10-17, revised the same day); `docs/report-tpl-1-research-1017.md` §4, `docs/report-tpl-1-window-1017.md` §7 |
 | **D10** | Language | **English for everything**: code, comments, docs, file names, commit messages, in-game text and chat. Nothing is written in Spanish. All existing files were translated on 2026-10-12 | **closed** (user, 2026-10-12) |
 
 ---

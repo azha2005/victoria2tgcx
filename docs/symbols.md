@@ -593,3 +593,111 @@ anchor above (P40).
 Screen position of any inner = Σ (`+0x84`, `-0x88`) over the chain up to
 the scene. 0.4.1 logs the live values (`Templates anchor:`) when it opens
 the panel; the 2026-10-17 log confirms it (`report-tpl-0-visual-1017.md`).
+
+## TPL-1: stack commands for Conform (2026-10-17, static)
+
+Read-only Ghidra on the reference build (`check_exe.py` ALL OK). Sources
+and decompiles in `E:\v2re\logs\tgcx-tpl1-1017\` (private, R8). RVA = VA
+- 0x400000. Nothing here is guarded or called yet: each row needs a
+relocation-aware signature before code uses it (R2, P24).
+
+### Identity
+
+| what | where | conf | evidence |
+|---|---|---|---|
+| object identity subobject | `object+8`: `+0` name string, `+8` id type, `+0xC` id | C | registry lookups return `object+8` and every caller subtracts 8; `FUN_0072D4E0` copies from it |
+| registry split | type `< 0x1269` → `g_registryLow`, else `g_registryHigh`; hash `(type*0x10000+id) % buckets` | C | `FUN_00794AA0` inlines the lookup; `ObjectRegistry_HashLookup` / `ObjectRegistry_FindByTypeAndId` |
+| command unit reference | 0x24 bytes: `+0` pointer, `+4` type, `+8` id, `+0xC` name string; built by `FUN_0079DE40` (from a unit: ids `+0x10/+0x14`, name `+8`) or `FUN_0072D4E0` (from an identity subobject) | C | both helpers decompiled |
+| stack (`CUnit`) fields | `+0xC0` province id, `+0xC4` owner country index, `+0xDC` → `+0x58` (passed through to commands), `+0xEC` province unit list (`node +0 item, +8 next`), `+0x40` regiment count | I | Create/Split callers; AI merge `FUN_004716F0` |
+| new stack id (native UI) | type `word [0x01258A90] + 0x1268`, id `++[0x01258A9C]` (client counter, written just before posting) | C | `FUN_0079DB10` / `FUN_0079DC70` disassembly |
+
+### Commands (all posted to the queue at `0x33261B`; slot 6 execute, slot 14 validity)
+
+| command | id | size | ctor (VA / RVA) | slot 6 / slot 14 | conf |
+|---|---|---|---|---|---|
+| `CMoveCommand` | `0x2F8` | 0x90 | `FUN_005DE7D0` / `0x1DE7D0`: `(mem, unit*, destination, 4 byte flags)`; pushes destination onto a vector at `+0x64`; unit ref at `+0x3C` | `FUN_005DEAE0` (each destination through `FUN_005DED20`) / `FUN_005DF4B0` (unit resolves; each step `FUN_005D0EB0`) | C (destination type I) |
+| `CMergeCommand` | `0x410` | 0x48 | `FUN_005E13B0` / `0x1E13B0`: `(mem, list*)`, list of stacks (`node +0 item, +8 next`), the first one stays | `FUN_005E1590` (merges each later stack into the first; sound `subunit_merge`) / `FUN_005E1BE0` (all resolve, at least two, `FUN_00513D50`) | C |
+| `CTransferSubUnitCommand` | `0x412` | 0x6C | `FUN_005E1EE0` / `0x1E1EE0`: `(mem, regimentType, regimentId, targetIdentity*)`; regiment id at `+0x64/+0x68`, target ref at `+0x3C` | `FUN_005E1F90` (`FUN_00513F30` can-transfer, remove `FUN_005CB230`, add `FUN_005CB1D0`, player log) / `FUN_00908FD0` (target resolves only) | C |
+| `CCreateUnitCommand` | `0x41A` | 0x60 | `FUN_0057DB30` / `0x17DB30`, stack args in order: province, country, new id (8 bytes), new id again (8 bytes), `stack+0xDC→+0x58`, kind, split flag (byte) → `+0x3C, +0x40, +0x48, +0x50, +0x44, +0x58, +0x5D` | `FUN_0057DBF0` (creates an empty stack with that id: kind 1 army `0x1C0`, 0 `0x1B8`, 2 `CAir`; split flag with a different source id moves about half by category) / `FUN_00A31490` | C (kind names I) |
+| `CDetachUnitCommand` | `0x525` | 0x64 | `FUN_005E55A0` / `0x1E55A0`: `(mem, unit*)` from a unit-panel button (`FUN_0078F900`) | `FUN_005E5640` / `FUN_005E5760` | C (meaning not established; not needed: extras use Create + Transfer) |
+| `CSplitAndLoadArmyCommand` | — | — | execute `FUN_005E3B50`: Create with a pre-chosen id, run inline, find the stack by id, Transfer each regiment, then load | — | C (reference pattern) |
+
+### Unit panel
+
+| what | where | conf |
+|---|---|---|
+| `CUnitView` vtables | `0x00E16850` (13) / `0x00E1688C` (23); ctor `FUN_00798A50` | C |
+| native "new stack" handlers | `FUN_0079DB10` / `FUN_0079DC70` (registered by the ctor; differ only in byte `view+0x2C0`); pending id `view+0x2B8/+0x2BC`, source stack `view+0x28` | C |
+| reorganize drop | `FUN_00794350`: one Transfer per regiment into an existing stack | C |
+| GUI | TGC v2.5.2 overrides `interface/unitpanel.gui`; window `unitpanel` with `splitinhalf` (254,32) and `newunitbutton` (279,32) | C (file) |
+
+### TPL-1 second pass (2026-10-17, static)
+
+| what | where | conf | evidence |
+|---|---|---|---|
+| `CConstructUnitCommand` ids | the ctor `FUN_0057D1B0` allocates three ids from the client counter (`[0x01258A90]+0x1268`, `++[0x01258A9C]`) into `cmd+0x48`, `+0x50`, `+0x58` | C | ctor decompile (`tgcx-tpl-research-1017/dec-*.txt`) |
+| id hand-over | execute `FUN_0057D2F0` copies `cmd+0x50/+0x54` → construction `+0x58/+0x5C` and `cmd+0x58/+0x5C` → construction `+0x60/+0x64`; `cmd+0x48` presumably the construction's own identity (vfunc `+0x18`) | C (`+0x48` I) | execute decompile |
+| `CMilitaryConstruction` vtables | `0x00DFC034` (15) / `0x00DFC074` (8) | C | `rtti-classes.md` |
+| construction completion | slot 9 `FUN_00491E80` (RVA `0x91E80`): creates a **new stack** (army `0x1B8` / navy `0x1C0` / `CAir`) with id construction `+0x58` and its **regiment** (`CRegiment` / `CShip` / `CWing`) with id `+0x60`, in province `+0x48`; for a rally point (`+0x98` ≥ 0, country `+0x1570` list) posts `Move(stack, rally+8, 1, 1)` | C | decompile |
+| **future stack id of a recruit** | = `CConstructUnitCommand +0x50/+0x54`, readable right after the TPL-0 ctor call, before posting | C (chain above) | — |
+| `CMoveCommand` ctor args | `(mem, unit*, provinceId, replace, safePath, verySafePath, setAttach)` → `+0x88`, `+0x89`, `+0x8A`, `+0x8B` | C | `FUN_005DED20` |
+| Move destination | a **province id**: `g_world+0xACC` table index; the engine pathfinds (`CPathFind`, `CSafePathFind` with `+0x89`, `CVerySafePathFind` with `+0x8A`); `+0x88` replaces current orders, later steps append; `+0x8B` writes the last destination to `unit+0x74` | C | `FUN_005DED20`, `FUN_005DEAE0` |
+| `CUnitView` object | ctor `FUN_00798A50` loads window `unitpanel`, binds `disbandbutton`, `disbandtoosmallbutton`, `newunitbutton`, `splitinhalf`, `unitname`, `leader_button`, ...; primary vtable `0x00E16850`, secondary at object `+0x1C` (`0x00E1688C`) | C | ctor decompile |
+| `CUnitView` slots | primary slot 0 `FUN_00799290` deleting destructor (body `FUN_0079D490`); slot 8 `FUN_0079B800` refresh; secondary slot 9 `FUN_007993B0` per-frame: when window `+4`→`+0x67` is visible, calls primary slot 8 | C | decompile |
+| shown stack | `view+0x28` (`CUnit*`); `+0x40` regiment count; vfunc `+0x38` land test (I); regiment list `+0x38` (`node +0 item, +8 next`), regiment `+0x38` → unit type, type `+0x34` category | C (`+0x38` meanings I) | refresh and `FUN_0057DBF0` |
+
+### TPL-1 guards (2026-10-17)
+
+Every row in the two TPL-1 tables that code will call or read is now a
+`check_exe.SIGNATURES` entry ("TPL-1 ..."): 38 entries, including the
+command vtables and the `CUnitView` slots, all ALL OK. The pure planner that
+uses them is `dll/tgcx/tgcx_conform.h` (report-tpl-1-research §9).
+
+### TPL-1 native wrappers (2026-10-17, static; guarded)
+
+Read-only Ghidra again (`E:2re\logs	gcx-tpl1-1017
+at*.txt`); ten more
+`check_exe.SIGNATURES` entries ("TPL-1 native ..."), 139 in all, ALL OK.
+**Two corrections** to the tables above (they are not rewritten):
+
+- **`CTransferSubUnitCommand` arguments are the other way round.**
+  `FUN_005E1EE0(mem, targetStackType, targetStackId, regiment)` RET 0x10.
+  The target stack's id goes to `+0x64/+0x68` (the execute resolves it
+  first, `entry-8`). The regiment reference goes to `+0x3C`, built by
+  `FUN_0072D4E0` from the regiment, whose type/id are at `+8/+0xC`. Native
+  caller: the reorganize drop `FUN_00794350`, call at `0x007944FF`.
+- **The rally-point Move sets three flags**:
+  `Move(stack, province, 1, 1, 1, 0)`, so replace, safe path and very safe
+  path, with attach off (`0x00492342`). Conform uses the same.
+
+| what | where | conf | evidence |
+|---|---|---|---|
+| registry lookup | `FUN_009C1D40` (EAX key `{type,id}`, ECX table) returns the node's entry unchanged; entry `+8` type, `+0xC` id | C | disassembly |
+| stack ↔ entry | stack object = entry − 8 (ids at stack `+0x10/+0x14`); a regiment is its entry, the pointer kept in a stack's list `+0x38` | C | Transfer execute, reorganize |
+| regiment unit type | regiment `+0x38`, matched against the country's unit types | I (U-9 probe) | reorganize compares `+0x38`→`+0x48` |
+| new id lock | `FUN_009C12D0`: EAX → spinlock byte `0x0131CA68` (RVA `0xF1CA68`), returns the byte to store back; the new-stack button stores AL after `++[0x01258A9C]` | C | disassembly |
+| Create kind | stack vfunc `+0x3C` true → 1, `+0x40` true → 2, else 0 (land; completion makes class `0x1B8` for it) | C | `0x0079DB84` |
+| Create pushes | `(mem, +0xC0, +0xC4, id, id, +0xDC→+0x58, kind, 0)` | C | `0x0079DBD7` |
+| Merge list | `{head, tail, count}`, node `{stack, prev, next, byte}` (0x10); the ctor copies references | C | ctor `0x005E1450`, AI merge caller |
+| `CUnitView` slot 9 → 8 | secondary slot 9 sets ECX = view − 0x1C (the primary) and jumps to primary slot 8 | C | `0x007993B9` |
+
+### TPL-1 U-9 correction (2026-10-17, runtime)
+
+Stack `+0xC0` is the **owner's tag** (U-9 logged `0x415246`, "FRA"), not a
+province. The province is `+0xDC` → `+0x58` (C: Move ctor `0x1DE8B2`, AI
+merge `FUN_004716F0`). The "province" in the TPL-1 tables above and in
+the Create ctor arguments means the tag. Regiment `+0x38` is the country's
+unit type (R: every land regiment mapped). New stack ids `0x1269/n` were
+seen live (P43).
+
+### TPL-1 Conform window guards (2026-10-17, static)
+
+| What | VA | RVA | conf | Evidence |
+|---|---|---|---|---|
+| `CUnitView` ctor stores the loaded `unitpanel` window at `+0x20` | `0x00798AE8` | `0x398AE8` | C | `FUN_00798A50`: vcall `+0x2C` (window factory) then `mov [edi+0x20],eax` |
+| Secondary slot 9 tests that window's `+0x67` before refreshing | `0x007993B0` | `0x3993B0` | C | `mov eax,[ecx+4]` (view `+0x20`), `cmp byte [eax+0x67],0`, then jumps to primary slot 8 |
+
+The Conform window (`tgcx_conform_gui.h`) uses `*(view+0x20)` as its root and
+`+0x67` as the panel's visible byte. It assumes that root has TPL-0's build
+root class (`+0x494` inner, vtable `0xA38350`; `+0x90` renderer); the
+placement refuses otherwise (unverified in game, U-10).

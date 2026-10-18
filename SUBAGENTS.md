@@ -111,7 +111,9 @@ update §4.
 | LAW-1 | Catalogue for 23 groups / 46 direction entries | **short script smoke accepted**; broader engine coverage unconfirmed; 25 catalogue/10 installer tests pass | `docs/instructions-law-1.md`; `docs/report-law-1-report-fix-1013.md` |
 | LAW-2 | Bill GUI and command bridge | 0.3.4 look accepted; **0.3.5: visible buttons, Reforms tab, Decisions filter, no DLL popups; done, not tested in game** (U-7 pending) | `docs/instructions-law-2.md`; `docs/report-law-2-reforms-1017.md` |
 | U-7 | Bill prototype visual/Count evidence | 0.3.3 placement and 0.3.4 look accepted; **0.3.5 check pending**, brief check only | `docs/instructions-u-7.md` |
-| U-8 | First live template recruit and visual check | recruit/save-reload (0.4.0) and placement (0.4.1) accepted; **0.4.2 short visual check next**; extended checks open | `docs/instructions-u-8.md` |
+| U-8 | First live template recruit and visual check | recruit/save-reload (0.4.0) and the 0.4.4 short check accepted; extended checks open | `docs/instructions-u-8.md` |
+| U-9 | Conform probe on 0.5.0 (log only) | **passed on 0.5.0** 2026-10-17 (P43 found, fixed in 0.5.1, installed; 0.5.1 confirmed) | `docs/instructions-u-9.md` |
+| U-10 | Conform in game: button, window, one Conform, march and merge (0.6.0) | **passed on 0.6.2** 2026-10-17 (user: "it worked"; 0.6.0 P44 and 0.6.1 P45 fixed); visual pass next | `docs/instructions-u-10.md` |
 | U-6 | LAW-1 catalogue game evidence | **short smoke passed**; user requests moving on, extended coverage unconfirmed | `docs/instructions-u-6.md` |
 | DLL-0 | Our own `lua51.dll` proxy that logs signatures and the upper house | **done, tested in game** (U-4, 2026-10-12); installed on E:\; cadence coverage remains to verify in DLL-1 | `docs/instructions-dll-0.md`; `docs/report-dll-0-1012.md` |
 | U-4 | Install DLL-0, play a few days, send the log | **done** (2026-10-12): screenshots/log match, clean errors, save/load | `docs/instructions-u-4.md`; `docs/report-u-4-1012.md` |
@@ -127,8 +129,8 @@ update §4.
 | GOV-0 | Data: 1836 rulers and generals' portraits | ready to start (no RE, in parallel) | `docs/instructions-gov-0.md` |
 | GOV-1 | Rulers by script | waits for GOV-0, SUB-0 | — |
 | GOV-2 | Ruler portrait/name (DLL) | DLL-1 prototype available; waits for GOV-1; not selected | — |
-| TPL-0 | Native Templates panel, local library and first recruit | **0.4.0 recruit/save-reload accepted; 0.4.1 placement confirmed; 0.4.2 details installed, done, not tested in game** | `docs/instructions-tpl-0.md`; `docs/report-tpl-0-visual-1017.md` |
-| TPL-1 | Conform an existing army to a template | D12 approved; after TPL-0/U-8 acceptance, scoped research required | `docs/instructions-tpl-1.md` |
+| TPL-0 | Native Templates panel, local library and first recruit | **0.4.4 accepted in game** (recruit, reopen, navy tab, queue clicks); extended U-8 cases open | `docs/instructions-tpl-0.md`; `docs/report-tpl-0-visual-1017.md` |
+| TPL-1 | Conform an existing army to a template | **research started 2026-10-17**: research done (commands, recruit stack id, Move, CUnitView); D13 = A; signatures, planner, native wrappers and unit-panel hooks: U-9 passed on 0.5.0; 0.5.1 province fix installed and confirmed; **Conform window done in 0.6.0, not tested in game**, installed on E: (report-tpl-1-window-1017.md); next: U-10 | `docs/instructions-tpl-1.md` |
 | TPL-2 | Replace regiments lost to rebellion automatically | **on hold** (user, 2026-10-17): TPL-1 Conform already restores the lost regiments | `docs/instructions-tpl-2.md` |
 
 ### I — Infrastructure
