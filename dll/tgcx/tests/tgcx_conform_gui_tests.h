@@ -1,6 +1,23 @@
 // TPL-1 Conform window: board 6's Changes list from a plan (pure).
 #pragma once
 static void tgcx_ConformGuiTests() {
+    // The view still holds an army after it leaves the registry on Merge.
+    tgcx_CfFakeReset();
+    tgcx_CfGlobals globals={};globals.high=reinterpret_cast<uintptr_t>(&tgcx_cf_f_high);
+    uintptr_t army=tgcx_CfMakeStack(0,50,10,7);
+    tgcx_Expect(tgcx_CfShownStack(globals,army)==army,"GUI accepts registered army");
+    tgcx_CfFakeReset();
+    tgcx_Expect(!tgcx_CfShownStack(globals,army),"GUI rejects removed army before ownership or virtual calls");
+    void* freed=VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE);
+    tgcx_Expect(freed!=nullptr,"GUI stale-stack fixture allocated");
+    if(freed) {
+        VirtualFree(freed,0,MEM_RELEASE);
+        tgcx_Expect(!tgcx_CfShownStack(globals,reinterpret_cast<uintptr_t>(freed)),"GUI rejects freed army without disabling panel");
+    }
+    // Replaced roots must discard the old child without calling its vtable.
+    static tgcx_CfPanel panel={};panel.root=1;panel.window=1;panel.disabled=true;panel.open=true;panel.tick=123;
+    tgcx_CfRootChanged(&panel,2);
+    tgcx_Expect(panel.root==2 && !panel.window && !panel.disabled && !panel.open && !panel.tick,"GUI replacement recovers without touching destroyed child");
     static tgcx_CfPlan p;static tgcx_CfRows rows;int want[tgcx_tpl_units]={},placed[tgcx_tpl_units]={};
     // 3 infantry(0) + 1 dragoon(2) + 1 hussar(3) against 4 inf, 1 artillery(4), 1 hussar.
     tgcx_CfRegiment regs[]={tgcx_CfR(1,0),tgcx_CfR(2,0),tgcx_CfR(3,2),tgcx_CfR(4,0),tgcx_CfR(5,3)};

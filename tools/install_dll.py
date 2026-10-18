@@ -64,8 +64,8 @@ def original(path):
 def proxy(path, reference):
     image = PE(path)
     if image.machine != 0x14C or not any(marker in image.data for marker in
-                (b"TGCX DLL-0 0.1.0", b"TGCX DLL-1+HEMI-1 0.2.0", b"TGCX DLL-1+HEMI-1 0.2.1", b"TGCX DLL-1+HEMI-1 0.2.2", b"TGCX DLL-1+HEMI-1 0.2.3", b"TGCX DLL-1+HEMI-1 0.2.4", b"TGCX DLL-1+HEMI-2 0.2.5", b"TGCX DLL-1+HEMI-3 0.2.6", b"TGCX DLL-1+HEMI-3 0.2.7", b"TGCX DLL-1+HEMI-3 0.2.8", b"TGCX LAW-2 0.3.0", b"TGCX LAW-2 0.3.1", b"TGCX LAW-2 0.3.2", b"TGCX LAW-2 0.3.3", b"TGCX LAW-2 0.3.4", b"TGCX LAW-2 0.3.5", b"TGCX TPL-0 0.4.0", b"TGCX TPL-0 0.4.1", b"TGCX TPL-0 0.4.2", b"TGCX TPL-0 0.4.3", b"TGCX TPL-0 0.4.4", b"TGCX TPL-1 0.5.0", b"TGCX TPL-1 0.5.1", b"TGCX TPL-1 0.6.0", b"TGCX TPL-1 0.6.1")):
-        if image.machine != 0x14C or b"TGCX TPL-1 0.6.2" not in image.data:
+                (b"TGCX DLL-0 0.1.0", b"TGCX DLL-1+HEMI-1 0.2.0", b"TGCX DLL-1+HEMI-1 0.2.1", b"TGCX DLL-1+HEMI-1 0.2.2", b"TGCX DLL-1+HEMI-1 0.2.3", b"TGCX DLL-1+HEMI-1 0.2.4", b"TGCX DLL-1+HEMI-2 0.2.5", b"TGCX DLL-1+HEMI-3 0.2.6", b"TGCX DLL-1+HEMI-3 0.2.7", b"TGCX DLL-1+HEMI-3 0.2.8", b"TGCX LAW-2 0.3.0", b"TGCX LAW-2 0.3.1", b"TGCX LAW-2 0.3.2", b"TGCX LAW-2 0.3.3", b"TGCX LAW-2 0.3.4", b"TGCX LAW-2 0.3.5", b"TGCX TPL-0 0.4.0", b"TGCX TPL-0 0.4.1", b"TGCX TPL-0 0.4.2", b"TGCX TPL-0 0.4.3", b"TGCX TPL-0 0.4.4", b"TGCX TPL-1 0.5.0", b"TGCX TPL-1 0.5.1", b"TGCX TPL-1 0.6.0", b"TGCX TPL-1 0.6.1", b"TGCX TPL-1 0.6.2")):
+        if image.machine != 0x14C or b"TGCX TPL-1 0.6.3" not in image.data:
             raise ValueError(f"{path}: not a recognized TGCX Win32 build")
     expected = {name: (ordinal, f"lua51_real.{name}")
                 for name, (ordinal, _) in PE(reference).exports().items()}

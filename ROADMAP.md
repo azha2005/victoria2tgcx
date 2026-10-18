@@ -43,6 +43,8 @@
 
 ## 1. Status by stage (as of 2026-10-17)
 
+TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted in game**. Automatic gates and installed hashes pass; paired 0.6.2 rollback retained. User reports "works"; current 0.6.3 log has no guarded GUI read fault. Extended coverage and new screenshot comparison remain unconfirmed. See `docs/report-tpl-1-visual-1017.md` and `docs/instructions-tpl-1-063-check.md`.
+
 | # | Stage | Status | Numbers / evidence |
 |---|---|---|---|
 | 0 | **Infrastructure** | **done** | TGC v2.5.2 cloned (tag, `e06ade2`, 589 MB, no line-ending conversion); Ghidra 12.1.4 (zip SHA-256 equal to the published one); refs: RE repo `e299a02`, V2DLL `5d6f894`; initial `check_exe.py` 7/7 OK on `D:\` and `E:\`; TPL-0 gate now SHA-256 + 91 runtime signatures OK (`check_exe.py` ALL OK, 2026-10-17) on `E:\`; `tgc_scan.py` OK on v2.3.4, v2.5.2 and HPM; Ghidra analysis 752 s, 260/260 symbols imported, 1 500 vtables (`docs/report-initial-1012.md` §4) |
@@ -60,6 +62,8 @@
 ---
 
 ## 2. The version matrix
+
+2026-10-17 refresh: TGC v2.5.2 scan and 0.6.3 generator gates pass; 0.6.3 has no game evidence yet.
 
 | version | `tgc_scan.py` | generator | loads in game |
 |---|---|---|---|
@@ -146,6 +150,8 @@ When closing, in this order:
    session** that lacks a current one, and add them to `docs/README.md`.
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
+
+2026-10-17 (TPL-1 visual): staged 0.6.3 with army-panel styling per user screenshot, lifetime guards/recovery and diagnostics. All automatic gates pass; not installed or tested in game. Next: normal exit confirmation, paired backup, installation and player check (`docs/instructions-tpl-1-063-check.md`).
 
 2026-10-17 (TPL-1 window): Conform button and window, 0.6.0 to 0.6.2 (P44
 marker lookup, P45 Merge size 0x4C, hover, D13 revised: build only).

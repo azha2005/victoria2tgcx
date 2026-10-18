@@ -10,47 +10,46 @@ import re
 from pathlib import Path
 from PIL import Image, ImageDraw
 from gen_laws import DEFAULT_TGC, ROOT
-from tgcx_bill_gui import sprites, texture, sprite, section, write_dds
+from tgcx_bill_gui import sprites, texture, sprite, nine, write_dds
 from tgcx_templates_gui import units, ORDER
 
 LAYOUT = "tgcx_conform_layout.txt"
-WIDTH, HEIGHT = 460, 624
+WIDTH, HEIGHT = 400, 624
 SLOTS, CHANGES, MINIS = 4, 8, 4
-# Board 6 coordinates minus the window's origin (414,122). Template rows
-# repeat TPL-0's (the same native group button); change rows use the
-# province recruit button's pale part, widened as on the board.
-SLOT_X, SLOT_Y = 47, 44
-CHANGE_X, CHANGE_Y = 47, 226
+# Board 6's list structure, narrowed to the user's army-panel reference.
+# Templates and changes share the native pale regiment row art.
+SLOT_X, SLOT_Y = 17, 44
+CHANGE_X, CHANGE_Y = 17, 226
 # The fixed 400x80 stack panel has no room for the board's wide bottom
 # button: the free cell between the location and the attrition icon.
 OPEN = (222, 68, 20, 20)
 
 
 def buttons():
-    result = [("open", "open", 0, 0, 20, 20), ("close", "GFX_main_close_button", 418, 8, 32, 32)]
-    result += [(f"slot_{i}", "GFX_province_recruit_group_button", SLOT_X, SLOT_Y+i*32, 366, 30) for i in range(SLOTS)]
-    result += [("list_prev", "left", 343, 174, 24, 24), ("list_next", "right", 415, 174, 24, 24),
-               ("conform", "button", 50, 576, 177, 34), ("cancel", "button", 233, 576, 177, 34)]
+    result = [("open", "open", 0, 0, 20, 20), ("close", "GFX_unit_close", 374, 8, 20, 20)]
+    result += [(f"slot_{i}", "slot", SLOT_X, SLOT_Y+i*32, 366, 30) for i in range(SLOTS)]
+    result += [("list_prev", "left", 283, 174, 24, 24), ("list_next", "right", 355, 174, 24, 24),
+               ("conform", "button", 17, 576, 177, 34), ("cancel", "button", 206, 576, 177, 34)]
     return result
 
 
 def texts():
-    result = [("title", "Conform the selected army to a template", 20, 14, 390, 22, "vic_18_black", "centre")]
+    result = [("title", "Conform to template", 16, 11, 350, 22, "Arial14", "left")]
     for i in range(SLOTS):
         x, y = SLOT_X, SLOT_Y+i*32
         result += [(f"slot_{i}", "", x+40, y+2, 150, 14, "Arial12_bold_black", "left"),
                    (f"detail_{i}", "", x+40, y+16, 150, 14, "Arial12_black", "left")]
         result += [(f"mini_{i}_{k}", "", x+221+k*42, y+9, 20, 14, "Arial12_bold", "left") for k in range(MINIS)]
-    result += [("list_page", "", 367, 178, 48, 16, "Arial12_black", "centre"),
-               ("changes", "Changes", 20, 200, 420, 20, "vic_18_black", "centre")]
+    result += [("list_page", "", 307, 178, 48, 16, "Arial12_black", "centre"),
+               ("changes", "Changes", 17, 200, 366, 20, "Arial14_black", "left")]
     for i in range(CHANGES):
         x, y = CHANGE_X, CHANGE_Y+i*32
         result += [(f"change_{i}", "", x+40, y+1, 320, 14, "Arial12_bold_black", "left"),
                    (f"note_{i}", "", x+40, y+15, 320, 14, "Arial12_black", "left")]
-    result += [("summary", "", 20, 522, 420, 16, "Arial12_black", "centre"),
-               ("status", "", 20, 540, 420, 30, "Arial12_black", "centre"),
-               ("conform", "Conform", 50, 584, 177, 20, "vic_18_black", "centre"),
-               ("cancel", "Cancel", 233, 584, 177, 20, "vic_18_black", "centre")]
+    result += [("summary", "", 17, 504, 366, 32, "Arial12_black", "left"),
+               ("status", "", 17, 540, 366, 30, "Arial12_black", "left"),
+               ("conform", "Conform", 17, 584, 177, 20, "vic_18_black", "centre"),
+               ("cancel", "Cancel", 206, 584, 177, 20, "vic_18_black", "centre")]
     return result
 
 
@@ -92,7 +91,7 @@ def layout():
                          [f'iconType={{name="tgcx_cf_ring_{row}" spriteType="tgcx_cf_ring" position={{x=0 y=0}}}}'])
         parts += _window(f"tgcx_cf_slot_blank_{row}", SLOT_X, ry, 366, 30,
                          [f'iconType={{name="tgcx_cf_blank_icon_{row}" spriteType="tgcx_cf_blank_{row}" position={{x=0 y=0}}}}'])
-    parts += _window("tgcx_cf_pager_blank", 343, 172, 96, 28,
+    parts += _window("tgcx_cf_pager_blank", 283, 172, 96, 28,
                      ['iconType={name="tgcx_cf_pager_icon" spriteType="tgcx_cf_pager" position={x=0 y=0}}'])
     for row in range(CHANGES):
         parts += _window(f"tgcx_cf_change_row_{row}", CHANGE_X, CHANGE_Y+row*32, 366, 30,
@@ -159,11 +158,19 @@ def generate(output, tgc=DEFAULT_TGC):
     (output/'TGCX/localisation').mkdir(parents=True, exist_ok=True)
     table = sprites(tgc)
     images = {}
-    images['bg'] = section(WIDTH, HEIGHT)
+    # The user's army-composition reference: native parchment body, gold
+    # frame and compact green name strip, without the unrelated army stats.
+    body = sprite(tgc, table, 'GFX_unit_bottom_bg')
+    body.paste(body.crop((4, 80, body.width-4, 150)).resize((body.width-8, 64)), (4, 4))
+    images['bg'] = nine(body, 4, WIDTH, HEIGHT)
+    top = sprite(tgc, table, 'GFX_unit_toppanel_bg', frames=2)
+    images['bg'].alpha_composite(nine(top.crop((0, 0, top.width, 8)), 3, WIDTH, 8), (0, 0))
+    images['bg'].alpha_composite(top.crop((51, 8, 326, 26)).resize((WIDTH-16, 22)), (8, 8))
+    images['slot'] = nine(sprite(tgc, table, 'GFX_unit_entry_bg'), 3, 366, 30)
     for row in range(SLOTS):
         y = SLOT_Y+row*32
         images[f'blank_{row}'] = images['bg'].crop((SLOT_X, y, SLOT_X+366, y+30))
-    images['pager'] = images['bg'].crop((343, 172, 439, 200))
+    images['pager'] = images['bg'].crop((283, 172, 379, 200))
     ring = Image.new('RGBA', (366, 30))
     d = ImageDraw.Draw(ring)
     d.rectangle((0, 0, 365, 29), outline=(59, 46, 16, 255))
@@ -185,16 +192,8 @@ def generate(output, tgc=DEFAULT_TGC):
     w = strip.width//21
     frame.alpha_composite(strip.crop((0, 0, w, strip.height)).resize((16, 16)), (2, 2))
     images['open'] = frame
-    # Board 6's change rows are pale all along: the native row's icon cell and
-    # right edge, its pale middle stretched between them.
-    row = sprite(tgc, table, 'GFX_province_recruit_button')
-    if row.size != (366, 30):
-        raise ValueError("TGC v2.5.2 recruit rows are 366x30")
-    change = Image.new('RGBA', row.size)
-    change.alpha_composite(row.crop((0, 0, 40, 30)), (0, 0))
-    change.alpha_composite(row.crop((40, 0, 190, 30)).resize((322, 30)), (40, 0))
-    change.alpha_composite(row.crop((362, 0, 366, 30)), (362, 0))
-    images['change'] = change
+    # Match the army's regiment rows for both templates and changes.
+    images['change'] = images['slot'].copy()
     declarations = []
     for key, image in images.items():
         filename = f'tgcx_cf_{key}.dds'

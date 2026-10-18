@@ -169,3 +169,6 @@ TPL-0 instructions before the native panel are retained verbatim in
 TPL-0/U-8 instructions before runtime acceptance are retained verbatim in
 `archive/instructions-tpl-0-before-runtime-1017.md` and
 `archive/instructions-u-8-before-runtime-1017.md`.
+
+- [TPL-1 0.6.3 visual candidate](report-tpl-1-visual-1017.md): army styling, lifetime guards, gates and limits.
+- [TPL-1 0.6.3 installation/player check](instructions-tpl-1-063-check.md): next steps.

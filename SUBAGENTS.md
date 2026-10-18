@@ -95,6 +95,8 @@ update §4.
 
 ### Card status (as of 2026-10-17)
 
+TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted in game**. Automatic gates and installed hashes pass; paired 0.6.2 rollback retained. User reports "works"; current 0.6.3 log has no guarded GUI read fault. Extended coverage and new screenshot comparison remain unconfirmed. See `docs/report-tpl-1-visual-1017.md` and `docs/instructions-tpl-1-063-check.md`.
+
 | ID | Title | Status | Instructions |
 |---|---|---|---|
 | I-0 | Downloads, Ghidra, gates, docs | **done** | `docs/report-initial-1012.md` |

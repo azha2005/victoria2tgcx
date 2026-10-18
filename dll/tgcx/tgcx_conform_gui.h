@@ -50,6 +50,15 @@ struct tgcx_CfPanel {
 };
 static tgcx_CfPanel tgcx_cf_panels[8]={};
 
+// A view may retain a just-merged stack. Check its small identity under SEH,
+// then the registry, before reading ownership or calling a virtual method.
+static uintptr_t tgcx_CfShownStack(const tgcx_CfGlobals& g,uintptr_t stack) {
+    __try {
+        if(stack && tgcx_CfLookup(g,tgcx_CfStackId(stack))==stack+8)return stack;
+    } __except(EXCEPTION_EXECUTE_HANDLER) {}
+    return 0;
+}
+
 enum {TGCX_CF_SHOW_SEL=0,TGCX_CF_SHOW_BLANK=4,TGCX_CF_SHOW_PAGER=8,TGCX_CF_SHOW_ROW=9,
     TGCX_CF_SHOW_ICON=TGCX_CF_SHOW_ROW+tgcx_cf_changes,TGCX_CF_SHOW_MINI=TGCX_CF_SHOW_ICON+tgcx_cf_slots*tgcx_tpl_kinds,
     TGCX_CF_SHOW_CHANGE=TGCX_CF_SHOW_MINI+tgcx_cf_slots*tgcx_cf_minis*tgcx_tpl_kinds,
@@ -185,7 +194,7 @@ static void tgcx_CfLabels(tgcx_CfPanel* p) {
         switch(row.kind) {
         case TGCX_CF_ROW_BUILD:
             tgcx_CfText(p,text,"\xA7G+%u %s\xA7!",row.count,label);
-            tgcx_CfText(p,text+1,"built from free soldier pops, marches and joins (%d days)",k>=0?tgcx_tpl_catalog[k].days:0);break;
+            tgcx_CfText(p,text+1,"built; marches and joins (%d days)",k>=0?tgcx_tpl_catalog[k].days:0);break;
         case TGCX_CF_ROW_SHORT:
             tgcx_CfText(p,text,"\xA7Y+%u %s\xA7!",row.count,label);
             tgcx_CfText(p,text+1,"no free soldier pop can build it now: not built");break;
@@ -197,7 +206,7 @@ static void tgcx_CfLabels(tgcx_CfPanel* p) {
             tgcx_CfText(p,text+1,"detached into a new stack here");break;
         }
     }
-    tgcx_CfText(p,TGCX_CF_T_TITLE,"Conform the selected army to a template");
+    tgcx_CfText(p,TGCX_CF_T_TITLE,"Conform to template");
     tgcx_CfText(p,TGCX_CF_T_CHANGES,"Changes");
     if(p->planned && p->rows.more)tgcx_CfText(p,TGCX_CF_T_SUMMARY,"%s (%u more rows)",p->summary,p->rows.more);
     else tgcx_CfText(p,TGCX_CF_T_SUMMARY,"%s",p->summary);
@@ -233,9 +242,9 @@ static void tgcx_CfConformClick(tgcx_CfPanel* p) {
 static void tgcx_CfClickImpl(tgcx_CfPanel* p,unsigned action) {
     if(!tgcx_cf_enabled || !p || GetCurrentThreadId()!=p->thread || action>=TGCX_CF_BUTTONS)return;
     __try {
-        if(!tgcx_CfPanelLive(p))return;
+        if(p->disabled || !tgcx_CfPanelLive(p))return;
         if(action==TGCX_CF_B_OPEN) {
-            uintptr_t stack=*reinterpret_cast<uintptr_t*>(p->view+0x28);
+            uintptr_t stack=tgcx_CfShownStack(tgcx_CfLiveGlobals(),*reinterpret_cast<uintptr_t*>(p->view+0x28));
             if(p->open && stack && tgcx_CfSame(tgcx_CfStackId(stack),p->stack)) { tgcx_CfClose(p);return; }
             if(stack && p->land)tgcx_CfOpen(p,stack);
             return;
@@ -286,9 +295,14 @@ static void tgcx_CfBind(tgcx_CfPanel* p,unsigned action) {
     reinterpret_cast<tgcx_GuiOne>(vt[1])(observable,nullptr,glue);p->bound[action]=true;
 }
 static void tgcx_CfReset(tgcx_CfPanel* p) {
-    p->root=p->window=p->tab=p->seen=0;p->open=p->land=false;
+    p->root=p->window=p->tab=p->seen=0;p->open=p->land=p->disabled=false;p->tick=0;
     memset(p->bound,0,sizeof(p->bound));memset(p->text_set,0,sizeof(p->text_set));memset(p->shown,0,sizeof(p->shown));
     // Observer memory stays valid until native GUI destruction.
+}
+// The previous root can already be destroyed: never hide its cached children.
+static void tgcx_CfRootChanged(tgcx_CfPanel* p,uintptr_t root) {
+    if(root==p->root)return;
+    tgcx_CfReset(p);p->root=root;
 }
 static void tgcx_CfPanelRelease(uintptr_t view) {
     for(auto& p:tgcx_cf_panels)if(p.view==view) {
@@ -297,12 +311,24 @@ static void tgcx_CfPanelRelease(uintptr_t view) {
     }
 }
 static void tgcx_CfPanelTick(tgcx_CfPanel* p) {
+    const char* volatile step="view/root";
     __try {
+        if(GetCurrentThreadId()!=p->thread)return;
+        if(!p->view || *reinterpret_cast<uintptr_t*>(p->view)!=tgcx_base+tgcx_cf_view_vt_rva)return;
         uintptr_t root=*reinterpret_cast<uintptr_t*>(p->view+0x20);
-        if(root!=p->root) { if(p->window)tgcx_TplVisible(p->window,false);tgcx_CfReset(p);p->root=root; }
+        tgcx_CfRootChanged(p,root);
+        step="view/stack";
+        uintptr_t shown=*reinterpret_cast<uintptr_t*>(p->view+0x28);
+        if(p->disabled) {
+            if(shown==p->seen)return;
+            // A new selection can recover without re-registering observers.
+            p->disabled=false;p->tick=0;p->land=false;
+        }
+        step="visibility";
         if(!tgcx_CfPanelLive(p)) { if(p->open)tgcx_CfClose(p);return; }
         DWORD now=GetTickCount();if(p->tick && now-p->tick<100)return;p->tick=now;
         if(!p->window) {
+            step="marker/window/tab lookup";
             // Without our GUI fragment there is nothing to bind: the button
             // lookup is silent, a window lookup is not. It searches only the
             // panel's own children, so the probe is the top-level marker.
@@ -311,26 +337,32 @@ static void tgcx_CfPanelTick(tgcx_CfPanel* p) {
             p->tab=tgcx_BillFind(p->root,27,0x5E4A20,"tgcx_cf_tab");
             tgcx_TplVisible(p->window,false);tgcx_Log("Conform native window found view=%08X root=%08X tab=%d",p->view,p->root,p->tab!=0);
         }
-        uintptr_t stack=*reinterpret_cast<uintptr_t*>(p->view+0x28);
-        if(stack!=p->seen) {
-            p->seen=stack;p->land=stack && tgcx_TplRead<int>(stack+0xC4)==tgcx_CfPlayer(tgcx_CfLiveGlobals()) && tgcx_cf_native.land(stack);
+        step="stack registry/owner/land";
+        uintptr_t stack=tgcx_CfShownStack(tgcx_CfLiveGlobals(),shown);
+        {
+            p->seen=shown;p->land=stack && tgcx_TplRead<int>(stack+0xC4)==tgcx_CfPlayer(tgcx_CfLiveGlobals()) && tgcx_cf_native.land(stack);
             // Another army selected: the window belonged to the previous one.
             if(p->open && (!stack || !tgcx_CfSame(tgcx_CfStackId(stack),p->stack)))tgcx_CfClose(p);
         }
         // Fleets and foreign stacks have no Conform. Re-applied every tick:
         // showing the unit panel re-shows its subtree (P42).
-        tgcx_TplVisible(p->tab,p->land);
+        step="tab visibility";tgcx_TplVisible(p->tab,p->land);
+        step="bind";
         for(unsigned b=0;b<TGCX_CF_BUTTONS;++b)tgcx_CfBind(p,b);
         if(p->open) {
+            step="place";
             if(!tgcx_CfPlace(p,false)) { tgcx_CfClose(p);return; }
             auto g=tgcx_CfLiveGlobals();
             // Once per game day: regiments arrive, merge, or finish building.
+            step="preview";
             if(g.world && tgcx_TplRead<uint32_t>(g.world+0xB0C)!=p->preview_date)tgcx_CfPreview(p);
+            step="labels";
             tgcx_CfLabels(p);
         }
     } __except(EXCEPTION_EXECUTE_HANDLER) {
         p->open=false;__try { if(p->window)tgcx_TplVisible(p->window,false); } __except(EXCEPTION_EXECUTE_HANDLER) {}
-        tgcx_Log("Conform window disabled after guarded GUI read fault");p->disabled=true;
+        if(!p->disabled)tgcx_Log("Conform window disabled after guarded GUI read fault: step=%s view=%08X root=%08X stack=%08X",step,p->view,p->root,p->seen);
+        p->disabled=true;
     }
 }
 static void tgcx_CfPanelsTick() {
@@ -340,6 +372,6 @@ static void tgcx_CfPanelsTick() {
         tgcx_CfPanel* found=nullptr;tgcx_CfPanel* empty=nullptr;
         for(auto& p:tgcx_cf_panels) { if(p.view==v.view)found=&p;if(!p.view && !empty)empty=&p; }
         if(!found && empty) { found=empty;tgcx_CfReset(found);found->view=v.view;found->thread=v.thread;found->disabled=false; }
-        if(found && !found->disabled)tgcx_CfPanelTick(found);
+        if(found)tgcx_CfPanelTick(found);
     }
 }
