@@ -655,7 +655,7 @@ uses them is `dll/tgcx/tgcx_conform.h` (report-tpl-1-research §9).
 
 ### TPL-1 native wrappers (2026-10-17, static; guarded)
 
-Read-only Ghidra again (`E:2re\logs	gcx-tpl1-1017
+Read-only Ghidra again (`E:\v2re\logs\tgcx-tpl1-1017
 at*.txt`); ten more
 `check_exe.SIGNATURES` entries ("TPL-1 native ..."), 139 in all, ALL OK.
 **Two corrections** to the tables above (they are not rewritten):

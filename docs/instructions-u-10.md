@@ -87,8 +87,8 @@ it. Install it the same way, after a normal exit:
 
 - the DLL, `install_dll.py` (proxy `8ECFE80D…0F3D`);
 - the submod, `install_submod.py ... --source
-  E:2re\logs	gcx-tpl1-1017\stage-061 --backup
-  E:2re\logs	gcx-tpl-place-1017efore-061-submod`
+  E:\v2re\logs\tgcx-tpl1-1017\stage-061 --backup
+  E:\v2re\logs\tgcx-tpl-place-1017\before-061-submod`
   (`unitpanel.gui` `29c84cba…d869`).
 
 Back up 0.6.0 to `before-061-dll\` first. The 0.5.1 rollback stays in
@@ -123,7 +123,7 @@ gathering. Install it as for 0.6.1:
 
 - the DLL, proxy `63FB05F5…23A3`, after backing up 0.6.1 to
   `before-062-dll\`;
-- the submod, from `stage-062` with `--backup …efore-062-submod`
+- the submod, from `stage-062` with `--backup …\before-062-submod`
   (`unitpanel.gui` `058ecdc8…46fa`).
 
 Then repeat from step 1. Step 5's nearby-regiment case no longer applies.

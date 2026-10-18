@@ -55,7 +55,7 @@
 | 6 | Hemicycle | HEMI-1 (DLL-2) **working prototype, tested in game**; user accepts function but says it looks clunky; HEMI-2 0.2.5 works in game; HEMI-3 0.2.6 hover **accepted in game**; 0.2.8 hover/header correction **accepted in game** | 100 seats/seven rows, native ordered GUI pass, native tooltip retained; `docs/report-u-5-1012.md`; 27 runtime guards, 5555 ordered draws, three UK native hover mappings; extended U-5 coverage remains; `docs/report-hemi-3-seam-1012.md` |
 | 7 | Charts in game (ECO-B) | renderer prerequisite available as a working prototype; GH-5/save-history work still needed; not selected | — |
 | 8 | Rulers and generals | GOV-0 data ready (D4); DLL-1 prototype available for future UI; not selected | TGC v2.5.2: 297 historical leaders, 44 own portraits; rulers: none |
-| 9 | Army templates | **TPL-0 0.4.0 functional prototype accepted in game; 0.4.1 placement (owner-chain anchor, P40) confirmed in game; 0.4.2-0.4.4 board-5 details, Recruit (P41), reopen (P42) and navy tab accepted in game (0.4.4)**; TPL-1 Conform: research, native layer (0.5.0/0.5.1, U-9 passed) and the Conform button and window (**0.6.0, done, not tested in game**, `docs/report-tpl-1-window-1017.md`; U-10 next); native Military build panel, local composition-named library, engine-command recruit; Conform is TPL-1 after visual acceptance; automatic replacement of regiments lost to rebellion (TPL-2) is on hold: Conform covers it | user screenshots/logs confirm 4 infantry + 4 artillery + 1 hussar and save/reload; `docs/report-tpl-0-runtime-1017.md`; 0.4.1: translated-parent fixture, `docs/report-tpl-0-placement-1017.md`; 0.4.1 anchor log (1104,490) and 0.4.2, `docs/report-tpl-0-visual-1017.md`; 91 runtime guards; native/reference-window/GPU and 8 DLL installer/Lua tests; 4 Templates GUI/rollback tests; existing law gates pass; all pre-existing installed submod files unchanged; `docs/report-tpl-0-panel-1017.md` |
+| 9 | Army templates | **TPL-0 0.4.0 functional prototype accepted in game; 0.4.1 placement (owner-chain anchor, P40) confirmed in game; 0.4.2-0.4.4 board-5 details, Recruit (P41), reopen (P42) and navy tab accepted in game (0.4.4)**; TPL-1 Conform: research, native layer (0.5.0/0.5.1, U-9 passed) and the Conform button and window (**0.6.2 accepted in game**, `docs/report-tpl-1-window-1017.md` §8; next: the visual pass and the guarded read fault, `docs/instructions-tpl-1-visual.md`); native Military build panel, local composition-named library, engine-command recruit; Conform is TPL-1 after visual acceptance; automatic replacement of regiments lost to rebellion (TPL-2) is on hold: Conform covers it | user screenshots/logs confirm 4 infantry + 4 artillery + 1 hussar and save/reload; `docs/report-tpl-0-runtime-1017.md`; 0.4.1: translated-parent fixture, `docs/report-tpl-0-placement-1017.md`; 0.4.1 anchor log (1104,490) and 0.4.2, `docs/report-tpl-0-visual-1017.md`; 91 runtime guards; native/reference-window/GPU and 8 DLL installer/Lua tests; 4 Templates GUI/rollback tests; existing law gates pass; all pre-existing installed submod files unchanged; `docs/report-tpl-0-panel-1017.md` |
 
 ---
 
@@ -146,6 +146,13 @@ When closing, in this order:
    session** that lacks a current one, and add them to `docs/README.md`.
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
+
+2026-10-17 (TPL-1 window): Conform button and window, 0.6.0 to 0.6.2 (P44
+marker lookup, P45 Merge size 0x4C, hover, D13 revised: build only).
+**0.6.2 accepted in game**: builds march and merge, extras detach, no
+crash, error logs empty. Pushed as `421bfc9`. Open: a guarded GUI read
+fault. Next (user): the V2-style visual pass,
+`docs/instructions-tpl-1-visual.md`. `docs/report-tpl-1-window-1017.md`.
 
 2026-10-17 (TPL-0 runtime): user accepts nine-regiment recruitment and
 save/reload; original screenshots, proxy/game logs and preferences preserved.

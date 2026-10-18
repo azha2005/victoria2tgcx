@@ -165,7 +165,7 @@ was already on the direct parent.
 - DLL `8ECFE80D…0F3D`. All gates pass (`check_exe`, `test_dll`,
   `test_conform_gui` with a new marker-level check, and the Templates,
   Bill and installer tests).
-- Stage `E:2re\logs	gcx-tpl1-1017\stage-061\`. Generated
+- Stage `E:\v2re\logs\tgcx-tpl1-1017\stage-061\`. Generated
   `unitpanel.gui` `29c84cba…d869`; `buildunit.gui` unchanged.
 
 Not installed at first: the game was running. **Installed on E: 2026-10-17** after the game exited (record in U-10). Not tested in game.
@@ -183,7 +183,7 @@ Not installed at first: the game was running. **Installed on E: 2026-10-17** aft
   path. Later, built stack 6891 marched to province 408 and joined 597.
 
 **The crash (P45).** Right after "stack 6891 joins 597" the game crashed.
-The minidump (`CrashDumps2game.exe.28204.dmp`, parsed privately) shows
+The minidump (`CrashDumps\v2game.exe.28204.dmp`, parsed privately) shows
 heap corruption (`0xC0000374`) in a native free. Its stack runs from
 Merge execute (`FUN_005E1590`) through stack merging (`FUN_005D5BC0`) and
 the merged stack's destructor (`FUN_005C61B0`) into its map avatar
@@ -219,7 +219,7 @@ Conform on the army builds the missing ones again. It does not reuse them.
 **0.6.2:**
 
 - DLL `63FB05F5…23A3`;
-- stage `E:2re\logs	gcx-tpl1-1017\stage-062\`;
+- stage `E:\v2re\logs\tgcx-tpl1-1017\stage-062\`;
 - generated `unitpanel.gui` `058ecdc8…46fa`; `buildunit.gui` unchanged.
 
 Gates: `check_exe`, `test_dll` (ALL OK, installer 8 OK), and the Conform

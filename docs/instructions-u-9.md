@@ -43,7 +43,7 @@ Rollback: restore the 0.4.4 DLL from the backup.
 
 - The game was closed normally (user).
 - 0.4.4 (`39AAFB47…72FB`) and its install record were backed up to
-  `E:2re\logs	gcx-tpl-place-1017efore-050-dll\`.
+  `E:\v2re\logs\tgcx-tpl-place-1017\before-050-dll\`.
 - `install_dll.py` dry run, then install. The installed `lua51.dll` is
   `11FAFD22…3A8A`, the same as the build. The original stays as
   `lua51_real.dll` (`B2BA1934…A7B0`). The record says card `TPL-1`. The

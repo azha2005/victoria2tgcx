@@ -130,7 +130,7 @@ update §4.
 | GOV-1 | Rulers by script | waits for GOV-0, SUB-0 | — |
 | GOV-2 | Ruler portrait/name (DLL) | DLL-1 prototype available; waits for GOV-1; not selected | — |
 | TPL-0 | Native Templates panel, local library and first recruit | **0.4.4 accepted in game** (recruit, reopen, navy tab, queue clicks); extended U-8 cases open | `docs/instructions-tpl-0.md`; `docs/report-tpl-0-visual-1017.md` |
-| TPL-1 | Conform an existing army to a template | **research started 2026-10-17**: research done (commands, recruit stack id, Move, CUnitView); D13 = A; signatures, planner, native wrappers and unit-panel hooks: U-9 passed on 0.5.0; 0.5.1 province fix installed and confirmed; **Conform window done in 0.6.0, not tested in game**, installed on E: (report-tpl-1-window-1017.md); next: U-10 | `docs/instructions-tpl-1.md` |
+| TPL-1 | Conform an existing army to a template | **research started 2026-10-17**: research done (commands, recruit stack id, Move, CUnitView); D13 = A; signatures, planner, native wrappers and unit-panel hooks: U-9 passed on 0.5.0; 0.5.1 province fix installed and confirmed; Conform button and window: **0.6.2 accepted in game** (U-10 passed; report-tpl-1-window-1017.md §8); next: visual pass and the guarded read fault | `docs/instructions-tpl-1.md`; `docs/instructions-tpl-1-visual.md` |
 | TPL-2 | Replace regiments lost to rebellion automatically | **on hold** (user, 2026-10-17): TPL-1 Conform already restores the lost regiments | `docs/instructions-tpl-2.md` |
 
 ### I — Infrastructure

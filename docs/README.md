@@ -39,9 +39,10 @@
 | `instructions-u-7.md` | short 0.3.5 game check (Reforms tab, Bill buttons, Decisions tab, a month with no popup) and rollback |
 | `instructions-u-8.md` | first live template recruit, queue, local library, save/reload and side-by-side comparison on 0.4.0 |
 | `instructions-u-9.md` | TPL-1 0.5.0 log probe: unit-panel hooks, stack/regiment read and registry round trip |
-| `instructions-u-10.md` | TPL-1 0.6.0 game check: Conform button, window, one Conform, march and merge |
+| `instructions-u-10.md` | TPL-1 game check: Conform button, window, one Conform, march and merge (passed on 0.6.2) |
 | `report-tpl-1-research-1017.md` | 2026-10-17 | Conform: commands and new-stack id mapped, D13; §9 signatures and pure planner; §10 native wrappers, unit-panel hooks, DLL 0.5.0 (U-9 passed); §11 P43 province fix, 0.5.1 |
 | `report-tpl-1-window-1017.md` | 2026-10-17 | Conform button and window (board 6), DLL 0.6.0: generator, preview, board deviations, gates; done, not tested in game |
+| `instructions-tpl-1-visual.md` | TPL-1 next pass: fix the guarded GUI read fault, then make Conform look like native Victoria II windows (board 6) |
 | `instructions-tpl-1.md` | Conform: scoped stack/move/merge/detach research after TPL-0 acceptance |
 | `instructions-tpl-2.md` | Auto-replace regiments lost to rebellion: on hold (Conform covers it) |
 | `instructions-tpl-0.md` | TPL-0: army templates; the `CConstructUnitCommand` findings, board questions, first DLL recruit |
