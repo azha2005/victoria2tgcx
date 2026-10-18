@@ -366,7 +366,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P48**).
+number (**the next one is P50**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -426,6 +426,8 @@ number (**the next one is P48**).
 - **P45** A command's allocation size comes from a native `push size; call new`, never from its last field: Merge is 0x4C, not 0x48 (0.6.1 heap-corruption crash)
 - **P46** A native row builder that ran once keeps its element state: a hook that only sets state never clears it; make the view rebuild or own the state (U-7 Reforms tab)
 - **P47** A fixed table of native objects freed only by our destructor hook fills up: free on vtable change and log a full table (0.6.4 Conform stopped after a year)
+- **P48** V2DLL writes `common\defines_v2dll.txt` into the first `-mod=` folder: expect it in R1 hash checks and move it out after a V2DLL run
+- **P49** The launcher does not enforce `dependencies`: a submod ticked alone loads on vanilla (TGCX alone crashed, MOD-0 run 3); an unticked dependency puts its mod first
 
 ## 9. Decisions
 
@@ -433,7 +435,7 @@ number (**the next one is P48**).
 |---|---|---|---|
 | **D1** | Compatibility | **TGC v2.5.2 only**; other versions deferred (maybe never). Nothing from TGC enters git; what is overridden is generated from the installed v2.5.2. Revised: the first answer was "any version" | **closed** (user, 2026-10-12, revised the same day after U-2) |
 | **D2** | Base | **TGC** instead of HPM (TGC already absorbed HPM/HFM); test with stable v2.5.2 | **closed** (user, 2026-10-12) |
-| D3 | Submod name and prefix | provisional `TGCX` / `tgcx_` | open [user] |
+| D3 | Submod name and prefix | Army package named **"Army Templates and Conform"** (user, 2026-10-18); Politics name still provisional ("TGCX Politics"); internal prefix `tgcx_` kept | partly closed [user] |
 | **D4** | "Leaders" | **both: rulers and generals/admirals, starting with those who existed in 1836** | **closed** (user, 2026-10-12); `docs/technical-plan.md` §5 |
 | **D5** | Multiplayer | **later**: single player first. R5 still holds (it is cheap and avoids rework), but MP is not tested until the user asks | **closed** (user, 2026-10-12) |
 | **D6** | DLL base | **our own DLL, allowed to use V2DLL code** (personal use; R8 says how to mark it) | **closed** (user, 2026-10-12) |
@@ -443,7 +445,7 @@ number (**the next one is P48**).
 | **D11** | Law details (favours) | **virtual purchases only, lasting the bill** (not TGC's real seat shifts); favours **accrue automatically like diplomatic points** (the DLL sends the monthly tick; a decision is the no-DLL fallback); the rate comes **from prestige plus stability, militancy, consciousness, voting pop and monarch/leader support** (initial values in `docs/law-design.md` §5) | **closed** (user, 2026-10-12) |
 | **D12** | Army templates | **local file** written by the DLL (an interface preference, not in the save; recruiting still uses the engine command, R5); **names from the composition**; **native windows** (route B); short of soldier pops, **recruit what fits** and report the rest; a **"Conform to template"** button on stacks in the field (template picked per click; missing regiments built, then marched and merged by engine commands; extras detached into a new stack) | **closed** (user, 2026-10-17); `docs/report-tpl-0-research-1017.md` §4 |
 | **D13** | Conform across save/reload | **A: session tracking, re-Conform after a reload**. Within a session the DLL marches and merges each finished regiment automatically. After a reload, pressing Conform on the stack again finds the finished, unattached regiments of the missing types nearby and offers to bring them. Nothing is persisted (B, a local file, and C, no automatic march, were rejected). Marches use **safe paths**, like the native rally point (user, same day). **Revised (user, 2026-10-17, after U-10 on 0.6.1): Conform always builds the missing regiments; it never takes finished regiments from nearby stacks.** After a reload, regiments still being built for an earlier Conform are no longer tracked: they finish as their own stacks, and a new Conform builds again | **closed** (user, 2026-10-17, revised the same day); `docs/report-tpl-1-research-1017.md` §4, `docs/report-tpl-1-window-1017.md` §7 |
-| **D15** | Templates + Conform as their own package | **Templates and Conform are the most important part of the mod and become their own package that works almost anywhere** (vanilla, other mods, alongside TGC); D1 stays for the laws. Order: LAW-3 first, then MOD-0 to MOD-5 (`docs/report-modular-scope-1018.md` §6.2). Package names, save folder, per-base installs, HPM descriptor still open | **closed** (user, 2026-10-18) |
+| **D15** | Templates + Conform as their own package | **Templates and Conform are the most important part of the mod and become their own package that works almost anywhere** (vanilla, other mods, alongside TGC); D1 stays for the laws. Order: LAW-3 first, then MOD-0 to MOD-5 (`docs/report-modular-scope-1018.md` §6.2). **Sub-decisions (user, 2026-10-18):** Army works on any base, as generic as possible (vanilla, TGC, HPM, HFM, others), Politics stays TGC v2.5.2; packages **Army** ("Army Templates and Conform", no `user_dir`) and **Politics** (keeps `user_dir` TGCX), later **Economy** and **Cosmetic**; one folder per base; our own HPM descriptor (P4); `tgcx.dll` in the package folders; `mod\TGCX` replaced. `docs/instructions-mod-2.md` §2 | **closed** (user, 2026-10-18) |
 | **D14** | Reforms tab offer | **A + B**: a row is offered only if its bill's decision passes its own `allow` (flag written by the favour collection), and backward steps only where the native game allows a backward reform. Mockup board 1 changes with it (R10) | **closed** (user, 2026-10-18); `docs/report-u-7-1018.md` F4, `docs/instructions-law-3.md` |
 | **D16** | V2DLL coexistence | **(a) own `lua51.dll` proxy now; (b) after MOD-1, one logic DLL (`tgcx.dll`) behind two thin loaders**: our own `lua51.dll` proxy, and V2DLL (its `v2dll_mod.dll` slot, or loading by a V2DLL setting as maxioten suggested). Per-mechanic signature gates first. (c), plugin only, rejected. Open: V2DLL's slot reads only the **first** `-mod=`, which is TGC's (MOD-0 run 1), so loading by setting, or V2DLL searching every `-mod=`, is asked of V2DLL | **closed** (user, 2026-10-18; shape agreed the same day); `docs/report-v2dll-mod-slot-1018.md` §7 |
 | **D10** | Language | **English for everything**: code, comments, docs, file names, commit messages, in-game text and chat. Nothing is written in Spanish. All existing files were translated on 2026-10-12 | **closed** (user, 2026-10-12) |

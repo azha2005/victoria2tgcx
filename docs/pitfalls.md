@@ -768,3 +768,37 @@ never bound).
 **Fix:** treat a changed vtable as destruction and free every slot tied to
 that object without touching its GUI. Never let a table fill silently: log
 it. 0.6.5, `report-tpl-1-slots-1018.md`.
+
+### P48 - V2DLL writes `common\defines_v2dll.txt` into the first mod's folder
+
+**Cause:** V2DLL keeps its game-data settings in
+`<mod>\common\defines_v2dll.txt` and creates the file automatically
+("Created automatically, edit freely"). The mod is the one named by the
+first `-mod=` (the same `ResolveModFolder` as its plugin loader).
+
+**Symptom:** after V2D-1, `mod\TGCX\common\defines_v2dll.txt` (3297 bytes,
+written 2026-10-18 19:38) was an extra file in our submod. It was found by
+re-checking MOD-0's baseline hashes. In a normal launch, the same file would
+appear in TGC's own `common\`. That is V2DLL editing TGC's folder, not us,
+but it changes what a re-hash of TGC finds.
+
+**Fix:** after any run with V2DLL, check the first mod's `common\` and move
+the file out (it was moved to `E:\v2re\logs\tgcx-v2d1-1018\v2dll-run\`).
+`install_submod.py` and any R1 hash check must expect this file when V2DLL is
+installed. MOD-2's base profiles must too. `report-v2d-1-1018.md` §3.
+
+### P49 - The launcher does not enforce `dependencies`
+
+**Cause:** with only TGCX ticked, the launcher passes `-mod=mod/TGCX.mod`
+alone, with no warning, although `TGCX.mod` names TGC v2.5.2 in
+`dependencies`. The base is then vanilla. A mod whose dependency is not
+ticked is also placed **first** on the command line (MOD-0 run 2).
+
+**Symptom:** MOD-0 run 3 crashed right after loading, before the first GUI
+frame. The likely cause (inferred) is TGCX's TGC-generated
+`country_politics.gui`, which uses 14 sprites only TGC defines.
+
+**Fix:** never rely on `dependencies` to keep base-generated files away from
+another base. MOD-2 installs each package for the base it was generated
+from, and the DLL acts only when one of our packages is in the `-mod=` list.
+`report-mod-0-1018.md` §2, §4.

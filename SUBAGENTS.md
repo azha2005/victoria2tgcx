@@ -116,8 +116,9 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 | LAW-2 | Bill GUI and command bridge | 0.3.4 look accepted; 0.3.5 **checked in game (U-7, 2026-10-18): partly passed**; failures go to LAW-3 | `docs/instructions-law-2.md`; `docs/report-u-7-1018.md` |
 | LAW-3 | Reforms rows refresh (F1), top-bar tooltip filter (F2), load test removed (F3), D14 offer rule + board 1, Bill text overflow | 0.6.4 installed, **U-11 passed** 2026-10-18; G1 open | `docs/instructions-law-3.md`; `docs/report-law-3-1018.md` |
 | U-11 | Short game check of LAW-3 (0.6.4) | **passed** 2026-10-18 (`docs/report-u-11-1018.md`) | `docs/instructions-u-11.md` |
-| MOD-0 | Read-only launcher check: command line, three mods, dependency not ticked (D15) | run 1 done; runs 2-3 open (user runs them) | `docs/instructions-mod-0.md` |
+| MOD-0 | Read-only launcher check: command line, three mods, dependency not ticked (D15) | **done** 2026-10-18 (P49; open points in the report) | `docs/instructions-mod-0.md`, `docs/report-mod-0-1018.md` |
 | V2D-1 | In-game run with V2DLL loading `tgcx.dll` as `v2dll_mod.dll` (MOD-1 step B, D16) | **done** (passed 2026-10-18; E: restored to 0.7.0) | `docs/instructions-v2d-1.md`, `docs/report-v2d-1-1018.md` |
+| MOD-2 | Installer with generic base profiles and per-base packages (Army, Politics); sprite check; DLL found through the `-mod=` list (D15) | **ready** (S1-S8 answered 2026-10-18) | `docs/instructions-mod-2.md` |
 | MOD-1 | Per-module signature gates; `tgcx.dll` behind a `lua51.dll` loader, `V2Mod_Init` export (D16) | **done** (0.7.0 installed, game check passed 2026-10-18; staged) | `docs/instructions-mod-1.md`, `docs/report-mod-1-1018.md` |
 | U-7 | Bill prototype visual/Count evidence | 0.3.3 placement and 0.3.4 look accepted; **0.3.5 partly passed** (2026-10-18): F1, F2 failed | `docs/instructions-u-7.md`; `docs/report-u-7-1018.md` |
 | U-8 | First live template recruit and visual check | **complete** (2026-10-18): all extended cases passed on 0.6.3 | `docs/instructions-u-8.md`; `docs/report-u-8-extended-1018.md` |

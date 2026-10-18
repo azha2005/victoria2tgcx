@@ -60,7 +60,7 @@
    (`docs/report-mod-1-1018.md`): per-module gates, `tgcx.dll` behind a
    `lua51.dll` loader. **Installed 2026-10-18** after a normal exit
    (0.6.5 backed up to `before-070-dll`); **game check passed** the same day (report §6). Stage `E:\v2re\logs\tgcx-mod1-1018\stage-070\`.
-5. Close under ROADMAP §7. The next pitfall is **P48**.
+5. Close under ROADMAP §7. The next pitfall is **P50**.
 
 Only the user launches and exits the game. Install only after a normal
 exit, with paired backups. No commit, push or subagents unless asked.
@@ -70,8 +70,9 @@ exit, with paired backups. No commit, push or subagents unless asked.
 | Card | Status | Instructions/evidence |
 |---|---|---|
 | V2D-1 | **passed** 2026-10-18: V2DLL `de66ee61` loaded tgcx.dll 0.7.0 (`-> ok`), 7 FOREIGN, all modules on; E: restored to 0.7.0 | instructions-v2d-1.md; report-v2d-1-1018.md |
+| MOD-2 | **ready**: instructions written, D15 sub-decisions S1-S8 answered 2026-10-18 | instructions-mod-2.md |
 | MOD-1 | 0.7.0 installed on E:, **passed the game check** 2026-10-18; plugin entry checked without the game (step A) | instructions-mod-1.md; report-mod-1-1018.md |
-| MOD-0 | run 1 done (P47 found, fixed in 0.6.5); runs 2-3 open | instructions-mod-0.md; report-tpl-1-slots-1018.md |
+| MOD-0 | **done** 2026-10-18 (`-mod=` order, three mods OK, TGCX alone crashed on vanilla: P49); open: Q3 units, P19 recheck, run 3 cause | instructions-mod-0.md; report-mod-0-1018.md |
 | LAW-3 | 0.6.4 installed and **passed U-11** 2026-10-18; G1 open | instructions-law-3.md; report-law-3-1018.md |
 | U-11 | **passed** 2026-10-18 (G1 open) | instructions-u-11.md; report-u-11-1018.md | instructions-u-11.md |
 | LAW-2 / U-7 | 0.3.5 checked in game 2026-10-18: partly passed; failures go to LAW-3 | instructions-law-2.md; report-u-7-1018.md |

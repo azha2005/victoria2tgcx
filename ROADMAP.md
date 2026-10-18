@@ -96,7 +96,7 @@ D10:
 | D12 | army templates (user, 2026-10-17): **stored in a local file** written by the DLL (not in the save); **names built from the composition**; **native windows** generated from TGC's `.gui` (route B); when soldier pops run short, **recruit what fits** and report the rest. Added the same day: a **"Conform to template" button on stacks in the field**; the template is **picked on each click**; missing regiments are **built, then marched to the stack and merged** by the DLL (engine move/merge commands); extra regiments are **detached into a new stack** | `docs/report-tpl-0-research-1017.md` §4; `docs/instructions-tpl-0.md` |
 
 | D13 | Conform: **session tracking; re-Conform after a reload** gathers finished unattached regiments (user, 2026-10-17) | `docs/report-tpl-1-research-1017.md` §4; `docs/instructions-tpl-1.md` |
-| D15 | **Templates + Conform: their own package that works almost anywhere**; D1 still holds for laws; LAW-3 first, then MOD-0..MOD-5 (user, 2026-10-18) | `docs/report-modular-scope-1018.md` §6 |
+| D15 | **Templates + Conform: their own package that works almost anywhere**; D1 still holds for laws; LAW-3 first, then MOD-0..MOD-5 (user, 2026-10-18). Sub-decisions S1-S8 the same day: Army on any base (generic), packages Army ("Army Templates and Conform", no `user_dir`) and Politics (TGC v2.5.2, `user_dir` TGCX), later Economy and Cosmetic; one folder per base; own HPM descriptor; DLL in package folders; `mod\TGCX` replaced | `docs/report-modular-scope-1018.md` §6; `docs/instructions-mod-2.md` §2 |
 | D16 | V2DLL: **(a) keep our own `lua51.dll` proxy now; (b) after MOD-1, one logic DLL `tgcx.dll` behind two thin loaders** (our proxy, and V2DLL by its mod slot or a setting) once the signature gate is per mechanic (user, 2026-10-18) | `docs/report-v2dll-mod-slot-1018.md` §5-6 |
 | D14 | Reforms tab offer: **only bills whose decision passes its own `allow`, and backward steps only where the game allows a backward reform** (user, 2026-10-18) | `docs/report-u-7-1018.md` F4; `docs/instructions-law-3.md` §4 |
 
@@ -158,6 +158,8 @@ When closing, in this order:
    session** that lacks a current one, and add them to `docs/README.md`.
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
+
+2026-10-18 (MOD-0 runs 2-3): three mods load with no warning (`-mod=` OrganizedStacks, TGC, TGCX: a mod with an unticked dependency goes first); TGCX alone gets only `-mod=mod/TGCX.mod`, runs on vanilla and crashed after loading (likely the TGC-generated `country_politics.gui`'s 14 TGC-only sprites; inferred). `mod\` unchanged. P49. MOD-0 done; P19 needs a recheck (V2D-1 contradicts it). `docs/report-mod-0-1018.md`.
 
 2026-10-18 (V2D-1): with V2DLL `de66ee61` installed and TGCX first on the command line, V2DLL loaded tgcx.dll 0.7.0 (`ModLoader … -> ok`); 146 OK + 7 FOREIGN (exactly V2DLL's sites), Direct3DCreate9 chained through V2DLL, slot 10 left alone, all modules on through ~11 months of play. TGCX script also worked with TGCX listed first (narrows P19). E: restored byte-identical to 0.7.0. Left: ask V2DLL for a load setting or a search of every `-mod=` (D16). `docs/report-v2d-1-1018.md`.
 

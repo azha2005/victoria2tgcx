@@ -66,6 +66,9 @@ Settings stayed in `TGC252_TGCX` (`Templates local file` line).
 - `lua51.dll`, `lua51_real.dll` and `tgcx.dll` are byte-identical to
   `before-v2d1` (`cmp`). No V2DLL file is left in the game folder or in
   `mod\TGCX`.
+- Found later by the MOD-0 baseline re-check: V2DLL had also written
+  `mod\TGCX\common\defines_v2dll.txt`. It was moved to `v2dll-run\`, and
+  `mod\` matches the MOD-0 baseline again (P48).
 - V2DLL's own logs are still in the game's `Logs\` folder. Among them,
   `v2dll_state.log` is 307 MB. They are V2DLL's files and were left in place;
   delete them if you like.
