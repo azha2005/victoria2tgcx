@@ -1,26 +1,25 @@
 # NEXT - what comes next
 
-2026-10-17 (30). **0.6.3 installed on E: and accepted in game** (user: "works").
+2026-10-18 (31). **0.6.3 (332x594 native army-panel look and flush placement) installed on E:, tested and accepted in game** (user screenshot + "works great!").
 0.6.3 is the working baseline; paired 0.6.2 backups are retained. See
-`docs/instructions-tpl-1-063-check.md`; evidence and hashes in
 `docs/report-tpl-1-visual-1017.md`.
 
 ## This session
 
-- User supplied an army-composition screenshot and requested that style.
-  Candidate uses the army frame, parchment, green header and pale rows.
-- Root replacement discards the cached old window; stack reads validate
-  registry identity. Disabled panels recover on root/selection changes.
-  Named fault stages added. Current 0.6.3 log has no guarded GUI read fault; exhaustive reproduction coverage remains unconfirmed.
-- Automatic gates and installation dry runs pass. Stage preserves stage-062
-  law content. User authorized commit and push; no subagents used.
+- Refined `tools/tgcx_conform_gui.py` to match the native `332 px` army panel:
+  top and bottom gold braided headers from `GFX_unit_toppanel_bg`, unstretched
+  parchment middle and recessed bottom tray from `GFX_unit_bottom_bg`, clean
+  `317x30` regiment rows (`GFX_unit_entry_bg` without the right-hand POP/bar
+  stripes), `GFX_unit_bg_28` section header for `Changes`, and `148x28`
+  bevelled unit-panel footer buttons (`GFX_unit_gunboat_diplo_button`).
+- Placed the Conform window flush beside the unit panel at `(x+331, y+26)` in
+  `tgcx_CfPlace` (`dll/tgcx/tgcx_conform_gui.h`) so its top gold border aligns
+  with `unitpanel_bg`.
+- Tested and accepted in game by the user.
 
 ## Next session in order
 
-1. 0.6.3 short player check accepted. Optional extended view-turnover and
-   screenshot evidence: `docs/instructions-tpl-1-063-check.md`. No new
-   mechanic selected; next outstanding player checks follow.
-2. U-8 extended cases: `docs/instructions-u-8.md`, `docs/instructions-tpl-0.md`.
+1. U-8 extended cases: `docs/instructions-u-8.md`, `docs/instructions-tpl-0.md`.
 3. U-7 short law/reforms check: `docs/instructions-u-7.md`.
 4. V2DLL compatibility remains an open user decision (own proxy recommended).
 5. Close under ROADMAP section 7. Next pitfall remains P46.

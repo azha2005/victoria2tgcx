@@ -1,7 +1,7 @@
 # TPL-1 visual candidate 0.6.3 - 2026-10-17
 
-Status: implemented and staged, not installed, not tested in game. The
-accepted installed baseline remains 0.6.2. No commit or push.
+Status: installed on E:, tested and accepted in game (332x594 native
+army-panel look and flush placement beside the unit panel).
 
 ## Lifetime repair
 

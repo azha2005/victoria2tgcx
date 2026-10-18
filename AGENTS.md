@@ -257,13 +257,14 @@ E:\tools\ghidra_12.1.4_PUBLIC\support\analyzeHeadless.bat E:\v2re\ghidra v2game 
   -process v2game.exe -noanalysis -scriptPath <folder> -postScript <Script>.java
 ```
 
-Current candidate: **0.6.2 (TPL-1: the Conform button and window, board
-6)**, staged in `E:\v2re\logs\tgcx-tpl1-1017\stage-062\`, installed on E:
-and **accepted in game** (`docs/report-tpl-1-window-1017.md` §8; U-10
+Current candidate: **0.6.3 (TPL-1: the Conform window styled like the
+native 332px army panel and placed flush beside it, plus lifetime guards)**,
+staged in `E:\v2re\logs\tgcx-tpl1-1017\stage-063\`, installed on E:,
+**tested and accepted in game** (`docs/report-tpl-1-visual-1017.md`).
+Before it: **0.6.2** (`docs/report-tpl-1-window-1017.md` §8; U-10
 passed). 0.6.0 did nothing (P44) and 0.6.1 crashed after a Merge (P45).
-Rollbacks: `before-062-*` (0.6.1), `before-061-*` (0.6.0), `before-060-*`
-(0.5.1). Next: the visual pass and the guarded GUI read fault,
-`docs/instructions-tpl-1-visual.md`.
+Rollbacks: `before-063b-submod`, `before-063-*` (0.6.2), `before-062-*`
+(0.6.1), `before-061-*` (0.6.0), `before-060-*` (0.5.1).
 
 Before it: **0.4.4 (TPL-0: the Templates tab is hidden in Build
 Navy)**, installed on E:, **accepted in game** (`docs/report-tpl-0-visual-1017.md` §10). 0.4.3 is installed and
