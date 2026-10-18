@@ -295,3 +295,33 @@ has its own lua51.dll proxy and was written before LOAD_DLL_FROM_MOD_FOLDER.
 Building it as v2dll_mod.dll is possible but needs our signature checks to
 tolerate V2DLL's own patches (music player, OOS hook, Politics tooltip slot,
 Direct3DCreate9); we may do it later."
+
+## 7. Addendum (2026-10-18, later): the shape chosen for (b)
+
+The user chose (a) now and (b) after MOD-1 (D16). The same day maxioten
+suggested shipping the logic as one DLL that V2DLL's own `lua51.dll` loads
+when a setting enables it. The user agreed. The shape for (b) is:
+
+- **`tgcx.dll`, the logic**, built from the one translation unit there
+  already is (`tgcx_dllmain.cpp` includes every header; the project compiles
+  only that file).
+- **Two thin loaders.** Our `lua51.dll` proxy (Lua forwards plus a
+  `LoadLibrary` of `tgcx.dll`) for players without V2DLL. For players with
+  V2DLL, V2DLL loads `tgcx.dll`, either through its `v2dll_mod.dll` slot
+  or through a setting. Either way: one logic build and one set of game
+  checks.
+
+**What MOD-0 run 1 settled:** the launcher passes
+`-mod=mod/TGC_v2.5.2.mod -mod=mod/TGCX.mod` (recorded with
+`Win32_Process`). The dependency comes first, so the §2.1 slot would look
+in TGC's folder (R1). V2DLL upstream re-checked at `de66ee61` (2026-10-18
+19:04 +0300): the loader is unchanged (that commit adds only decompilation
+notes). So TGCX needs V2DLL to load it in one of two ways:
+
+1. **By setting** (maxioten's suggestion): a path or name in
+   `v2dll_settings.ini`, the DLL next to the game.
+2. **By searching every `-mod=`** for `v2dll_mod.dll`, the last mod first.
+
+Either still needs MOD-1: per-mechanic gates that accept V2DLL's
+documented patches (§3.2), and D3D chaining through V2DLL's
+`Direct3DCreate9`/`CreateDevice` hooks.
