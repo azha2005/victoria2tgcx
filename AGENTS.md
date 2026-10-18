@@ -357,7 +357,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P47**).
+number (**the next one is P48**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -416,6 +416,7 @@ number (**the next one is P47**).
 - **P44** A GUI name lookup searches only the host's direct children: probe with a top-level marker button (0.6.0 Conform did nothing)
 - **P45** A command's allocation size comes from a native `push size; call new`, never from its last field: Merge is 0x4C, not 0x48 (0.6.1 heap-corruption crash)
 - **P46** A native row builder that ran once keeps its element state: a hook that only sets state never clears it; make the view rebuild or own the state (U-7 Reforms tab)
+- **P47** A fixed table of native objects freed only by our destructor hook fills up: free on vtable change and log a full table (0.6.4 Conform stopped after a year)
 
 ## 9. Decisions
 

@@ -49,9 +49,11 @@
    `lua51.dll` proxy now (a); build the `v2dll_mod.dll` plugin (b) as a card
    after MOD-1 (`docs/report-v2dll-mod-slot-1018.md` §5(b)).
 4. **MOD-0 to MOD-5** (D15), per `docs/report-modular-scope-1018.md` §6.2.
-   **MOD-0 next:** `docs/instructions-mod-0.md` (read-only game check, three
-   runs). MOD-1 instructions are written from the MOD-0 report.
-5. Close under ROADMAP §7. The next pitfall is **P47**.
+   **MOD-0 in progress:** `docs/instructions-mod-0.md`. Run 1 passed
+   except that Conform stopped after about a year (P47). Fix staged as
+   **0.6.5** (`docs/report-tpl-1-slots-1018.md`): install it after a normal
+   exit, then do runs 2-3. MOD-1 instructions are written from the MOD-0 report.
+5. Close under ROADMAP §7. The next pitfall is **P48**.
 
 Only the user launches and exits the game. Install only after a normal
 exit, with paired backups. No commit, push or subagents unless asked.

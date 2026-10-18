@@ -50,4 +50,21 @@ static void tgcx_ConformGuiTests() {
     tgcx_CfRowsOf(p,nullptr,&rows);
     tgcx_Expect(rows.count==tgcx_cf_changes && rows.more==11-tgcx_cf_changes && rows.detach==11,"conform rows: overflow counted, totals complete");
     printf("Conform window: Changes rows checked\n");
+    // P47: unit panels that die without the destructor hook free their slots,
+    // so a long game never runs out (0.6.4 stopped after eight).
+    bool enabled_was=tgcx_cf_enabled;tgcx_cf_enabled=true;
+    for(auto& v:tgcx_cf_views)v={};for(auto& q:tgcx_cf_panels) { tgcx_CfReset(&q);q.view=0; }
+    static uintptr_t views[40][16];bool every=true;
+    for(unsigned i=0;i<40;++i) {
+        views[i][0]=tgcx_base+tgcx_cf_view_vt_rva;
+        tgcx_CfCapture(reinterpret_cast<uintptr_t>(views[i]));
+        tgcx_CfPanel* slot=nullptr;
+        for(const auto& v:tgcx_cf_views)if(v.view==reinterpret_cast<uintptr_t>(views[i]))slot=tgcx_CfPanelFor(v);
+        every=every && slot!=nullptr && slot->view==reinterpret_cast<uintptr_t>(views[i]);
+        views[i][0]=0;tgcx_CfSweepViews();                      // destroyed by another path
+    }
+    tgcx_Expect(every,"Conform: 40 unit panels destroyed outside the hook each get a view and a panel slot");
+    unsigned left=0;for(const auto& q:tgcx_cf_panels)left+=q.view?1u:0u;for(const auto& v:tgcx_cf_views)left+=v.view?1u:0u;
+    tgcx_Expect(left==0,"Conform: no slot left behind by dead unit panels");
+    tgcx_cf_enabled=enabled_was;
 }

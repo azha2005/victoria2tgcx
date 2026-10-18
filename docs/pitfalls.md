@@ -751,3 +751,20 @@ Either make the native view rebuild when our state changes, or own the
 elements' state from then on. LAW-3 step 2.
 
 `report-u-7-1018.md` F1.
+
+### P47 - A fixed table of native objects freed only by our destructor hook fills up
+
+**Cause:** Conform kept the unit panels it saw in two tables of 8
+(`tgcx_cf_views`, `tgcx_cf_panels`). A slot was freed by the hooked slot-0
+destructor. A panel whose vtable simply changed (destroyed by a path the
+hook does not see) left only the view table; its panel slot stayed taken.
+The game makes many `CUnitView`s over a long game: 11 distinct ones in one
+year of MOD-0 run 1.
+
+**Symptom:** after about a year of play on 0.6.4 the Conform button did
+nothing, and `tgcx.log` said nothing (no free panel, so the button was
+never bound).
+
+**Fix:** treat a changed vtable as destruction and free every slot tied to
+that object without touching its GUI. Never let a table fill silently: log
+it. 0.6.5, `report-tpl-1-slots-1018.md`.

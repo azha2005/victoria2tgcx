@@ -302,7 +302,10 @@ static tgcx_CfResult tgcx_CfConformWith(const tgcx_CfGlobals& g,const tgcx_CfNat
 // shown stacks are also described in the log (read only), so the regiment
 // layout and the registry walk stay checkable in game (U-9).
 struct tgcx_CfView { uintptr_t view,shown;DWORD thread; };
-static tgcx_CfView tgcx_cf_views[8]={};
+// P47: a unit panel can die without our destructor hook (its vtable just
+// changes). Its slot is freed then too, and a full table is logged.
+static tgcx_CfView tgcx_cf_views[32]={};
+static unsigned tgcx_cf_views_lost=0,tgcx_cf_views_released=0;static bool tgcx_cf_views_full_logged=false;
 static uintptr_t tgcx_cf_refresh_original=0,tgcx_cf_destroy_original=0;
 static bool tgcx_cf_enabled=false;static unsigned tgcx_cf_described=0;
 
@@ -312,15 +315,17 @@ static void __cdecl tgcx_CfCapture(uintptr_t view) {
         tgcx_CfView* empty=nullptr;bool known=false;
         for(auto& v:tgcx_cf_views) { if(v.view==view)known=true;if(!v.view && !empty)empty=&v; }
         if(!known && empty) { empty->view=view;empty->shown=0;empty->thread=GetCurrentThreadId(); }
+        else if(!known && !tgcx_cf_views_full_logged) { tgcx_cf_views_full_logged=true;tgcx_Log("Conform: unit panel table full (%u views); a new panel has no Conform",static_cast<unsigned>(_countof(tgcx_cf_views))); }
     }
     SetLastError(error);
 }
 static void tgcx_CfPanelRelease(uintptr_t view);   // the Conform window (tgcx_conform_gui.h)
+static void tgcx_CfPanelForget(uintptr_t view);    // the same, without touching its (dead) GUI
 static void tgcx_CfPanelsTick();
 static void __cdecl tgcx_CfRelease(uintptr_t view) {
     DWORD error=GetLastError();
     tgcx_CfPanelRelease(view);
-    for(auto& v:tgcx_cf_views)if(v.view==view)v={};
+    for(auto& v:tgcx_cf_views)if(v.view==view) { v={};++tgcx_cf_views_released; }
     SetLastError(error);
 }
 #define TGCX_CF_VIEW_THUNK(name,callback,original) \
@@ -352,14 +357,28 @@ static void tgcx_CfDescribe(const tgcx_CfGlobals& g,uintptr_t stack) {
             tgcx_CfLookup(g,s.regiment[i].id)==s.entry[i]?"round trip":"MISMATCH");
     }
 }
+// Views whose vtable changed were destroyed by a path the slot-0 hook does not
+// see: free the view and its Conform panel (whose GUI is gone with it).
+static void tgcx_CfSweepViews() {
+    for(auto& v:tgcx_cf_views) {
+        if(!v.view)continue;
+        bool alive=false;
+        __try { alive=*reinterpret_cast<uintptr_t*>(v.view)==tgcx_base+tgcx_cf_view_vt_rva; } __except(EXCEPTION_EXECUTE_HANDLER) {}
+        if(alive)continue;
+        tgcx_CfPanelForget(v.view);
+        if(++tgcx_cf_views_lost<=8)tgcx_Log("Conform: unit panel %08X gone without its destructor (%u so far, %u by destructor); slot freed",
+            v.view,tgcx_cf_views_lost,tgcx_cf_views_released);
+        v={};
+    }
+}
 static void tgcx_CfTick() {
     if(!tgcx_cf_enabled)return;
     auto g=tgcx_CfLiveGlobals();
     __try { tgcx_CfDaily(g,tgcx_cf_native); } __except(EXCEPTION_EXECUTE_HANDLER) { tgcx_Log("Conform driver fault; pending orders forgotten");tgcx_CfForget("fault"); }
+    tgcx_CfSweepViews();
     for(auto& v:tgcx_cf_views) {
         if(!v.view)continue;
         __try {
-            if(*reinterpret_cast<uintptr_t*>(v.view)!=tgcx_base+tgcx_cf_view_vt_rva) { v={};continue; }
             uintptr_t stack=*reinterpret_cast<uintptr_t*>(v.view+0x28);
             if(stack==v.shown)continue;
             v.shown=stack;

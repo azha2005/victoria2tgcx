@@ -314,6 +314,11 @@ static void tgcx_TplTick() {
     if(!tgcx_tpl_gui_enabled)return;
     for(auto& p:tgcx_tpl_panels)if(p.view && !p.disabled) {
         __try {
+            // P47: destroyed outside the hook; its GUI went with it, free the slot.
+            if(*reinterpret_cast<uintptr_t*>(p.view)!=tgcx_base+0xA12A14) {
+                p.view=p.root=p.window=p.tab=0;p.open=false;memset(p.bound,0,sizeof(p.bound));memset(p.text_set,0,sizeof(p.text_set));memset(p.shown,0,sizeof(p.shown));
+                tgcx_Log("Templates: build view gone without its destructor; slot freed");continue;
+            }
             uintptr_t root=*reinterpret_cast<uintptr_t*>(p.view+0x60);
             if(root!=p.root) {
                 tgcx_TplVisible(p.window,false);tgcx_TplVisible(p.tab,false);p.root=root;p.window=p.tab=0;p.open=false;

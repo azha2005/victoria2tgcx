@@ -48,7 +48,7 @@ struct tgcx_CfPanel {
     char text[TGCX_CF_TEXTS][192],summary[192],status[192];bool text_set[TGCX_CF_TEXTS];
     unsigned char shown[352];
 };
-static tgcx_CfPanel tgcx_cf_panels[8]={};
+static tgcx_CfPanel tgcx_cf_panels[_countof(tgcx_cf_views)]={};
 
 // A view may retain a just-merged stack. Check its small identity under SEH,
 // then the registry, before reading ownership or calling a virtual method.
@@ -365,13 +365,26 @@ static void tgcx_CfPanelTick(tgcx_CfPanel* p) {
         p->disabled=true;
     }
 }
+static void tgcx_CfPanelForget(uintptr_t view) {
+    for(auto& p:tgcx_cf_panels)if(p.view==view) { tgcx_CfReset(&p);p.view=0; }
+}
+// The panel of a captured view; a panel whose view left the table is freed
+// first (P47), so slots never run out while views come and go.
+static tgcx_CfPanel* tgcx_CfPanelFor(const tgcx_CfView& v) {
+    tgcx_CfPanel* found=nullptr;tgcx_CfPanel* empty=nullptr;
+    for(auto& p:tgcx_cf_panels) {
+        if(!p.view)continue;
+        bool known=false;for(const auto& w:tgcx_cf_views)if(w.view==p.view)known=true;
+        if(!known) { tgcx_CfReset(&p);p.view=0; }
+    }
+    for(auto& p:tgcx_cf_panels) { if(p.view==v.view)found=&p;if(!p.view && !empty)empty=&p; }
+    if(!found && empty) { found=empty;tgcx_CfReset(found);found->view=v.view;found->thread=v.thread;found->disabled=false; }
+    return found;
+}
 static void tgcx_CfPanelsTick() {
     if(!tgcx_cf_enabled)return;
     for(const auto& v:tgcx_cf_views) {
         if(!v.view)continue;
-        tgcx_CfPanel* found=nullptr;tgcx_CfPanel* empty=nullptr;
-        for(auto& p:tgcx_cf_panels) { if(p.view==v.view)found=&p;if(!p.view && !empty)empty=&p; }
-        if(!found && empty) { found=empty;tgcx_CfReset(found);found->view=v.view;found->thread=v.thread;found->disabled=false; }
-        if(found)tgcx_CfPanelTick(found);
+        if(tgcx_CfPanel* p=tgcx_CfPanelFor(v))tgcx_CfPanelTick(p);
     }
 }
