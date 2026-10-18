@@ -157,7 +157,7 @@ When closing, in this order:
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
 
-2026-10-18 (MOD-0 run 1 / P47): run 1 played a year as France; the command line is `-mod=mod/TGC_v2.5.2.mod -mod=mod/TGCX.mod`. Conform stopped: unit-panel slots leaked (P47). 0.6.5 frees them and logs a full table; built, tests pass, staged, not installed (`docs/report-tpl-1-slots-1018.md`).
+2026-10-18 (MOD-0 run 1 / P47): run 1 played a year as France; the command line is `-mod=mod/TGC_v2.5.2.mod -mod=mod/TGCX.mod`. Conform stopped: unit-panel slots leaked (P47). 0.6.5 frees them and logs a full table; built, tests pass, installed after a normal exit (backup `before-065-dll`), not yet tested in game (`docs/report-tpl-1-slots-1018.md`).
 
 2026-10-18 (D16): committed LAW-3/U-11 (75e2077). The user chose V2DLL option (a) now and (b) after MOD-1. Next: MOD-0.
 

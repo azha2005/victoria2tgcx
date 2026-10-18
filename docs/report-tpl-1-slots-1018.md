@@ -5,8 +5,9 @@ about a year of play as France (March 1837) the **Conform to template**
 button did nothing. Templates, laws and everything else kept working. The
 `dsx-….exe` error shown at the same time came from an unrelated 64-bit
 program, not the game (its crash address `0x00007FF6…` cannot be in the
-32-bit `v2game.exe`; Windows recorded no game crash). **Fix built and staged,
-not installed, not tested in game.**
+32-bit `v2game.exe`; Windows recorded no game crash). **Fix built and installed
+on E: the same day (0.6.4 backed up to `before-065-dll`); not tested in
+game.**
 
 ## Evidence (`tgcx.log`, run 1)
 
