@@ -51,7 +51,8 @@ V2DLL technique).
 
 **Target (D1, revised by the user 2026-10-12): TGC v2.5.2 (stable).**
 Other TGC versions are not tested and not designed for; compatibility is
-deferred, maybe for good. Still, no TGC file is copied into the repository
+deferred, maybe for good. **D15 (2026-10-18): Templates + Conform become
+their own package aimed at almost any base**; that work follows LAW-3. Still, no TGC file is copied into the repository
 (R3, R8): whatever has to be overridden is generated from the installed
 v2.5.2 at install time (`docs/tgc-compatibility.md` §3).
 
@@ -257,7 +258,13 @@ E:\tools\ghidra_12.1.4_PUBLIC\support\analyzeHeadless.bat E:\v2re\ghidra v2game 
   -process v2game.exe -noanalysis -scriptPath <folder> -postScript <Script>.java
 ```
 
-Current candidate: **0.6.3 (TPL-1: the Conform window styled like the
+Installed: **0.6.4 (LAW-3: Reforms rows follow the D14 offer,
+top-bar alert filter, load test out of the default install, Bill text
+fitted)** in `E:2re\logs	gcx-law3-1018\stage-064\`, **U-11 passed in game
+2026-10-18** (`docs/report-u-11-1018.md`; G1 open). Rollback
+`before-064-*`.
+
+Before it: **0.6.3 (TPL-1: the Conform window styled like the
 native 332px army panel and placed flush beside it, plus lifetime guards)**,
 staged in `E:\v2re\logs\tgcx-tpl1-1017\stage-063\`, installed on E:,
 **tested and accepted in game** (`docs/report-tpl-1-visual-1017.md`).
@@ -426,6 +433,7 @@ number (**the next one is P47**).
 | **D11** | Law details (favours) | **virtual purchases only, lasting the bill** (not TGC's real seat shifts); favours **accrue automatically like diplomatic points** (the DLL sends the monthly tick; a decision is the no-DLL fallback); the rate comes **from prestige plus stability, militancy, consciousness, voting pop and monarch/leader support** (initial values in `docs/law-design.md` §5) | **closed** (user, 2026-10-12) |
 | **D12** | Army templates | **local file** written by the DLL (an interface preference, not in the save; recruiting still uses the engine command, R5); **names from the composition**; **native windows** (route B); short of soldier pops, **recruit what fits** and report the rest; a **"Conform to template"** button on stacks in the field (template picked per click; missing regiments built, then marched and merged by engine commands; extras detached into a new stack) | **closed** (user, 2026-10-17); `docs/report-tpl-0-research-1017.md` §4 |
 | **D13** | Conform across save/reload | **A: session tracking, re-Conform after a reload**. Within a session the DLL marches and merges each finished regiment automatically. After a reload, pressing Conform on the stack again finds the finished, unattached regiments of the missing types nearby and offers to bring them. Nothing is persisted (B, a local file, and C, no automatic march, were rejected). Marches use **safe paths**, like the native rally point (user, same day). **Revised (user, 2026-10-17, after U-10 on 0.6.1): Conform always builds the missing regiments; it never takes finished regiments from nearby stacks.** After a reload, regiments still being built for an earlier Conform are no longer tracked: they finish as their own stacks, and a new Conform builds again | **closed** (user, 2026-10-17, revised the same day); `docs/report-tpl-1-research-1017.md` §4, `docs/report-tpl-1-window-1017.md` §7 |
+| **D15** | Templates + Conform as their own package | **Templates and Conform are the most important part of the mod and become their own package that works almost anywhere** (vanilla, other mods, alongside TGC); D1 stays for the laws. Order: LAW-3 first, then MOD-0 to MOD-5 (`docs/report-modular-scope-1018.md` §6.2). Package names, save folder, per-base installs, HPM descriptor still open | **closed** (user, 2026-10-18) |
 | **D14** | Reforms tab offer | **A + B**: a row is offered only if its bill's decision passes its own `allow` (flag written by the favour collection), and backward steps only where the native game allows a backward reform. Mockup board 1 changes with it (R10) | **closed** (user, 2026-10-18); `docs/report-u-7-1018.md` F4, `docs/instructions-law-3.md` |
 | **D10** | Language | **English for everything**: code, comments, docs, file names, commit messages, in-game text and chat. Nothing is written in Spanish. All existing files were translated on 2026-10-12 | **closed** (user, 2026-10-12) |
 

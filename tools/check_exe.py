@@ -68,6 +68,22 @@ SIGNATURES = [
     (0x506F00, "558BEC6AFF684C62B90064A100000000", "LAW-2 decision message poster entry"),
     (0x506F55, "803DA67DF000000F84CB050000", "LAW-2 decision message gate byte"),
     (0x507542, "8BE55DC28C00", "LAW-2 decision message poster RET 0x8C"),
+    # 2026-10-18, LAW-3: CPoliticsView slot 11 (FUN_006D7180) rebuilds the
+    # tab, reform rows (FUN_006D96F0 -> FUN_006DA930) included; slot 2 (show)
+    # tail-calls it. FUN_005268F0 is the native minimum delay between reforms
+    # (EAX = country, AL = open; last reform date +0x9C, world date +0xB0C).
+    (0xA0E484, "80716D00", "LAW-3 CPoliticsView vtable slot 11 = FUN_006D7180"),
+    (0x2D7180, "558BEC83E4F864A1000000006AFF6840FEB4005064892500", "LAW-3 CPoliticsView refresh slot 11 entry"),
+    (0x2D71AE, "56E83C250000", "LAW-3 refresh calls the reform rows FUN_006D96F0"),
+    (0x2D2C2B, "8B068B502C8BCE5EFFE2", "LAW-3 CPoliticsView show tail-calls slot 11"),
+    (0x1268F0, "558BEC51803D3C872501008B889C000000", "LAW-3 native reform delay gate entry (EAX country)"),
+    (0x12693C, "3B8A0C0B00000F9EC08BE55DC3", "LAW-3 native reform delay gate SETLE AL / RET"),
+    # FUN_0053A6A0 (EAX = country, EDI = decision, AL = ignored by the player):
+    # the top-bar "We can enact the following decisions" list (FUN_0053A6D0,
+    # key COUNTRYALERT_CanDoDecisions) and CPoliticsView slot 10 skip those.
+    (0x13A6A0, "568BB0880100008B80840100008D4F085156E8C919F2FF", "LAW-3 decision ignored check entry (EAX country, EDI decision)"),
+    (0x13C100, "BAC4F5DF00", "LAW-3 alert key COUNTRYALERT_CanDoDecisions"),
+    (0x13C2A1, "E8FAE3FFFF84C00F85B3000000", "LAW-3 decisions alert skips ignored decisions"),
 
     (0x1D74BE, "B8E8030000", "PATCH_ALLIED_REINFORCE_150, mov eax,1000"),
     (0x282EC0, "558BEC6AFF", "FUN_00682EC0, daily sync check (OOS)"),

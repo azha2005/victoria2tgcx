@@ -4,6 +4,11 @@
 static void tgcx_ReformTestString(unsigned char* at,const char* text) {
     tgcx_GameString s=tgcx_BorrowString(text);memcpy(at,&s,sizeof(s));
 }
+// An idle offer: chamber, no cooldown, reform delay open, no bill, no allow flags.
+static tgcx_ReformOffer tgcx_ReformTestOffer(bool active=false,int group=-1,int index=-1) {
+    tgcx_ReformOffer o={};o.known=true;o.legislature=true;o.delay_open=true;
+    o.active=active;o.target_group=group;o.target_index=index;return o;
+}
 static void tgcx_ReformTests() {
     (void)&tgcx_InstallReforms;   // patches live code; covered by the guard table, not run here
     // MSVC std::string reads: inline, heap and malformed.
@@ -24,13 +29,22 @@ static void tgcx_ReformTests() {
     tgcx_Expect(bill>0 && !strcmp(tgcx_bill_catalog[bill-1].to,"Free Press"),"Reforms one-step bill found");
     tgcx_Expect(!tgcx_ReformBill(free.group,state.index,free.index),"Reforms two-step change has no bill");
 
-    // What lights up.
-    tgcx_ReformOffer o={true,true,false,false,-1,-1};
-    tgcx_Expect(tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms negotiable row offered");
+    // What lights up (D14: next steps whose TGC allow held at the last collection).
+    tgcx_ReformOffer o=tgcx_ReformTestOffer();
+    tgcx_Expect(!tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms no allow flag (fresh load) offers nothing");
+    o.offer_from[free.group]=censored.index+1;
+    tgcx_Expect(tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms allowed next step offered");
+    o.offer_from[free.group]=state.index+1;
+    tgcx_Expect(!tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms flag from another law (stale) offers nothing");
+    o.offer_from[free.group]=censored.index+1;
     tgcx_Expect(!tgcx_ReformOffers(o,free.group,state.index,free.index),"Reforms non-catalogue row not offered");
-    o.cooldown=true;tgcx_Expect(!tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms cooldown offers nothing");
+    o.offer_from[free.group]=free.index+1;
+    tgcx_Expect(!tgcx_ReformOffers(o,free.group,free.index,censored.index),"Reforms step back never negotiated");
+    o.offer_from[free.group]=censored.index+1;
+    o.delay_open=false;tgcx_Expect(!tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms native reform delay offers nothing");
+    o.delay_open=true;o.cooldown=true;tgcx_Expect(!tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms cooldown offers nothing");
     o.cooldown=false;o.legislature=false;tgcx_Expect(!tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms without a chamber offers nothing");
-    o={true,true,false,true,free.group,free.index};
+    o=tgcx_ReformTestOffer(true,free.group,free.index);
     tgcx_Expect(tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms open bill lights its target");
     tgcx_Expect(!tgcx_ReformOffers(o,free.group,censored.index,state.index),"Reforms open bill lights nothing else");
     o.known=false;tgcx_Expect(!tgcx_ReformOffers(o,free.group,censored.index,free.index),"Reforms unknown state offers nothing");
@@ -46,15 +60,28 @@ static void tgcx_ReformTests() {
     *reinterpret_cast<uintptr_t*>(frame-0x1C)=reinterpret_cast<uintptr_t>(group);
     *reinterpret_cast<uintptr_t*>(frame-0x18)=reinterpret_cast<uintptr_t>(country);
     bool enabled_was=tgcx_bill_enabled,usable_was=tgcx_bill_usable;tgcx_ReformOffer offer_was=tgcx_reform_offer;
-    tgcx_bill_enabled=true;tgcx_bill_usable=true;tgcx_reform_offer={true,true,false,false,-1,-1};
+    tgcx_bill_enabled=true;tgcx_bill_usable=true;tgcx_reform_offer=tgcx_ReformTestOffer();
+    tgcx_reform_offer.offer_from[free.group]=censored.index+1;
     stack[0x80-0x11]=0;tgcx_ReformRowImpl(frame);
     tgcx_Expect(stack[0x80-0x11]==1 && tgcx_reform_current[free.group]==censored.index && !tgcx_reform_native[free.group][free.index],
                 "Reforms row hook enables a negotiable blocked row");
     stack[0x80-0x11]=1;tgcx_ReformRowImpl(frame);
     tgcx_Expect(stack[0x80-0x11]==1 && tgcx_reform_native[free.group][free.index],"Reforms row hook records a natively allowed row");
-    tgcx_reform_offer={true,true,true,false,-1,-1};stack[0x80-0x11]=0;tgcx_ReformRowImpl(frame);
+    tgcx_reform_offer.cooldown=true;stack[0x80-0x11]=0;tgcx_ReformRowImpl(frame);
     tgcx_Expect(stack[0x80-0x11]==0,"Reforms row hook leaves a cooled-down row disabled");
-    tgcx_bill_usable=false;tgcx_reform_offer={true,true,false,false,-1,-1};stack[0x80-0x11]=0;tgcx_ReformRowImpl(frame);
+    // P46: a bill open darkens every other row, natively allowed ones included.
+    tgcx_reform_offer=tgcx_ReformTestOffer(true,free.group,state.index);stack[0x80-0x11]=1;tgcx_ReformRowImpl(frame);
+    tgcx_Expect(stack[0x80-0x11]==0,"Reforms row hook darkens a native row while a bill is open");
+    tgcx_reform_offer=tgcx_ReformTestOffer(true,free.group,free.index);stack[0x80-0x11]=0;tgcx_ReformRowImpl(frame);
+    tgcx_Expect(stack[0x80-0x11]==1,"Reforms row hook lights the open bill target");
+    // Offer changes request one native rebuild; an unchanged one does not.
+    tgcx_reform_offer=tgcx_ReformTestOffer();tgcx_reform_rebuild=false;
+    tgcx_ReformOffer next=tgcx_ReformTestOffer(true,free.group,free.index);
+    bool changed=memcmp(&next,&tgcx_reform_offer,sizeof(next))!=0;
+    tgcx_Expect(changed,"Reforms offer change (bill starts) is detected");
+    next=tgcx_ReformTestOffer();
+    tgcx_Expect(memcmp(&next,&tgcx_reform_offer,sizeof(next))==0,"Reforms unchanged offer is not a change");
+    tgcx_bill_usable=false;tgcx_reform_offer=tgcx_ReformTestOffer();stack[0x80-0x11]=0;tgcx_ReformRowImpl(frame);
     tgcx_Expect(stack[0x80-0x11]==0,"Reforms row hook idle without a usable Bill");
     tgcx_bill_usable=true;
     tgcx_ReformTestString(option+0x34,"tariff_policy_x");stack[0x80-0x11]=0;tgcx_ReformRowImpl(frame);
@@ -79,6 +106,16 @@ static void tgcx_ReformTests() {
     tgcx_Expect(tgcx_DecisionHiddenImpl(reinterpret_cast<uintptr_t>(decision))==0,"Decisions list keeps TGC's");
     tgcx_reforms_installed=false;tgcx_ReformTestString(decision+8,"tgcx_collect_favours");
     tgcx_Expect(tgcx_DecisionHiddenImpl(reinterpret_cast<uintptr_t>(decision))==0,"Decisions list unchanged without the Reforms tab");
+    // Top-bar alert: ours count as ignored, TGC's do not; a Bill too small to show keeps them listed.
+    tgcx_reforms_installed=true;bool known_was=tgcx_bill_size_known,usable_now=tgcx_bill_usable;
+    tgcx_bill_size_known=false;tgcx_bill_usable=false;
+    tgcx_ReformTestString(decision+8,"tgcx_withdraw");
+    tgcx_Expect(tgcx_DecisionIgnoredImpl(reinterpret_cast<uintptr_t>(decision))==1,"Decisions alert skips ours before Politics is opened");
+    tgcx_bill_size_known=true;
+    tgcx_Expect(tgcx_DecisionIgnoredImpl(reinterpret_cast<uintptr_t>(decision))==0,"Decisions alert lists ours when the Bill cannot fit");
+    tgcx_bill_usable=true;tgcx_ReformTestString(decision+8,"form_germany");
+    tgcx_Expect(tgcx_DecisionIgnoredImpl(reinterpret_cast<uintptr_t>(decision))==0,"Decisions alert keeps TGC's");
+    tgcx_bill_size_known=known_was;tgcx_bill_usable=usable_now;
     tgcx_reforms_installed=installed_was;
 
     // Each decision the DLL sends expects one message to skip (at most four pending).

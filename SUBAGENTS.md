@@ -114,8 +114,8 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 | U-3 | Play the LAW-0 bill (with a save/load halfway) | **done** (2026-10-12) | `docs/instructions-law-0.md` step 6 |
 | LAW-1 | Catalogue for 23 groups / 46 direction entries | **short script smoke accepted**; broader engine coverage unconfirmed; 25 catalogue/10 installer tests pass | `docs/instructions-law-1.md`; `docs/report-law-1-report-fix-1013.md` |
 | LAW-2 | Bill GUI and command bridge | 0.3.4 look accepted; 0.3.5 **checked in game (U-7, 2026-10-18): partly passed**; failures go to LAW-3 | `docs/instructions-law-2.md`; `docs/report-u-7-1018.md` |
-| LAW-3 | Reforms rows refresh (F1), top-bar tooltip filter (F2), load test removed (F3), D14 offer rule + board 1, Bill text overflow | **next** (not started) | `docs/instructions-law-3.md` |
-| U-11 | Short game check of LAW-3 (0.6.4) | after LAW-3 | `docs/instructions-u-11.md` |
+| LAW-3 | Reforms rows refresh (F1), top-bar tooltip filter (F2), load test removed (F3), D14 offer rule + board 1, Bill text overflow | 0.6.4 installed, **U-11 passed** 2026-10-18; G1 open | `docs/instructions-law-3.md`; `docs/report-law-3-1018.md` |
+| U-11 | Short game check of LAW-3 (0.6.4) | **passed** 2026-10-18 (`docs/report-u-11-1018.md`) | `docs/instructions-u-11.md` |
 | U-7 | Bill prototype visual/Count evidence | 0.3.3 placement and 0.3.4 look accepted; **0.3.5 partly passed** (2026-10-18): F1, F2 failed | `docs/instructions-u-7.md`; `docs/report-u-7-1018.md` |
 | U-8 | First live template recruit and visual check | **complete** (2026-10-18): all extended cases passed on 0.6.3 | `docs/instructions-u-8.md`; `docs/report-u-8-extended-1018.md` |
 | U-9 | Conform probe on 0.5.0 (log only) | **passed on 0.5.0** 2026-10-17 (P43 found, fixed in 0.5.1, installed; 0.5.1 confirmed) | `docs/instructions-u-9.md` |

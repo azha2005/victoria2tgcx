@@ -13,6 +13,10 @@
   where the native game would allow a backward reform. This changes the
   mechanic, so mockup board 1 changes in the session that implements it
   (R10).
+- **D15:** Templates + Conform are the most important part and become
+  their own package that works almost anywhere. Work follows the proposed
+  order: LAW-3, then MOD-0 to MOD-5 (`docs/report-modular-scope-1018.md`
+  §6.2). The open sub-decisions are in that report's §6.3.
 - The order below is the coordinator's recommendation. Finishing laws first
   follows the standing rule "finish laws before starting another mechanic";
   the user can reorder it.
@@ -30,15 +34,23 @@
 
 ## Next session in order
 
-1. **LAW-3, Reforms tab and decisions fixes:**
-   `docs/instructions-law-3.md`. It covers F1 rows not re-evaluated, F2 the
-   top-bar tooltip, F3 removing the load test, F4/D14 the offer rule with
-   the board 1 update, and the Bill text overflow.
-2. **U-11, short game check of LAW-3:** `docs/instructions-u-11.md`.
+1. **LAW-3, Reforms tab and decisions fixes:** **built and staged
+   2026-10-18 (0.6.4), done, not tested in game**
+   (`docs/report-law-3-1018.md`). Stage:
+   `E:2re\logs	gcx-law3-1018\stage-064\` with `lua51-0.6.4.dll`.
+   Install after the user's normal game exit, backups `before-064-dll` and
+   `before-064-submod`.
+2. **U-11, short game check of LAW-3:** **passed 2026-10-18** with one small
+   text defect, G1: the » arrow is missing in the small font
+   (`docs/report-u-11-1018.md`). 0.6.4 is installed on E:. Next: fix G1 and
+   reset the offer on a new game (G3) as 0.6.5. G2 (Withdraw starts the
+   365-day cooldown) changes only if the user decides so.
 3. **V2DLL mod slot:** still an open user decision.
    `docs/report-v2dll-mod-slot-1018.md` recommends option (a), our own
    proxy.
-4. Close under ROADMAP §7. The next pitfall is **P47**.
+4. **MOD-0 to MOD-5** (D15), per `docs/report-modular-scope-1018.md` §6.2;
+   instructions are written when LAW-3 closes.
+5. Close under ROADMAP §7. The next pitfall is **P47**.
 
 Only the user launches and exits the game. Install only after a normal
 exit, with paired backups. No commit, push or subagents unless asked.
@@ -47,8 +59,8 @@ exit, with paired backups. No commit, push or subagents unless asked.
 
 | Card | Status | Instructions/evidence |
 |---|---|---|
-| LAW-3 | **next**: F1, F2, F3, F4/D14 and Bill text overflow | instructions-law-3.md; report-u-7-1018.md |
-| U-11 | after LAW-3 | instructions-u-11.md |
+| LAW-3 | 0.6.4 installed and **passed U-11** 2026-10-18; G1 open | instructions-law-3.md; report-law-3-1018.md |
+| U-11 | **passed** 2026-10-18 (G1 open) | instructions-u-11.md; report-u-11-1018.md | instructions-u-11.md |
 | LAW-2 / U-7 | 0.3.5 checked in game 2026-10-18: partly passed; failures go to LAW-3 | instructions-law-2.md; report-u-7-1018.md |
 | U-8 | **complete** (all extended cases passed on 0.6.3) | report-u-8-extended-1018.md |
 | TPL-0 / GH-4 | 0.4.4 accepted; U-8 complete; no further evidence needed | report-tpl-0-visual-1017.md |

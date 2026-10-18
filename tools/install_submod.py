@@ -15,6 +15,9 @@ tools/gen_laws.py). They never enter git (R3, R8).
 Before deleting an existing TGCX folder it checks that the folder is ours:
 every file in it must start with the tgcx_ prefix (R4), except the generated
 ones. If any does not, it refuses and deletes nothing.
+
+The SUB-0 load-order probe (a decision, its events and a Denmark rename) is
+left out unless --load-test is given (LAW-3, report-u-7-1018.md F3).
 """
 
 import argparse
@@ -42,6 +45,12 @@ GENERATED = {
     os.path.join("interface", "unitpanel.gui"): (os.path.join("interface", "unitpanel.gui"),
                                                 os.path.join(SRC, NAME, "tgcx_conform_layout.txt")),
 }
+# SUB-0 probe files, installed only with --load-test
+LOAD_TEST = {"tgcx_loadtest.txt", "tgcx_loadtest.csv", "000_tgcx_loadtest_override.csv"}
+
+
+def skip_load_test(_, names):
+    return [n for n in names if n.lower() in LOAD_TEST]
 
 
 def foreign_files(folder):
@@ -129,7 +138,7 @@ def generate(tgc, dest, source=SRC):
         print(f"generated {rel} = TGC's ({len(data)} bytes) + ours ({len(ours)} bytes)")
 
 
-def install(mod_dir, tgc, source=SRC, dry_run=False, backup=None):
+def install(mod_dir, tgc, source=SRC, dry_run=False, backup=None, load_test=False):
     mod_dir, tgc, source = (Path(p).resolve() for p in (mod_dir, tgc, source))
     if game_running():
         raise ValueError("close v2game.exe before installing the submod")
@@ -152,7 +161,7 @@ def install(mod_dir, tgc, source=SRC, dry_run=False, backup=None):
     # Fully prepare generated files before any live deletion or replacement.
     with tempfile.TemporaryDirectory(prefix="tgcx_submod_") as prepared:
         payload = Path(prepared) / NAME
-        shutil.copytree(src, payload)
+        shutil.copytree(src, payload, ignore=None if load_test else skip_load_test)
         generate(tgc, payload, source)
         if dry_run:
             print("dry-run: source, ownership, generated modifiers and running-game gates OK; no live files changed")
@@ -187,7 +196,7 @@ def install(mod_dir, tgc, source=SRC, dry_run=False, backup=None):
                 shutil.copy2(retained / modfile.name, modfile)
             raise
         print(f"rollback source: {retained}")
-    n = sum(len(fs) for _, _, fs in os.walk(src))
+    n = sum(1 for p in target.rglob("*") if p.is_file()) - sum((target / rel).is_file() for rel in GENERATED)
     generated = sum((target / rel).is_file() for rel in GENERATED)
     print(f"installed {NAME} ({n} files + {generated} generated) + {NAME}.mod in {mod_dir}")
 
@@ -200,6 +209,7 @@ def main():
     ap.add_argument("--source", default=SRC, help="complete staged submod root (default: repository submod)")
     ap.add_argument("--dry-run", action="store_true", help="prepare and validate without changing the live mod")
     ap.add_argument("--backup", help="new directory for a complete rollback source")
+    ap.add_argument("--load-test", action="store_true", help="also install the SUB-0 load-order probe")
     a = ap.parse_args()
     if not os.path.isdir(a.mod_dir) or not any(f.lower().endswith(".mod") for f in os.listdir(a.mod_dir)):
         sys.exit(f"install_submod: {a.mod_dir} does not look like a mod\\ folder (no .mod files)")
@@ -210,7 +220,7 @@ def main():
             sys.exit("use --dry-run for installation validation; removal was not performed")
         remove(a.mod_dir)
     else:
-        install(a.mod_dir, a.tgc or os.path.join(a.mod_dir, "TGC_v2.5.2", "TGC"), a.source, a.dry_run, a.backup)
+        install(a.mod_dir, a.tgc or os.path.join(a.mod_dir, "TGC_v2.5.2", "TGC"), a.source, a.dry_run, a.backup, a.load_test)
 
 
 if __name__ == "__main__":

@@ -14,6 +14,8 @@ from tgc_scan import parse, read
 
 
 class LawCountry(Country):
+    tgc_allow_triggers = set()
+
     def cond(self, key, value):
         if key == "militancy":
             return self.average_militancy >= float(value)
@@ -26,7 +28,14 @@ class LawCountry(Country):
             return value in getattr(self, "global_flags", set())
         if key == "year":
             return getattr(self, "year", 1836) >= int(value)
-        return super().cond(key, value)
+        try:
+            return super().cond(key, value)
+        except SystemExit:
+            # Conditions only TGC's own option allow blocks use (D14 offer flags):
+            # false unless the test states them, so our own typos still fail.
+            if key not in self.tgc_allow_triggers:
+                raise
+            return getattr(self, "tgc_conditions", {}).get(key, False)
 
     def run(self, items):
         for key, value in items:
@@ -50,6 +59,18 @@ class CatalogTests(unittest.TestCase):
         events = next(text for path, text in cls.files.items() if Path(path).parent.name == "events")
         cls.events = {int(dict(v)["id"]): dict(v) for _, v in parse(events)}
         cls.event_trees = {int(dict(v)["id"]): v for _, v in parse(events)}
+        names = set()
+
+        def walk(items):
+            for k, v in items:
+                if k not in ("AND", "OR", "NOT"):
+                    names.add(k)
+                if isinstance(v, list):
+                    walk(v)
+        for g in cls.gen.chosen:
+            for opt in cls.gen.groups[g]["options"]:
+                walk(dict(cls.gen.groups[g]["body"][opt]).get("allow", []))
+        LawCountry.tgc_allow_triggers = names - set(cls.gen.groups)
 
     def country(self, **kw):
         state = dict(house={"liberal": 1.0}, government="democracy", ruling="liberal",
@@ -470,6 +491,26 @@ class CatalogTests(unittest.TestCase):
         c.mods.discard("tgcx_favours_tick")
         self.click(c, "tgcx_collect_favours")
         self.assertEqual(c.vars["tgcx_favours_ticks"], 2)
+
+    def test_collection_writes_the_reforms_offer_from_tgc_allow(self):
+        # D14: 1 + the current law whose next step passes the target option allow.
+        c = self.country()
+        allow = {g: dict(self.gen.groups[g]["body"][self.gen.groups[g]["options"][1]]).get("allow", [])
+                 for g in self.gen.chosen}
+        self.click(c, "tgcx_collect_favours")
+        values = {g: c.vars[f"tgcx_gui_offer_{g}"] for g in self.gen.chosen}
+        self.assertEqual(values, {g: 1 if c.test(allow[g]) else 0 for g in self.gen.chosen})
+        self.assertEqual(set(values.values()), {0, 1}, "both an offered and a blocked first step")
+        g = next(g for g, v in values.items() if v == 1)
+        c.laws[g] = self.gen.groups[g]["options"][1]
+        second = dict(self.gen.groups[g]["body"][self.gen.groups[g]["options"][2]]).get("allow", [])             if len(self.gen.groups[g]["options"]) > 2 else None
+        c.mods.discard("tgcx_favours_tick")
+        self.click(c, "tgcx_collect_favours")
+        self.assertEqual(c.vars[f"tgcx_gui_offer_{g}"], 2 if second is not None and c.test(second) else 0)
+        c.laws[g] = self.gen.groups[g]["options"][-1]                 # no next step
+        c.mods.discard("tgcx_favours_tick")
+        self.click(c, "tgcx_collect_favours")
+        self.assertEqual(c.vars[f"tgcx_gui_offer_{g}"], 0)
 
     def test_reports_select_one_event_without_conditional_options(self):
         # The game screenshot showed all option triggers ignored. Do not teach

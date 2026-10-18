@@ -90,6 +90,20 @@ class InstallTests(unittest.TestCase):
                 installer.install(self.mod, self.tgc, self.new, backup=self.root / "backup")
         self.assertEqual(snapshot(self.mod), self.before)
 
+    def test_load_test_probe_only_with_flag(self):
+        probe = ["TGCX/decisions/tgcx_loadtest.txt", "TGCX/events/tgcx_loadtest.txt",
+                 "TGCX/localisation/tgcx_loadtest.csv", "TGCX/localisation/000_tgcx_loadtest_override.csv"]
+        for rel in probe:
+            (self.new / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.new / rel).write_text("probe")
+        installer.install(self.mod, self.tgc, self.new, backup=self.root / "b1")
+        self.assertFalse([rel for rel in probe if (self.mod / rel).exists()])
+        self.assertTrue((self.mod / "TGCX/events/tgcx_fixture.txt").exists())
+        installer.install(self.mod, self.tgc, self.new, backup=self.root / "b2", load_test=True)
+        self.assertEqual([rel for rel in probe if not (self.mod / rel).exists()], [])
+        installer.remove(self.mod)
+        self.assertEqual(list(self.mod.iterdir()), [])
+
     def bill_source(self):
         from tgcx_bill_gui import layout
         (self.tgc / "interface").mkdir()

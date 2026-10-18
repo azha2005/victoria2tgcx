@@ -418,8 +418,23 @@ class CatalogGen(Gen):
              chg("tgcx_favours_ticks", 1),
              # The Reforms tab offers bills only where a chamber can vote one.
              setv("tgcx_gui_legislature", 0), when(gov_in(self.limited + self.full), setv("tgcx_gui_legislature", 1)),
+             *self.offer_block(),
              f"add_country_modifier = {{ name = tgcx_favours_tick duration = {self.n('tick_days')} }}"],
             picture="cogs_yellow")
+
+    def offer_block(self):
+        """D14: for each group, 1 + the current law whose next step passes the
+        target option's own TGC allow (0 = none). The DLL lights a Reforms row
+        only for that law, so a law changed since the collection offers nothing."""
+        lines = []
+        for g in self.chosen:
+            opts = self.groups[g]["options"]
+            var = f"tgcx_gui_offer_{g}"
+            lines.append(setv(var, 0))
+            for n, (frm, to) in enumerate(zip(opts, opts[1:]), 1):
+                allow = ser(as_dict(self.groups[g]["body"][to]).get("allow", []), 0).replace("\n", " ")
+                lines.append(when(f"{g} = {frm} {allow}", setv(var, n)))
+        return lines
 
     def changed_text(self):
         return ("The vote cannot enact this bill: support, the starting law, the government, or TGC's target "

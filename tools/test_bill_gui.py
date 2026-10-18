@@ -9,7 +9,8 @@ import tempfile
 
 from PIL import Image
 from gen_law_catalog import catalog_data
-from tgcx_bill_gui import ATLAS_SIZE, ICON_CELL, ICON_COLUMNS, ICON_Y, atlas, background, buttons, catalogue_header, inject, layout, texts
+from tgcx_bill_gui import (ATLAS_SIZE, ICON_CELL, ICON_COLUMNS, ICON_Y, atlas, background, buttons, catalogue_header,
+                           fit, font_widths, inject, layout, text_width, texts)
 
 
 class BillGuiTests(unittest.TestCase):
@@ -112,6 +113,18 @@ class BillGuiTests(unittest.TestCase):
             self.assertIn('"' + '","'.join(groups[g]["options"]) + '"', header, g)
         self.assertIn('"' + '","'.join(chosen) + '"', header)
 
+
+    def test_long_names_fit_their_text_boxes(self):
+        # U-7 deviation 2: the longest catalogue names overprinted the next line.
+        boxes = {n.removeprefix("tgcx_bill_t_"): (w, f) for n, _, _, _, w, _, f, _ in texts()}
+        for box in ("transition", "transition_small", "card_0_option_0"):
+            w, font = boxes[box]
+            widths = font_widths(DEFAULT_TGC, font)
+            self.assertLessEqual(text_width(widths, fit(widths, "Universal Weighted Voting » Universal Voting", w)), w)
+        header = catalogue_header()
+        self.assertIn('"Universal Weighted Vo..."', header)              # Closeness row
+        self.assertRegex(header, r'"Wealth Voting","Universal Weighted Voting".*"Wealth Voting",true\}')
+        self.assertRegex(header, r'"Censored Press","Free Press".*"Censored Press",false\}')  # board 2 keeps vic_18
 
 if __name__ == "__main__":
     unittest.main(testRunner=unittest.TextTestRunner(stream=sys.stdout, verbosity=2))

@@ -701,3 +701,18 @@ The Conform window (`tgcx_conform_gui.h`) uses `*(view+0x20)` as its root and
 `+0x67` as the panel's visible byte. It assumes that root has TPL-0's build
 root class (`+0x494` inner, vtable `0xA38350`; `+0x90` renderer); the
 placement refuses otherwise (unverified in game, U-10).
+
+## LAW-3: Reforms refresh, reform delay and the decisions alert (2026-10-18, static)
+
+Ghidra listings in `E:2re\logs	gcx-law3-1018\` (outside git). RVA = VA - 0x400000.
+
+| What | VA | RVA | conf | Evidence |
+|---|---|---|---|---|
+| `CPoliticsView` slot 11, refresh: rebuilds the reform rows (`FUN_006D96F0` -> `FUN_006DA930`) and the decisions list (`FUN_006DB2E0`) | `0x006D7180` | `0x2D7180` | C | vtable `0xE0E458` + 0x2C; call at `0x6D71AE`; slot 2 (`FUN_006D2C10`) tail-calls it at `0x6D2C2B` |
+| Row builder re-evaluates every row on each call; enables with vcall `+0xB8`, disables with `+0xBC`, from the byte at `[ebp-0x11]` | `0x006DB22D` | `0x2DB22D` | C | the existing LAW-2 row hook site |
+| `FUN_005268F0` reform delay: EAX = country, AL = 1 when open, plain `RET`. Compares the last reform date at `CCountry+0x9C` plus the define months (economy defines `+0x40` -> `+0xAC` / 1000) with the world date at `+0xB0C` | `0x005268F0` | `0x1268F0` | C | `SETLE AL` / `RET` at `0x52693C` |
+| `FUN_00525BE0` (political) / `FUN_00525A20` (social) reform permission: the delay gate first, then upper-house support for add/remove (weighted by ideology) against a threshold, then the option's `allow` (`+0x58`) | `0x00525BE0` / `0x00525A20` | `0x125BE0` / `0x125A20` | C | both call `FUN_005268F0` first |
+| `CCountry+0x9C` date of the last reform | — | — | C | read by `FUN_005268F0` |
+| `FUN_0053A6A0` decision ignored by the player: EAX = country, EDI = decision, AL = 1 ignored | `0x0053A6A0` | `0x13A6A0` | C | entry `push esi; mov esi,[eax+0x188]`; also called from `CPoliticsView` slot 10 |
+| `FUN_0053A6D0` top-bar alert "We can enact the following decisions" (key `COUNTRYALERT_CanDoDecisions`, VA `0xDFF5C4`); skips decisions `FUN_0053A6A0` calls ignored | `0x0053A6D0` | `0x13A6D0` | C | key at `0x53C100`, call at `0x53C2A1` |
+| `FUN_0040B360` gates the alert icon itself | `0x0040B360` | `0x00B360` | I | not studied (LAW-3 limit) |

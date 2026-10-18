@@ -246,7 +246,7 @@ static void tgcx_BillBuildView(const tgcx_BillModel& m,const tgcx_BillTimers& t,
 static bool tgcx_bill_enabled=false,tgcx_bill_open=false,tgcx_bill_was_active=false,tgcx_bill_dirty=true;
 // Our GUI is loaded and the screen fits the Bill: the Reforms tab and the
 // Decisions list may then rely on it (tgcx_reforms.h).
-static bool tgcx_bill_usable=false;
+static bool tgcx_bill_usable=false,tgcx_bill_size_known=false;
 // Decisions the DLL sent whose "decision taken" message is still to come.
 static volatile LONG tgcx_msg_suppress=0;
 static DWORD tgcx_msg_suppress_tick=0;
@@ -469,8 +469,11 @@ static void tgcx_BillLabels(const tgcx_BillModel& m,const tgcx_BillTimers& t,con
     char text[160],date[32];
     const tgcx_BillInfo* law=m.id>0?&tgcx_bill_catalog[m.id-1]:nullptr;
     tgcx_BillText(TGCX_T_LAW,law?law->title:"Active bill");
-    if(law)tgcx_BillTextf(TGCX_T_TRANSITION,"%s \xBB %s",law->from,law->to);
+    // A transition too wide for vic_18 goes to the Arial12 bold line in the same place.
+    bool compact=law && law->transition_small;
+    if(law)tgcx_BillTextf(compact?TGCX_T_TRANSITION_SMALL:TGCX_T_TRANSITION,"%s \xBB %s",law->transition_from,law->to);
     else tgcx_BillText(TGCX_T_TRANSITION,"Count once to identify the bill.");
+    tgcx_BillText(compact?TGCX_T_TRANSITION:TGCX_T_TRANSITION_SMALL,"");
     const char* by=m.ruling>0?tgcx_bill_bloc_names[m.ruling-1]:nullptr;
     if(t.debate>1) {
         tgcx_BillDate(t.debate-tgcx_bill_debate_days*24,date,sizeof(date));
@@ -535,7 +538,7 @@ static void tgcx_BillLabels(const tgcx_BillModel& m,const tgcx_BillTimers& t,con
                 unsigned lo=(std::min)(law->from_index,law->to_index),hi=(std::max)(law->from_index,law->to_index);
                 unsigned start=g.count<=3?0:(std::min)(static_cast<unsigned>(g.count-3),lo>0?lo-1:0u);
                 if(hi>=start+3)start=hi-2;
-                if(start+r<g.count)option=g.options[start+r];
+                if(start+r<g.count)option=g.short_options[start+r];
             }
             tgcx_BillText(text_at(TGCX_T_CARD_0_OPTION_0)+r,option);
         }
@@ -590,6 +593,7 @@ static void tgcx_BillLabels(const tgcx_BillModel& m,const tgcx_BillTimers& t,con
     else tgcx_BillText(TGCX_T_VOTE,"Call the Vote");
 }
 static void tgcx_ReformRefresh(uintptr_t country,const tgcx_BillModel& model,bool model_valid);
+static void tgcx_ReformAfterTick(uintptr_t view);
 static void tgcx_BillTick() {
     if(!tgcx_bill_enabled || !tgcx_politics)return;
     DWORD now=GetTickCount();if(tgcx_bill_tick && now-tgcx_bill_tick<250)return;tgcx_bill_tick=now;
@@ -616,11 +620,12 @@ static void tgcx_BillTick() {
         for(bool on:tgcx_bill_bound)bound+=on;
         static unsigned logged_bound=0;
         if(bound!=logged_bound) { logged_bound=bound;tgcx_Log("Bill native buttons bound=%u of %u",bound,tgcx_bill_actions); }
-        tgcx_bill_usable=gui.width>=tgcx_bill_width && gui.height>=tgcx_bill_height;
+        tgcx_bill_usable=gui.width>=tgcx_bill_width && gui.height>=tgcx_bill_height;tgcx_bill_size_known=true;
         tgcx_Snapshot sample={};bool fault=false;tgcx_BillModel model={};tgcx_BillTimers timers={};
         bool snapshot=tgcx_ReadSnapshot(&sample,&fault);
         bool valid=snapshot && tgcx_BillReadModel(sample.country,&model);
         tgcx_ReformRefresh(snapshot?sample.country:0,model,valid);
+        tgcx_ReformAfterTick(tgcx_politics);
         if(!valid) {
             tgcx_bill_model.valid=false;tgcx_bill_open=false;tgcx_bill_was_active=false;tgcx_bill_log_count=0;
             tgcx_BillVisibility(false);return;

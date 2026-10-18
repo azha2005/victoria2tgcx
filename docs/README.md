@@ -68,7 +68,10 @@ statuses remain historical evidence. HEMI-2 0.2.5 works in game and is retained.
 
 | document | date | what |
 |---|---|---|
+| `report-modular-scope-1018.md` | 2026-10-18 | splitting TGCX into QoL/cosmetic/laws and more bases: generators measured on vanilla, HPM, TGC v2.3.4/v2.5.2, DoDFF; launcher facts; one DLL with modules; MOD-0..MOD-5 order; D15 |
 | `report-u-7-1018.md` | 2026-10-18 | U-7 on 0.6.3 (0.3.5 law layer): partly passed; F1 rows not re-evaluated, F2 top-bar tooltip, F3 load test, F4 offer rule decided (D14), Bill text overflow; P46 |
+| `report-u-11-1018.md` | 2026-10-18 | U-11 on 0.6.4: F1, F2, F3 and D14 pass in game; G1 » missing in Arial12 bold; G2 Withdraw cooldown is by design; G3 log tally after a new game |
+| `report-law-3-1018.md` | 2026-10-18 | LAW-3 0.6.4: Reforms rows rebuilt on offer change, alert filter, load test out of the default install, D14 offer rule and board 1, Bill text fitted; done, not tested in game |
 | `report-u-8-extended-1018.md` | 2026-10-18 | U-8 extended cases on 0.6.3: one-regiment, paused repeat, partial recruit, Military reopen, fresh-process reload; all passed |
 | `report-v2dll-mod-slot-1018.md` | 2026-10-18 | V2DLL 5.83 `LOAD_DLL_FROM_MOD_FOLDER`: first `-mod=` folder, loaded last in V2DLL's `DllMain`, `V2Mod_Init(V2ModAPI*)` with exe base; overlaps that disable today's TGCX gate; no licence; options (a)/(b)/(c), recommends (a) [user] |
 | `report-tpl-0-visual-1017.md` | 2026-10-17 | 0.4.1 placement confirmed by the anchor log and screenshots; 0.4.2 board-5 detail pass (native sprites, ring, covers, miniatures, texts); retained deviations; installed, not tested in game |
