@@ -45,9 +45,9 @@
    (`docs/report-u-11-1018.md`). 0.6.4 is installed on E:. Next: fix G1 and
    reset the offer on a new game (G3) as 0.6.5. G2 (Withdraw starts the
    365-day cooldown) changes only if the user decides so.
-3. **V2DLL mod slot:** still an open user decision.
-   `docs/report-v2dll-mod-slot-1018.md` recommends option (a), our own
-   proxy.
+3. **V2DLL mod slot:** **decided (D16, user, 2026-10-18):** keep our own
+   `lua51.dll` proxy now (a); build the `v2dll_mod.dll` plugin (b) as a card
+   after MOD-1 (`docs/report-v2dll-mod-slot-1018.md` §5(b)).
 4. **MOD-0 to MOD-5** (D15), per `docs/report-modular-scope-1018.md` §6.2;
    instructions are written when LAW-3 closes.
 5. Close under ROADMAP §7. The next pitfall is **P47**.

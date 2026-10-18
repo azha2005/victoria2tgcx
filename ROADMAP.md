@@ -95,6 +95,7 @@ D10:
 
 | D13 | Conform: **session tracking; re-Conform after a reload** gathers finished unattached regiments (user, 2026-10-17) | `docs/report-tpl-1-research-1017.md` §4; `docs/instructions-tpl-1.md` |
 | D15 | **Templates + Conform: their own package that works almost anywhere**; D1 still holds for laws; LAW-3 first, then MOD-0..MOD-5 (user, 2026-10-18) | `docs/report-modular-scope-1018.md` §6 |
+| D16 | V2DLL: **(a) keep our own `lua51.dll` proxy now; (b) also build TGCX as V2DLL's `v2dll_mod.dll` plugin after MOD-1** splits the signature gate per mechanic (user, 2026-10-18) | `docs/report-v2dll-mod-slot-1018.md` §5-6 |
 | D14 | Reforms tab offer: **only bills whose decision passes its own `allow`, and backward steps only where the game allows a backward reform** (user, 2026-10-18) | `docs/report-u-7-1018.md` F4; `docs/instructions-law-3.md` §4 |
 
 Open:
@@ -155,6 +156,8 @@ When closing, in this order:
    session** that lacks a current one, and add them to `docs/README.md`.
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
+
+2026-10-18 (D16): committed LAW-3/U-11 (75e2077). The user chose V2DLL option (a) now and (b) after MOD-1. Next: MOD-0.
 
 2026-10-18 (U-11): installed 0.6.4 after a normal exit (backups `before-064-*`); the user's check passed: D14 offer (15 rows lit, against about 38 in U-7), F1 target-only rows, F2 tooltip, F3 load test gone, clean logs. G1: the » arrow is missing in the small Bill font. Next: 0.6.5 for G1/G3 (`docs/report-u-11-1018.md`).
 

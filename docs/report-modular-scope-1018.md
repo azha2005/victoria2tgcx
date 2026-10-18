@@ -229,7 +229,7 @@ R10 (no mockup changes: none of this changes a mechanic).
 | 4 | **MOD-3** QoL on vanilla | install TGCX QoL on vanilla 3.04; Templates, Conform and save/reload in game | in game (V3) |
 | 5 | **MOD-4** QoL on HPM | needs a working HPM descriptor first (P4, user's call) | in game |
 | 6 | **MOD-5** run-time unit catalogue | QoL on mods with other land units (DoDFF as the test case) | in game |
-| 7 | later | V2DLL option (b) on top of MOD-1; laws on another base (new catalogue and affinity review) | per their own reports |
+| 7 | later | V2DLL option (b) on top of MOD-1 (chosen, D16, 2026-10-18); laws on another base (new catalogue and affinity review) | per their own reports |
 
 ### 6.3 Decisions for the user (R9)
 
