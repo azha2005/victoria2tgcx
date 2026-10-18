@@ -36,6 +36,8 @@
 | `instructions-law-1.md` | LAW-1 short smoke accepted; script baseline, later fixes and release gates |
 | `instructions-u-6.md` | accepted short LAW-1 smoke, retained evidence and limitations |
 | `instructions-law-2.md` | 0.3.5 buttons, Reforms tab and Decisions filter; what to do after U-7 |
+| `instructions-law-3.md` | LAW-3: Reforms rows refresh, top-bar tooltip filter, load test removed, D14 offer rule with board 1, Bill text overflow (0.6.4) |
+| `instructions-u-11.md` | short game check of LAW-3 0.6.4 and rollback |
 | `instructions-u-7.md` | short 0.3.5 game check (Reforms tab, Bill buttons, Decisions tab, a month with no popup) and rollback |
 | `instructions-u-8.md` | first live template recruit, queue, local library, save/reload and side-by-side comparison on 0.4.0 |
 | `instructions-u-9.md` | TPL-1 0.5.0 log probe: unit-panel hooks, stack/regiment read and registry round trip |
@@ -66,6 +68,8 @@ statuses remain historical evidence. HEMI-2 0.2.5 works in game and is retained.
 
 | document | date | what |
 |---|---|---|
+| `report-u-7-1018.md` | 2026-10-18 | U-7 on 0.6.3 (0.3.5 law layer): partly passed; F1 rows not re-evaluated, F2 top-bar tooltip, F3 load test, F4 offer rule decided (D14), Bill text overflow; P46 |
+| `report-u-8-extended-1018.md` | 2026-10-18 | U-8 extended cases on 0.6.3: one-regiment, paused repeat, partial recruit, Military reopen, fresh-process reload; all passed |
 | `report-v2dll-mod-slot-1018.md` | 2026-10-18 | V2DLL 5.83 `LOAD_DLL_FROM_MOD_FOLDER`: first `-mod=` folder, loaded last in V2DLL's `DllMain`, `V2Mod_Init(V2ModAPI*)` with exe base; overlaps that disable today's TGCX gate; no licence; options (a)/(b)/(c), recommends (a) [user] |
 | `report-tpl-0-visual-1017.md` | 2026-10-17 | 0.4.1 placement confirmed by the anchor log and screenshots; 0.4.2 board-5 detail pass (native sprites, ring, covers, miniatures, texts); retained deviations; installed, not tested in game |
 | `report-tpl-0-placement-1017.md` | 2026-10-17 | 0.4.1: build-root matrix is owner-relative (P40); anchor sums the owner chain; translated-parent fixture; installed, not tested in game |

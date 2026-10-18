@@ -735,3 +735,19 @@ the size of any object the DLL allocates for the engine from a native
 infer the size from the last field the ctor writes.
 
 `report-tpl-1-window-1017.md` §7.
+
+### P46 - A native row builder that ran once keeps its element state
+
+**Cause:** `tgcx_ReformRowImpl` sets each Reforms row's enable byte only
+while the native builder `FUN_006DA930` runs. The builder runs once per
+view: not when a bill starts, and not on Politics hide/show (the same view
+is reused).
+
+**Symptom:** in U-7 on 0.6.3, every row lit with no bill stayed lit after a
+bill opened. Board 1 lights only the target.
+
+**Fix:** a hook that only sets state never clears what it set earlier.
+Either make the native view rebuild when our state changes, or own the
+elements' state from then on. LAW-3 step 2.
+
+`report-u-7-1018.md` F1.

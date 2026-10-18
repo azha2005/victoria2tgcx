@@ -93,7 +93,9 @@ update §4.
 
 ## 4. Cards
 
-### Card status (as of 2026-10-17)
+### Card status (as of 2026-10-18)
+
+U-7/U-8 update (2026-10-18): U-8 complete; U-7 partly passed; LAW-3 and U-11 added (`docs/report-u-7-1018.md`, `docs/report-u-8-extended-1018.md`).
 
 TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted in game**. Automatic gates and installed hashes pass; paired 0.6.2 rollback retained. User reports "works"; current 0.6.3 log has no guarded GUI read fault. Extended coverage and new screenshot comparison remain unconfirmed. See `docs/report-tpl-1-visual-1017.md` and `docs/instructions-tpl-1-063-check.md`.
 
@@ -111,9 +113,11 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 | LAW-0 | One bill with favours and affinity, end to end (`press_rights`) | **done** (2026-10-12, U-3 passed) | `docs/instructions-law-0.md`; `docs/report-law-0-1012.md` |
 | U-3 | Play the LAW-0 bill (with a save/load halfway) | **done** (2026-10-12) | `docs/instructions-law-0.md` step 6 |
 | LAW-1 | Catalogue for 23 groups / 46 direction entries | **short script smoke accepted**; broader engine coverage unconfirmed; 25 catalogue/10 installer tests pass | `docs/instructions-law-1.md`; `docs/report-law-1-report-fix-1013.md` |
-| LAW-2 | Bill GUI and command bridge | 0.3.4 look accepted; **0.3.5: visible buttons, Reforms tab, Decisions filter, no DLL popups; done, not tested in game** (U-7 pending) | `docs/instructions-law-2.md`; `docs/report-law-2-reforms-1017.md` |
-| U-7 | Bill prototype visual/Count evidence | 0.3.3 placement and 0.3.4 look accepted; **0.3.5 check pending**, brief check only | `docs/instructions-u-7.md` |
-| U-8 | First live template recruit and visual check | recruit/save-reload (0.4.0) and the 0.4.4 short check accepted; extended checks open | `docs/instructions-u-8.md` |
+| LAW-2 | Bill GUI and command bridge | 0.3.4 look accepted; 0.3.5 **checked in game (U-7, 2026-10-18): partly passed**; failures go to LAW-3 | `docs/instructions-law-2.md`; `docs/report-u-7-1018.md` |
+| LAW-3 | Reforms rows refresh (F1), top-bar tooltip filter (F2), load test removed (F3), D14 offer rule + board 1, Bill text overflow | **next** (not started) | `docs/instructions-law-3.md` |
+| U-11 | Short game check of LAW-3 (0.6.4) | after LAW-3 | `docs/instructions-u-11.md` |
+| U-7 | Bill prototype visual/Count evidence | 0.3.3 placement and 0.3.4 look accepted; **0.3.5 partly passed** (2026-10-18): F1, F2 failed | `docs/instructions-u-7.md`; `docs/report-u-7-1018.md` |
+| U-8 | First live template recruit and visual check | **complete** (2026-10-18): all extended cases passed on 0.6.3 | `docs/instructions-u-8.md`; `docs/report-u-8-extended-1018.md` |
 | U-9 | Conform probe on 0.5.0 (log only) | **passed on 0.5.0** 2026-10-17 (P43 found, fixed in 0.5.1, installed; 0.5.1 confirmed) | `docs/instructions-u-9.md` |
 | U-10 | Conform in game: button, window, one Conform, march and merge (0.6.0) | **passed on 0.6.2** 2026-10-17 (user: "it worked"; 0.6.0 P44 and 0.6.1 P45 fixed); visual pass next | `docs/instructions-u-10.md` |
 | U-6 | LAW-1 catalogue game evidence | **short smoke passed**; user requests moving on, extended coverage unconfirmed | `docs/instructions-u-6.md` |
@@ -122,7 +126,7 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 | DLL-1 | Renderer, cadence and Politics visibility | **working prototype, tested in game (0.2.4)**; extended coverage outstanding | `docs/instructions-dll-1.md`; U-5 report |
 | U-5 | Combined renderer/hemicycle acceptance | **functional hover checkpoint passed**; 0.2.8 header accepted; extended integration coverage remains | `docs/instructions-u-5.md`; `docs/report-u-5-1012.md` |
 | GH-3 | GUI: element positions and creation on the fly | after GH-1 | to be written |
-| GH-4 | Engine commands: CConstructUnitCommand and posting | **TPL-0 static research/guards and recruit runtime-confirmed**; extended U-8 cases open | `docs/symbols.md`; TPL-0 reports |
+| GH-4 | Engine commands: CConstructUnitCommand and posting | **TPL-0 static research/guards and recruit runtime-confirmed**; U-8 complete | `docs/symbols.md`; TPL-0 reports |
 | GH-5 | Save/load: the save's name, the moment | after GH-1 | to be written |
 | HEMI-1 | Hemicycle (user DLL-2 alias) | **working prototype, tested in game (0.2.4)**; visual polish outstanding | `docs/instructions-dll-2.md`; U-5 report |
 | HEMI-3 | Match hover with rendered ideology | **0.2.8 hover/header accepted in game** | `docs/instructions-hemi-3.md`; `docs/report-hemi-3-seam-1012.md` |
@@ -131,7 +135,7 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 | GOV-0 | Data: 1836 rulers and generals' portraits | ready to start (no RE, in parallel) | `docs/instructions-gov-0.md` |
 | GOV-1 | Rulers by script | waits for GOV-0, SUB-0 | — |
 | GOV-2 | Ruler portrait/name (DLL) | DLL-1 prototype available; waits for GOV-1; not selected | — |
-| TPL-0 | Native Templates panel, local library and first recruit | **0.4.4 accepted in game** (recruit, reopen, navy tab, queue clicks); extended U-8 cases open | `docs/instructions-tpl-0.md`; `docs/report-tpl-0-visual-1017.md` |
+| TPL-0 | Native Templates panel, local library and first recruit | **0.4.4 accepted in game** (recruit, reopen, navy tab, queue clicks); U-8 extended cases passed on 0.6.3 | `docs/instructions-tpl-0.md`; `docs/report-tpl-0-visual-1017.md` |
 | TPL-1 | Conform an existing army to a template | **0.6.3 tested and accepted in game** (2026-10-18): research done (commands, recruit stack id, Move, CUnitView); D13 revised; U-9 passed on 0.5.0/0.5.1; 0.6.2 Conform window accepted in game (U-10 passed); 0.6.3 332x594 native army-panel styling, flush placement and lifetime guards tested and accepted in game | `docs/instructions-tpl-1.md`; `docs/report-tpl-1-visual-1017.md` |
 | TPL-2 | Replace regiments lost to rebellion automatically | **on hold** (user, 2026-10-17): TPL-1 Conform already restores the lost regiments | `docs/instructions-tpl-2.md` |
 

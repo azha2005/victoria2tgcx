@@ -350,7 +350,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P46**).
+number (**the next one is P47**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -408,6 +408,7 @@ number (**the next one is P46**).
 - **P43** A field named after the argument slot it fills is not identified: stack `+0xC0` is the tag; the province is `+0xDC`→`+0x58` (U-9)
 - **P44** A GUI name lookup searches only the host's direct children: probe with a top-level marker button (0.6.0 Conform did nothing)
 - **P45** A command's allocation size comes from a native `push size; call new`, never from its last field: Merge is 0x4C, not 0x48 (0.6.1 heap-corruption crash)
+- **P46** A native row builder that ran once keeps its element state: a hook that only sets state never clears it; make the view rebuild or own the state (U-7 Reforms tab)
 
 ## 9. Decisions
 
@@ -425,6 +426,7 @@ number (**the next one is P46**).
 | **D11** | Law details (favours) | **virtual purchases only, lasting the bill** (not TGC's real seat shifts); favours **accrue automatically like diplomatic points** (the DLL sends the monthly tick; a decision is the no-DLL fallback); the rate comes **from prestige plus stability, militancy, consciousness, voting pop and monarch/leader support** (initial values in `docs/law-design.md` §5) | **closed** (user, 2026-10-12) |
 | **D12** | Army templates | **local file** written by the DLL (an interface preference, not in the save; recruiting still uses the engine command, R5); **names from the composition**; **native windows** (route B); short of soldier pops, **recruit what fits** and report the rest; a **"Conform to template"** button on stacks in the field (template picked per click; missing regiments built, then marched and merged by engine commands; extras detached into a new stack) | **closed** (user, 2026-10-17); `docs/report-tpl-0-research-1017.md` §4 |
 | **D13** | Conform across save/reload | **A: session tracking, re-Conform after a reload**. Within a session the DLL marches and merges each finished regiment automatically. After a reload, pressing Conform on the stack again finds the finished, unattached regiments of the missing types nearby and offers to bring them. Nothing is persisted (B, a local file, and C, no automatic march, were rejected). Marches use **safe paths**, like the native rally point (user, same day). **Revised (user, 2026-10-17, after U-10 on 0.6.1): Conform always builds the missing regiments; it never takes finished regiments from nearby stacks.** After a reload, regiments still being built for an earlier Conform are no longer tracked: they finish as their own stacks, and a new Conform builds again | **closed** (user, 2026-10-17, revised the same day); `docs/report-tpl-1-research-1017.md` §4, `docs/report-tpl-1-window-1017.md` §7 |
+| **D14** | Reforms tab offer | **A + B**: a row is offered only if its bill's decision passes its own `allow` (flag written by the favour collection), and backward steps only where the native game allows a backward reform. Mockup board 1 changes with it (R10) | **closed** (user, 2026-10-18); `docs/report-u-7-1018.md` F4, `docs/instructions-law-3.md` |
 | **D10** | Language | **English for everything**: code, comments, docs, file names, commit messages, in-game text and chat. Nothing is written in Spanish. All existing files were translated on 2026-10-12 | **closed** (user, 2026-10-12) |
 
 ---

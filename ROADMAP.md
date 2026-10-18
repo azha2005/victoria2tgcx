@@ -25,7 +25,7 @@
    §11.
 2. Work on **one card at a time**; the next one does not start while the
    previous one is red. New pitfall: `Pnn` in `docs/pitfalls.md` and in the
-   index in `AGENTS.md` §8 (the next one is **P40**).
+   index in `AGENTS.md` §8 (the next one is **P47**).
 3. **When closing the session: §7** (required).
 
 **Process rules (not negotiable):**
@@ -41,7 +41,9 @@
 
 ---
 
-## 1. Status by stage (as of 2026-10-17)
+## 1. Status by stage (as of 2026-10-18)
+
+U-7/U-8 update (2026-10-18): **U-8 extended cases all passed on 0.6.3; U-8 complete** (`docs/report-u-8-extended-1018.md`). **U-7 partly passed** on the 0.3.5 law layer: buttons, bill flow, purchases, Decisions tab, monthly tick and popup filter work; the Reforms tab does not re-evaluate rows (F1), the top-bar tooltip lists `tgcx_` decisions (F2), the load test is still installed (F3), long names overflow the Bill (`docs/report-u-7-1018.md`). D14 decided; LAW-3 next.
 
 TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted in game**. Automatic gates and installed hashes pass; paired 0.6.2 rollback retained. User reports "works"; current 0.6.3 log has no guarded GUI read fault. Extended coverage and new screenshot comparison remain unconfirmed. See `docs/report-tpl-1-visual-1017.md` and `docs/instructions-tpl-1-063-check.md`.
 
@@ -50,14 +52,14 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 | 0 | **Infrastructure** | **done** | TGC v2.5.2 cloned (tag, `e06ade2`, 589 MB, no line-ending conversion); Ghidra 12.1.4 (zip SHA-256 equal to the published one); refs: RE repo `e299a02`, V2DLL `5d6f894`; initial `check_exe.py` 7/7 OK on `D:\` and `E:\`; TPL-0 gate now SHA-256 + 91 runtime signatures OK (`check_exe.py` ALL OK, 2026-10-17) on `E:\`; `tgc_scan.py` OK on v2.3.4, v2.5.2 and HPM; Ghidra analysis 752 s, 260/260 symbols imported, 1 500 vtables (`docs/report-initial-1012.md` §4) |
 | 1 | Submod skeleton + loading | **done** (SUB-0 + U-2, 2026-10-12) | loads on v2.5.2 and v2.3.4 (settings folders `TGC252_TGCX`, `TGC_TGCX`; `setup.log` lists our 2 files; `error.log` empty); `000_tgcx_` override wins; one event per click; install + remove leaves `mod\` identical (211 entries); P19-P21 found on the way |
 | 1b | TGC version matrix | **deferred** (D1 revised: v2.5.2 only) | v2.3.4 ↔ v2.5.2: what the submod uses is the same except `news.gui`, `topbar.gui`, `core.gfx` (the trees differ in 223 files, P18) |
-| 2 | Law negotiation (script) | LAW-1 short smoke accepted; LAW-2 0.3.3 placement/layering accepted; 0.3.4 board layout, controls and automatic favours: look accepted by the user ("splendid"); **0.3.5 visible buttons, Reforms tab per board 1, `tgcx_` decisions hidden and DLL popups skipped: done, not tested in game**; R10 side-by-side acceptance pending | 23 approved groups, 144 transitions; 27 catalogue / 8 GUI / 10 script installer tests; native controls/window/GPU fixtures and 8 DLL tests pass; `docs/report-law-2-controls-1017.md`; `docs/report-law-2-reforms-1017.md` |
+| 2 | Law negotiation (script) | LAW-1 short smoke accepted; LAW-2 0.3.3 placement/layering accepted; 0.3.4 board layout, controls and automatic favours: look accepted by the user ("splendid"); 0.3.5 visible buttons, Reforms tab, Decisions filter and no DLL popups: **U-7 partly passed in game (2026-10-18)**; F1 row refresh, F2 top-bar tooltip, F3 load test, D14 offer rule and Bill text overflow go to LAW-3; Bill board 2 matches apart from listed deviations | 23 approved groups, 144 transitions; 27 catalogue / 8 GUI / 10 script installer tests; native controls/window/GPU fixtures and 8 DLL tests pass; `docs/report-law-2-controls-1017.md`; `docs/report-law-2-reforms-1017.md` |
 | 3 | Charts outside the game (ECO-A) | pending | — |
 | 4 | Ghidra: RTTI and subsystems | GH-1 steps 1-4 done; GH-2 hemicycle data/mapping/colours/coordinates and native ordered draw runtime-confirmed | 1 165 RTTI classes, 1 500 vtables; `docs/symbols.md`; `docs/report-u-5-1012.md`; 2026-10-17 external cross-check (Discord CE tables, smedley_kernel): 59 smedley RVAs on function starts, 10 decompiled, `docs/report-research-discord-1017.md` |
 | 5 | DLL base | DLL-0/U-4 done; DLL-1 **working prototype, tested in game on 0.2.4**; extended integration coverage still open | 23 guards, Win32 /MT, 128 forwards and native/GPU/installer gates passed; U-5 log: 11133 frames, 2687 ordered chart draws, paused cadence, show/hide, empty errors |
 | 6 | Hemicycle | HEMI-1 (DLL-2) **working prototype, tested in game**; user accepts function but says it looks clunky; HEMI-2 0.2.5 works in game; HEMI-3 0.2.6 hover **accepted in game**; 0.2.8 hover/header correction **accepted in game** | 100 seats/seven rows, native ordered GUI pass, native tooltip retained; `docs/report-u-5-1012.md`; 27 runtime guards, 5555 ordered draws, three UK native hover mappings; extended U-5 coverage remains; `docs/report-hemi-3-seam-1012.md` |
 | 7 | Charts in game (ECO-B) | renderer prerequisite available as a working prototype; GH-5/save-history work still needed; not selected | — |
 | 8 | Rulers and generals | GOV-0 data ready (D4); DLL-1 prototype available for future UI; not selected | TGC v2.5.2: 297 historical leaders, 44 own portraits; rulers: none |
-| 9 | Army templates | **TPL-0 0.4.0 functional prototype accepted in game; 0.4.1 placement (owner-chain anchor, P40) confirmed in game; 0.4.2-0.4.4 board-5 details, Recruit (P41), reopen (P42) and navy tab accepted in game (0.4.4)**; TPL-1 Conform: research, native layer (0.5.0/0.5.1, U-9 passed), the Conform button and window (**0.6.2 accepted in game**, `docs/report-tpl-1-window-1017.md` §8), and the **0.6.3 332x594 native army-panel visual pass and flush placement tested and accepted in game** (`docs/report-tpl-1-visual-1017.md`); native Military build panel, local composition-named library, engine-command recruit; automatic replacement of regiments lost to rebellion (TPL-2) is on hold: Conform covers it | user screenshots/logs confirm 4 infantry + 4 artillery + 1 hussar and save/reload; `docs/report-tpl-0-runtime-1017.md`; 0.4.1: translated-parent fixture, `docs/report-tpl-0-placement-1017.md`; 0.4.1 anchor log (1104,490) and 0.4.2, `docs/report-tpl-0-visual-1017.md`; 144 runtime guards; native/reference-window/GPU and 8 DLL installer/Lua tests; 5 Conform GUI/rollback tests; `docs/report-tpl-1-visual-1017.md` |
+| 9 | Army templates | **TPL-0 0.4.0 functional prototype accepted in game; 0.4.1 placement (owner-chain anchor, P40) confirmed in game; 0.4.2-0.4.4 board-5 details, Recruit (P41), reopen (P42) and navy tab accepted in game (0.4.4)**; TPL-1 Conform: research, native layer (0.5.0/0.5.1, U-9 passed), the Conform button and window (**0.6.2 accepted in game**, `docs/report-tpl-1-window-1017.md` §8), and the **0.6.3 332x594 native army-panel visual pass and flush placement tested and accepted in game** (`docs/report-tpl-1-visual-1017.md`); **U-8 extended cases all passed on 0.6.3 (2026-10-18)**; native Military build panel, local composition-named library, engine-command recruit; automatic replacement of regiments lost to rebellion (TPL-2) is on hold: Conform covers it | user screenshots/logs confirm 4 infantry + 4 artillery + 1 hussar and save/reload; `docs/report-tpl-0-runtime-1017.md`; 0.4.1: translated-parent fixture, `docs/report-tpl-0-placement-1017.md`; 0.4.1 anchor log (1104,490) and 0.4.2, `docs/report-tpl-0-visual-1017.md`; 144 runtime guards; native/reference-window/GPU and 8 DLL installer/Lua tests; 5 Conform GUI/rollback tests; `docs/report-tpl-1-visual-1017.md` |
 
 ---
 
@@ -67,7 +69,7 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 
 | version | `tgc_scan.py` | generator | loads in game |
 |---|---|---|---|
-| **v2.5.2 (stable) — the target (D1)** | OK (2026-10-18, 0.6.3 gates) | LAW-0/LAW-1 gates pass; short U-6 smoke accepted; LAW-2 0.3.4 look accepted, 0.3.5 U-7 pending; TPL-0 0.4.4 accepted; TPL-1 0.6.3 accepted in game | yes (U-2/U-3/U-4); DLL-1/HEMI-1 0.2.4 functional checkpoint accepted in U-5, 0.2.5 accepted and retained; 0.2.6 scalar hover accepted; 0.2.8 hover/header accepted; LAW-1 corrected report/Count/save-reload smoke accepted; LAW-2 0.3.3 placement/layering and 0.3.4 look accepted; TPL-0 0.4.4 and TPL-1 0.6.3 tested and accepted in game |
+| **v2.5.2 (stable) — the target (D1)** | OK (2026-10-18, 0.6.3 gates) | LAW-0/LAW-1 gates pass; short U-6 smoke accepted; LAW-2 0.3.4 look accepted, 0.3.5 U-7 partly passed (LAW-3 next); TPL-0 0.4.4 accepted, U-8 complete; TPL-1 0.6.3 accepted in game | yes (U-2/U-3/U-4); DLL-1/HEMI-1 0.2.4 functional checkpoint accepted in U-5, 0.2.5 accepted and retained; 0.2.6 scalar hover accepted; 0.2.8 hover/header accepted; LAW-1 corrected report/Count/save-reload smoke accepted; LAW-2 0.3.3 placement/layering and 0.3.4 look accepted; TPL-0 0.4.4 and TPL-1 0.6.3 tested and accepted in game |
 | v2.3.4 (the user's old install) | OK (2026-10-12) | — | yes, skeleton only (U-2); no longer tested |
 | `master` | not cloned | — | — (deferred) |
 
@@ -92,12 +94,14 @@ D10:
 | D12 | army templates (user, 2026-10-17): **stored in a local file** written by the DLL (not in the save); **names built from the composition**; **native windows** generated from TGC's `.gui` (route B); when soldier pops run short, **recruit what fits** and report the rest. Added the same day: a **"Conform to template" button on stacks in the field**; the template is **picked on each click**; missing regiments are **built, then marched to the stack and merged** by the DLL (engine move/merge commands); extra regiments are **detached into a new stack** | `docs/report-tpl-0-research-1017.md` §4; `docs/instructions-tpl-0.md` |
 
 | D13 | Conform: **session tracking; re-Conform after a reload** gathers finished unattached regiments (user, 2026-10-17) | `docs/report-tpl-1-research-1017.md` §4; `docs/instructions-tpl-1.md` |
+| D14 | Reforms tab offer: **only bills whose decision passes its own `allow`, and backward steps only where the game allows a backward reform** (user, 2026-10-18) | `docs/report-u-7-1018.md` F4; `docs/instructions-law-3.md` §4 |
 
 Open:
 
 | ID | Question | What the user is shown |
 |---|---|---|
 | D3 | Submod name and prefix | provisional `TGCX` / `tgcx_` |
+| — | V2DLL `v2dll_mod.dll` slot | `docs/report-v2dll-mod-slot-1018.md`: options (a)/(b)/(c), recommends (a) own proxy |
 
 ---
 
@@ -150,6 +154,8 @@ When closing, in this order:
    session** that lacks a current one, and add them to `docs/README.md`.
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
+
+2026-10-18 (U-7/U-8 checks): two side sessions ran the game checks on 0.6.3; nothing built or installed. U-8 extended cases all passed (complete). U-7 partly passed: F1 rows not re-evaluated with a bill open, F2 top-bar tooltip lists `tgcx_` decisions, F3 load test still installed, Bill text overflow. User decided D14 (offer only what the game allows, A+B). P46. Next: LAW-3 then U-11 (`docs/instructions-law-3.md`, `docs/instructions-u-11.md`).
 
 2026-10-17 (TPL-1 visual): staged 0.6.3 with army-panel styling per user screenshot, lifetime guards/recovery and diagnostics. All automatic gates pass; not installed or tested in game. Next: normal exit confirmation, paired backup, installation and player check (`docs/instructions-tpl-1-063-check.md`).
 
