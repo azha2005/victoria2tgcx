@@ -93,7 +93,7 @@ static bool tgcx_CfPlace(tgcx_CfPanel* p,bool promote) {
     int width=*reinterpret_cast<int*>(renderer+0x6B9BC),height=*reinterpret_cast<int*>(renderer+0x6B9C0);
     if(width<tgcx_cf_width || height<tgcx_cf_height)return false;
     if(promote)tgcx_Log("Conform anchor: unit panel screen %.0f,%.0f through %u owner levels, screen %dx%d",x,y,depth,width,height);
-    x+=440;
+    x+=331;y+=26;
     if(x+tgcx_cf_width>width)x=static_cast<float>(width-tgcx_cf_width);
     if(y+tgcx_cf_height>height)y=static_cast<float>(height-tgcx_cf_height);
     if(x<0)x=0;if(y<0)y=0;

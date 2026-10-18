@@ -14,42 +14,42 @@ from tgcx_bill_gui import sprites, texture, sprite, nine, write_dds
 from tgcx_templates_gui import units, ORDER
 
 LAYOUT = "tgcx_conform_layout.txt"
-WIDTH, HEIGHT = 400, 624
+WIDTH, HEIGHT = 332, 594
+ROW_W, ROW_H = 317, 30
 SLOTS, CHANGES, MINIS = 4, 8, 4
-# Board 6's list structure, narrowed to the user's army-panel reference.
-# Templates and changes share the native pale regiment row art.
-SLOT_X, SLOT_Y = 17, 44
-CHANGE_X, CHANGE_Y = 17, 226
+# Native 332px army-panel width and 317x30 regiment rows.
+SLOT_X, SLOT_Y = 7, 42
+CHANGE_X, CHANGE_Y = 7, 232
 # The fixed 400x80 stack panel has no room for the board's wide bottom
 # button: the free cell between the location and the attrition icon.
 OPEN = (222, 68, 20, 20)
 
 
 def buttons():
-    result = [("open", "open", 0, 0, 20, 20), ("close", "GFX_unit_close", 374, 8, 20, 20)]
-    result += [(f"slot_{i}", "slot", SLOT_X, SLOT_Y+i*32, 366, 30) for i in range(SLOTS)]
-    result += [("list_prev", "left", 283, 174, 24, 24), ("list_next", "right", 355, 174, 24, 24),
-               ("conform", "button", 17, 576, 177, 34), ("cancel", "button", 206, 576, 177, 34)]
+    result = [("open", "open", 0, 0, 20, 20), ("close", "GFX_unit_close", 303, 7, 20, 20)]
+    result += [(f"slot_{i}", "slot", SLOT_X, SLOT_Y+i*32, ROW_W, ROW_H) for i in range(SLOTS)]
+    result += [("list_prev", "left", 228, 172, 24, 24), ("list_next", "right", 300, 172, 24, 24),
+               ("conform", "button", 12, 558, 148, 28), ("cancel", "button", 172, 558, 148, 28)]
     return result
 
 
 def texts():
-    result = [("title", "Conform to template", 16, 11, 350, 22, "Arial14", "left")]
+    result = [("title", "Conform to template", 12, 9, 285, 22, "Arial14", "left")]
     for i in range(SLOTS):
         x, y = SLOT_X, SLOT_Y+i*32
-        result += [(f"slot_{i}", "", x+40, y+2, 150, 14, "Arial12_bold_black", "left"),
-                   (f"detail_{i}", "", x+40, y+16, 150, 14, "Arial12_black", "left")]
-        result += [(f"mini_{i}_{k}", "", x+221+k*42, y+9, 20, 14, "Arial12_bold", "left") for k in range(MINIS)]
-    result += [("list_page", "", 307, 178, 48, 16, "Arial12_black", "centre"),
-               ("changes", "Changes", 17, 200, 366, 20, "Arial14_black", "left")]
+        result += [(f"slot_{i}", "", x+40, y+2, 132, 14, "Arial12_bold_black", "left"),
+                   (f"detail_{i}", "", x+40, y+16, 132, 14, "Arial12_black", "left")]
+        result += [(f"mini_{i}_{k}", "", x+195+k*35, y+9, 18, 14, "Arial12_bold", "left") for k in range(MINIS)]
+    result += [("list_page", "", 252, 176, 48, 16, "Arial12_black", "centre"),
+               ("changes", "Changes", 14, 203, 210, 20, "Arial12_bold_black", "left")]
     for i in range(CHANGES):
         x, y = CHANGE_X, CHANGE_Y+i*32
-        result += [(f"change_{i}", "", x+40, y+1, 320, 14, "Arial12_bold_black", "left"),
-                   (f"note_{i}", "", x+40, y+15, 320, 14, "Arial12_black", "left")]
-    result += [("summary", "", 17, 504, 366, 32, "Arial12_black", "left"),
-               ("status", "", 17, 540, 366, 30, "Arial12_black", "left"),
-               ("conform", "Conform", 17, 584, 177, 20, "vic_18_black", "centre"),
-               ("cancel", "Cancel", 206, 584, 177, 20, "vic_18_black", "centre")]
+        result += [(f"change_{i}", "", x+40, y+1, 272, 14, "Arial12_bold_black", "left"),
+                   (f"note_{i}", "", x+40, y+15, 272, 14, "Arial12_black", "left")]
+    result += [("summary", "", 10, 492, 312, 28, "Arial12_black", "left"),
+               ("status", "", 10, 522, 312, 26, "Arial12_black", "left"),
+               ("conform", "Conform", 12, 565, 148, 18, "Arial12_bold_black", "centre"),
+               ("cancel", "Cancel", 172, 565, 148, 18, "Arial12_bold_black", "centre")]
     return result
 
 
@@ -87,14 +87,14 @@ def layout():
     # the selection ring and the covers for empty rows are windows above them.
     for row in range(SLOTS):
         ry = SLOT_Y+row*32
-        parts += _window(f"tgcx_cf_slot_sel_{row}", SLOT_X, ry, 366, 30,
+        parts += _window(f"tgcx_cf_slot_sel_{row}", SLOT_X, ry, ROW_W, ROW_H,
                          [f'iconType={{name="tgcx_cf_ring_{row}" spriteType="tgcx_cf_ring" position={{x=0 y=0}}}}'])
-        parts += _window(f"tgcx_cf_slot_blank_{row}", SLOT_X, ry, 366, 30,
+        parts += _window(f"tgcx_cf_slot_blank_{row}", SLOT_X, ry, ROW_W, ROW_H,
                          [f'iconType={{name="tgcx_cf_blank_icon_{row}" spriteType="tgcx_cf_blank_{row}" position={{x=0 y=0}}}}'])
-    parts += _window("tgcx_cf_pager_blank", 283, 172, 96, 28,
+    parts += _window("tgcx_cf_pager_blank", 228, 170, 96, 28,
                      ['iconType={name="tgcx_cf_pager_icon" spriteType="tgcx_cf_pager" position={x=0 y=0}}'])
     for row in range(CHANGES):
-        parts += _window(f"tgcx_cf_change_row_{row}", CHANGE_X, CHANGE_Y+row*32, 366, 30,
+        parts += _window(f"tgcx_cf_change_row_{row}", CHANGE_X, CHANGE_Y+row*32, ROW_W, ROW_H,
                          [f'iconType={{name="tgcx_cf_change_bg_{row}" spriteType="tgcx_cf_change" position={{x=0 y=0}}}}'])
     # Each place has its own fixed unit icon; the DLL only shows one per place.
     for row in range(SLOTS):
@@ -102,7 +102,7 @@ def layout():
         for u in ORDER:
             parts += _window(f"tgcx_cf_slot_icon_{row}_{u}", SLOT_X+1, ry-2, 36, 36, [_strip(f"tgcx_cf_slot_sprite_{row}_{u}", 0, 0, icons[u])])
             for k in range(MINIS):
-                parts += _window(f"tgcx_cf_mini_{row}_{k}_{u}", SLOT_X+197+k*42, ry+3, 24, 24,
+                parts += _window(f"tgcx_cf_mini_{row}_{k}_{u}", SLOT_X+175+k*35, ry+3, 24, 24,
                                  [_strip(f"tgcx_cf_mini_sprite_{row}_{k}_{u}", 0, 0, icons[u], 0.66)])
     for row in range(CHANGES):
         for u in ORDER:
@@ -158,29 +158,42 @@ def generate(output, tgc=DEFAULT_TGC):
     (output/'TGCX/localisation').mkdir(parents=True, exist_ok=True)
     table = sprites(tgc)
     images = {}
-    # The user's army-composition reference: native parchment body, gold
-    # frame and compact green name strip, without the unrelated army stats.
+    # Native 332px army panel: top/bottom gold braids and green name bar from
+    # GFX_unit_toppanel_bg, unstretched parchment middle and recessed footer
+    # tray from GFX_unit_bottom_bg, and GFX_unit_bg_28 section divider.
     body = sprite(tgc, table, 'GFX_unit_bottom_bg')
-    body.paste(body.crop((4, 80, body.width-4, 150)).resize((body.width-8, 64)), (4, 4))
-    images['bg'] = nine(body, 4, WIDTH, HEIGHT)
     top = sprite(tgc, table, 'GFX_unit_toppanel_bg', frames=2)
-    images['bg'].alpha_composite(nine(top.crop((0, 0, top.width, 8)), 3, WIDTH, 8), (0, 0))
-    images['bg'].alpha_composite(top.crop((51, 8, 326, 26)).resize((WIDTH-16, 22)), (8, 8))
-    images['slot'] = nine(sprite(tgc, table, 'GFX_unit_entry_bg'), 3, 366, 30)
+    bg = Image.new('RGBA', (WIDTH, HEIGHT))
+    parchment = body.crop((0, 80, WIDTH, 360))
+    for y in range(30, HEIGHT-35, parchment.height):
+        h = min(parchment.height, HEIGHT-35-y)
+        bg.paste(parchment.crop((0, 0, WIDTH, h)), (0, y))
+    bg.paste(body.crop((0, 373, WIDTH, 408)), (0, HEIGHT-35))
+    bg.alpha_composite(top.crop((0, 0, WIDTH, 27)), (0, 0))
+    bg.alpha_composite(top.crop((51, 5, 324, 27)).resize((317, 22)), (7, 5))
+    bg.alpha_composite(top.crop((0, 58, WIDTH, 64)), (0, 27))
+    band = sprite(tgc, table, 'GFX_unit_bg_28').crop((7, 0, 314, 28)).resize((ROW_W, 28))
+    bg.alpha_composite(band, (SLOT_X, 198))
+    images['bg'] = bg
+    # Native 317x30 regiment row with the two right-hand POP/bar columns
+    # replaced by the clean dual-tone middle band.
+    entry = sprite(tgc, table, 'GFX_unit_entry_bg')
+    slot = entry.copy()
+    slot.paste(entry.crop((38, 0, 248, ROW_H)).resize((278, ROW_H)), (38, 0))
+    images['slot'] = slot
     for row in range(SLOTS):
         y = SLOT_Y+row*32
-        images[f'blank_{row}'] = images['bg'].crop((SLOT_X, y, SLOT_X+366, y+30))
-    images['pager'] = images['bg'].crop((283, 172, 379, 200))
-    ring = Image.new('RGBA', (366, 30))
+        images[f'blank_{row}'] = images['bg'].crop((SLOT_X, y, SLOT_X+ROW_W, y+ROW_H))
+    images['pager'] = images['bg'].crop((228, 170, 324, 198))
+    ring = Image.new('RGBA', (ROW_W, ROW_H))
     d = ImageDraw.Draw(ring)
-    d.rectangle((0, 0, 365, 29), outline=(59, 46, 16, 255))
-    d.rectangle((1, 1, 364, 28), outline=(243, 215, 124, 255)); d.rectangle((2, 2, 363, 27), outline=(243, 215, 124, 255))
+    d.rectangle((0, 0, ROW_W-1, ROW_H-1), outline=(59, 46, 16, 255))
+    d.rectangle((1, 1, ROW_W-2, ROW_H-2), outline=(243, 215, 124, 255)); d.rectangle((2, 2, ROW_W-3, ROW_H-3), outline=(243, 215, 124, 255))
     images['ring'] = ring
     for key, name in [('left', 'GFX_button_arrow_left'), ('right', 'GFX_button_arrow_right')]:
         images[key] = sprite(tgc, table, name).resize((24, 24))
-    # GFX_button_standard_177 is a textSpriteType: a bare button needs a
-    # plain spriteType copy to draw and bind (P41).
-    images['button'] = sprite(tgc, table, 'GFX_button_standard_177')
+    # Native unit-panel footer button (148x28 steel/gold bevelled button).
+    images['button'] = sprite(tgc, table, 'GFX_unit_gunboat_diplo_button')
     # The panel's own 20x20 button frame (disband), its centre cleared, with
     # the infantry figure of the unit strip: "this stack, by template".
     frame = sprite(tgc, table, 'GFX_unit_disband')
