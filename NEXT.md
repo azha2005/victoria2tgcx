@@ -48,8 +48,9 @@
 3. **V2DLL mod slot:** **decided (D16, user, 2026-10-18):** keep our own
    `lua51.dll` proxy now (a); build the `v2dll_mod.dll` plugin (b) as a card
    after MOD-1 (`docs/report-v2dll-mod-slot-1018.md` §5(b)).
-4. **MOD-0 to MOD-5** (D15), per `docs/report-modular-scope-1018.md` §6.2;
-   instructions are written when LAW-3 closes.
+4. **MOD-0 to MOD-5** (D15), per `docs/report-modular-scope-1018.md` §6.2.
+   **MOD-0 next:** `docs/instructions-mod-0.md` (read-only game check, three
+   runs). MOD-1 instructions are written from the MOD-0 report.
 5. Close under ROADMAP §7. The next pitfall is **P47**.
 
 Only the user launches and exits the game. Install only after a normal

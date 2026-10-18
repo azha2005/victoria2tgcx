@@ -38,6 +38,7 @@
 | `instructions-law-2.md` | 0.3.5 buttons, Reforms tab and Decisions filter; what to do after U-7 |
 | `instructions-law-3.md` | LAW-3: Reforms rows refresh, top-bar tooltip filter, load test removed, D14 offer rule with board 1, Bill text overflow (0.6.4) |
 | `instructions-u-11.md` | short game check of LAW-3 0.6.4 and rollback |
+| `instructions-mod-0.md` | MOD-0 (D15): read-only launcher check with several mods: `-mod=` arguments, three mods, a dependency not ticked |
 | `instructions-u-7.md` | short 0.3.5 game check (Reforms tab, Bill buttons, Decisions tab, a month with no popup) and rollback |
 | `instructions-u-8.md` | first live template recruit, queue, local library, save/reload and side-by-side comparison on 0.4.0 |
 | `instructions-u-9.md` | TPL-1 0.5.0 log probe: unit-panel hooks, stack/regiment read and registry round trip |
