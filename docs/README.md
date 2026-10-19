@@ -1,7 +1,7 @@
 # Index of `docs/`
 
 - `report-army-filters-implementation-1019.md`:0.11.0culture/continent filters, migration, exact checks, isolated TGC installation and rollback; player test pending.
-- `report-release-002-1019.md`: ATCU 0.0.2 ZIP built from internal 0.11.2 (source a90050c); not tagged or published.
+- `report-release-002-1019.md`: ATCU 0.0.2 ZIP built from internal 0.11.2 (source a90050c); published as pre-release v0.0.2.
 - `report-tpl-7-orders-1019.md`: 0.11.2 Conform orders saved to a local file and resumed after a load (D13 revised); installed in the isolated TGC copy, passed in game (pre-Conform save case unconfirmed).
 - `report-army-filters-gui-1019.md`: 0.11.1 filter GUI refinement (native checkboxes, compact continent selector, owned-province continents only); installed in isolated TGC copy, player test pending.
 - `instructions-tpl-5.md` / `instructions-tpl-6.md`: current step-by-step culture and continent player checks.

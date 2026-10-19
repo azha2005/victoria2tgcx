@@ -1,7 +1,11 @@
 # RELEASE: ATCU 0.0.2 prepared, 2026-10-19
 
-Status: **ZIP built and verified locally; source committed and pushed to
-origin/master. No tag, GitHub release or asset upload yet** (not requested).
+Status: **published 2026-10-19** as a pre-release, like 0.0.1:
+<https://github.com/azha2005/victoria2tgcx/releases/tag/v0.0.2>. Tag
+`v0.0.2` points at `cae2a68`. The assets are `ATCU-0.0.2.zip` (1 108 851
+bytes; the GitHub digest and a re-download both match the SHA-256 below) and
+`ATCU-0.0.2.zip.sha256`. The body is `docs/release-0.0.2/RELEASE_NOTES.md`.
+It was created through the user's signed-in Chrome on the user's request.
 
 ## What it is
 
@@ -58,7 +62,5 @@ ATCU 0.0.2 is internal build 0.11.2, with the log marker `TGCX TPL-7 0.11.2`:
 
 ## Next
 
-Publishing needs a separate go-ahead from the user. It would be tag
-`v0.0.2` on `a90050c` (or on the later docs commit), a GitHub release with
-the body from RELEASE_NOTES.md, and the asset `ATCU-0.0.2.zip` with its
-`.sha256`.
+Still open: rechecking the 0.11.x filters on vanilla, HPM and DoD; a
+second-PC recipient test; the licence; the artwork publication status.
