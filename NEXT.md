@@ -4,6 +4,8 @@
 internal0.11.0 and installed in the isolated TGC copy. Player test next.**
 Session58 archived in docs/archive/sessions.md.
 
+**Update 2026-10-19 (release): ATCU 0.0.2 prepared from internal 0.11.2.** work/releases/final/ATCU-0.0.2.zip, SHA-256 e656c58d...becb4a6, source a90050c, pushed to origin/master. Not tagged or published: that needs the user's go-ahead. docs/report-release-002-1019.md. The 0.11.x filters were not rechecked on vanilla, HPM or DoD.
+
 **Update 2026-10-19 (later): TPL-7, 0.11.2, Conform orders survive a load; PASSED in game (2 orders resumed and merged after a load; pre-Conform save case unconfirmed); installed in the isolated TGC copy 2026-10-19 (41/41 verified, backup work/orders-0112/before-tgc/).** A reload had sent a Conform regiment to the rally point (D13 forgot it). The user chose option 2 (D13 revised): tgcx_conform_orders.txt beside the templates records tag, date, stack and construction ids; a load of that tag dated within an order resumes the march and merge. docs/report-tpl-7-orders-1019.md. Candidate work/orders-0112/ATCU-orders-0.11.2-test.zip; Run the report's section 7 check (marker TGCX TPL-7 0.11.2).
 
 **Update 2026-10-19: 0.11.1 GUI refinement installed in the isolated TGC copy; user reports it works great (checklist items not individually confirmed).** Native
