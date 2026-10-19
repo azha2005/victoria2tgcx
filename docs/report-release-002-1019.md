@@ -7,6 +7,15 @@ bytes; the GitHub digest and a re-download both match the SHA-256 below) and
 `ATCU-0.0.2.zip.sha256`. The body is `docs/release-0.0.2/RELEASE_NOTES.md`.
 It was created through the user's signed-in Chrome on the user's request.
 
+ModDB (2026-10-19, through the user's signed-in Chrome, on the user's
+request): mod page
+<https://www.moddb.com/mods/atcu-army-template-and-conform-universal>
+(game Victoria 2: Heart of Darkness), put live by the user's decision. It
+has the same ZIP as file "ATCU 0.0.2 (beta)", waiting for ModDB staff
+authorisation; the 60 s demo video (an 8.6 MB re-encode); and five
+1280x720 in-game screenshots. The logo and screenshots are in
+`work/moddb/`, which git ignores.
+
 ## What it is
 
 ATCU 0.0.2 is internal build 0.11.2, with the log marker `TGCX TPL-7 0.11.2`:
