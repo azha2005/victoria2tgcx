@@ -34,7 +34,7 @@ class ReleaseTests(unittest.TestCase):
 
     def test_all_staged_art_has_explicit_origin(self):
         original = ('tgcx_cf_ring.dds', 'tgcx_tpl_bg.dds', 'tgcx_tpl_blank_0.dds')
-        derived = ('tgcx_cf_bg.dds', 'tgcx_cf_open.dds', 'tgcx_tpl_compact.dds')
+        derived = ('tgcx_cf_bg.dds', 'tgcx_cf_open.dds', 'tgcx_tpl_compact.dds', 'tgcx_tpl_check_on.dds', 'tgcx_cf_check.dds')
         for name in original:
             self.assertEqual(release.art_origin(name)[0], 'original drawn UI')
         for name in derived:
@@ -61,8 +61,8 @@ class ReleaseTests(unittest.TestCase):
     def test_readme_is_crlf_whatever_the_checkout(self):
         for text in ('a\nb\n', 'a\r\nb\r\n'):
             with self.subTest(text=text), tempfile.TemporaryDirectory() as temp:
-                (Path(temp) / 'docs/release-0.0.1').mkdir(parents=True)
-                (Path(temp) / 'docs/release-0.0.1/README.txt').write_bytes(text.encode())
+                (Path(temp) / release.DOCS).mkdir(parents=True)
+                (Path(temp) / release.DOCS / 'README.txt').write_bytes(text.encode())
                 self.assertEqual(release.readme_bytes(Path(temp)), b'a\r\nb\r\n')
 
     def test_dotted_release_version_is_kept_in_archive_name(self):

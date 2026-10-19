@@ -3,6 +3,7 @@ import unittest
 from tgc_scan import parse
 from tgcx_templates_gui import layout as templates
 from tgcx_conform_gui import layout as conform
+from tgcx_conform_gui import CHANGES
 
 
 class UniversalGuiTests(unittest.TestCase):
@@ -20,6 +21,7 @@ class UniversalGuiTests(unittest.TestCase):
         t,_=templates(universal=True);c,_=conform(universal=True)
         for row in range(8):
             self.assertIn(f'name="tgcx_tpl_edit_sprite_{row}"',t)
+        for row in range(CHANGES):
             self.assertIn(f'name="tgcx_cf_change_sprite_{row}_unit"',c)
         for text in (t,c):
             self.assertNotIn('_infantry',text)

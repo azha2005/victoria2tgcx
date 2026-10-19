@@ -321,6 +321,7 @@ static void tgcx_PackageTests() {
 #include "tgcx_bill_tests.h"
 #include "tgcx_reforms_tests.h"
 #include "tgcx_templates_tests.h"
+#include "tgcx_army_filters_tests.h"
 #include "tgcx_templates_gui_tests.h"
 #include "tgcx_conform_tests.h"
 #include "tgcx_conform_native_tests.h"
@@ -335,7 +336,7 @@ int wmain(int argc, wchar_t** argv) {
     else if (argc==3 && wcscmp(argv[1],L"plugin")==0) tgcx_PluginProbe(argv[2]);
     else if (argc==2) {
         tgcx_log=CreateFileW(L"tgcx_fixture.log",GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,0,nullptr);
-        tgcx_HashTests(argv[1]); tgcx_PackageTests(); tgcx_BillTests();tgcx_ReformTests();tgcx_TemplateTests();tgcx_TplGuiTests();tgcx_ConformTests();tgcx_ConformNativeTests();tgcx_ConformRouteTests();tgcx_ConformGuiTests();tgcx_TplMetadataTests();tgcx_UniversalTests();tgcx_BillWindowTests(argv[1]);tgcx_FixtureTests();
+        tgcx_HashTests(argv[1]); tgcx_PackageTests(); tgcx_BillTests();tgcx_ReformTests();tgcx_TemplateTests();tgcx_ArmyFilterTests();tgcx_FilterStorageTests();tgcx_TplGuiTests();tgcx_ConformTests();tgcx_ConformNativeTests();tgcx_ConformRouteTests();tgcx_ConformGuiTests();tgcx_TplMetadataTests();tgcx_UniversalTests();tgcx_BillWindowTests(argv[1]);tgcx_FixtureTests();
         if (tgcx_log!=INVALID_HANDLE_VALUE) CloseHandle(tgcx_log);
     } else { printf("usage: tgcx_tests <reference exe> | probe <proxy> | plugin <tgcx.dll>\n"); return 2; }
     printf("tgcx_tests: %s\n", tgcx_failures ? "FAIL" : "ALL OK");

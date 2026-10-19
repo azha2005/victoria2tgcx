@@ -339,7 +339,7 @@ static bool tgcx_Initialize(const char* origin) {
     tgcx_log=CreateFileW(log_path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, 0, nullptr);
     if (tgcx_log == INVALID_HANDLE_VALUE) return false;
     tgcx_base=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
-    tgcx_Log("TGCX MOD-6 0.10.4 tgcx.dll loaded_by=%s base=%08X preferred=%08X simulation_writes=engine_commands_only", origin, tgcx_base, tgcx_preferred_base);
+    tgcx_Log("TGCX TPL-7 0.11.2 tgcx.dll loaded_by=%s base=%08X preferred=%08X simulation_writes=engine_commands_only", origin, tgcx_base, tgcx_preferred_base);
     char digest[65]={};
     bool hash_ok=tgcx_HashFile(exe, digest) && strcmp(digest,tgcx_exe_sha256)==0;
     tgcx_Log("%s sha256 %s", hash_ok ? "OK" : "BAD", digest[0] ? digest : "unavailable");
@@ -387,6 +387,11 @@ static bool tgcx_Initialize(const char* origin) {
         const uint32_t universal_rvas[]={0x5A38F0,0x5C4410,0x5E3D60,0x5EFE20,0x246620,0x5A6A6D,0xA08A70,0x8453FC,0x1BAB1C,0x1BA89E,
             0x5E4490,0xA3C1DC};
         if(!tgcx_army_universal || tgcx_RequireSignatures(universal_rvas,_countof(universal_rvas))) {
+            const uint32_t filter_rvas[]={0x122310,0x4F84D0,0x4CF4C5,0x9D040,0x94520,0x94550,0x9FC1DC};
+            // Without the guards a restricted template or continent refuses
+            // to recruit (never widens to All/Any); unrestricted ones still work.
+            tgcx_army_filters_enabled=tgcx_RequireSignatures(filter_rvas,_countof(filter_rvas));
+            if(!tgcx_army_filters_enabled)tgcx_Log("Army filters disabled: native culture/continent guards failed");
             tgcx_InstallTemplatesGui();
             tgcx_InstallConform();
         } else tgcx_Log("Universal Army disabled: native GUI/metadata signature gate failed");

@@ -11,6 +11,7 @@ struct tgcx_TplPanel {
     char text[TGCX_TPL_TEXTS][192],status[192];
     bool text_set[TGCX_TPL_TEXTS];
     unsigned char shown[tgcx_tpl_capacity*21+64];
+    uintptr_t continent_world;char continent[64];   // current action only; never saved with a template
 };
 static tgcx_TplPanel tgcx_tpl_panels[8]={};
 static uintptr_t tgcx_tpl_update_original=0,tgcx_tpl_destroy_original=0;
@@ -116,9 +117,18 @@ static unsigned tgcx_TplMinis(const tgcx_TplComposition& c,unsigned* leading,uns
 }
 enum {TGCX_TPL_SHOW_SEL=0,TGCX_TPL_SHOW_BLANK=4,TGCX_TPL_SHOW_PAGER=8,TGCX_TPL_SHOW_PAGES=9,
     TGCX_TPL_SHOW_ICON=TGCX_TPL_SHOW_PAGES+(tgcx_tpl_capacity+7)/8,TGCX_TPL_SHOW_MINI=TGCX_TPL_SHOW_ICON+4*tgcx_tpl_capacity,
-    TGCX_TPL_SHOW_END=TGCX_TPL_SHOW_MINI+4*4*tgcx_tpl_capacity};
+    TGCX_TPL_SHOW_CHECK=TGCX_TPL_SHOW_MINI+4*4*tgcx_tpl_capacity,TGCX_TPL_SHOW_END=TGCX_TPL_SHOW_CHECK+2};
 static void tgcx_TplLabels(tgcx_TplPanel* p) {
+    auto world=tgcx_TplLiveGlobals().world;
+    if(p->continent_world!=world) {p->continent_world=world;p->continent[0]=0;}
+    bool continents=tgcx_ContinentsLive(world);
+    const tgcx_Continent* region=continents?tgcx_ContinentByKey(tgcx_continents,p->continent):nullptr;
+    unsigned mode=p->selected<tgcx_tpl_library.size?tgcx_tpl_library.item[p->selected].culture:0;
     static_assert(TGCX_TPL_SHOW_END<=sizeof(p->shown),"Templates visibility cache");
+    // A ticked box is the native "on" frame shown beneath its button.
+    tgcx_TplShow(p,TGCX_TPL_SHOW_CHECK,"tgcx_tpl_check_on_accepted",mode==TGCX_CULTURE_ACCEPTED);
+    tgcx_TplShow(p,TGCX_TPL_SHOW_CHECK+1,"tgcx_tpl_check_on_primary",mode==TGCX_CULTURE_PRIMARY);
+    tgcx_TplText(p,TGCX_TPL_TEXT_CONTINENT,"%s",!p->continent[0]?"Any continent":region?region->label:"Unavailable");
     unsigned pages=(std::max)(1u,(tgcx_tpl_library.size+3)/4);
     p->list_page%=pages;
     char key[128];
@@ -201,6 +211,21 @@ static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
             return;
         }
         if(!p->open)return;
+        if(action==TGCX_TPL_CONTINENT_PREV || action==TGCX_TPL_CONTINENT_NEXT) {
+            auto world=tgcx_TplLiveGlobals().world;
+            if(p->continent_world!=world) {p->continent_world=world;p->continent[0]=0;}
+            if(!tgcx_ContinentsLive(world)) {strcpy_s(p->status,"Continent catalogue unavailable; no selection changed.");return;}
+            unsigned current=0;
+            for(unsigned i=0;i<tgcx_continents.count;++i)if(!strcmp(p->continent,tgcx_continents.item[i].key))current=i+1;
+            // Only continents where the country owns a province; if that
+            // read fails, every continent is offered rather than none.
+            static bool present[tgcx_continents_max];static tgcx_TplCountry owner;
+            bool known=tgcx_TplScan(tgcx_TplLiveGlobals(),tgcx_tpl_native,&owner) &&
+                tgcx_ContinentsPresent(world,owner.country,tgcx_continents,present);
+            unsigned next=tgcx_ContinentStep(tgcx_continents,known?present:nullptr,current,action==TGCX_TPL_CONTINENT_NEXT);
+            if(next)strcpy_s(p->continent,tgcx_continents.item[next-1].key);else p->continent[0]=0;
+            strcpy_s(p->status,"Continent choice applies to this recruitment action only.");p->tick=0;return;
+        }
         p->tick=0;
         if(action>=TGCX_TPL_SLOT_0 && action<=TGCX_TPL_SLOT_3) {
             unsigned s=p->list_page*4+action-TGCX_TPL_SLOT_0;if(s<tgcx_tpl_library.size)p->selected=s;p->status[0]=0;return;
@@ -229,7 +254,16 @@ static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
                 int u=tgcx_TplUnitByName(country,tgcx_tpl_catalog[k].key),n=tgcx_tpl_library.item[p->selected].count[k];
                 if(u>=0)counts[u]=n;else unknown+=n;
             }
-            auto result=tgcx_TplRecruit(counts);
+            tgcx_ArmyFilter filter={tgcx_tpl_library.item[p->selected].culture,0};
+            if(p->continent_world!=g.world) {p->continent_world=g.world;p->continent[0]=0;}
+            if(p->continent[0]) {
+                if(!tgcx_ContinentsLive(g.world)) {strcpy_s(p->status,"Continent catalogue unavailable; nothing queued.");return;}
+                const auto* region=tgcx_ContinentByKey(tgcx_continents,p->continent);
+                if(!region) {strcpy_s(p->status,"Selected continent unavailable; choose again. Nothing queued.");return;}
+                filter.continent=region->object;
+            }
+            auto result=tgcx_TplRecruit(counts,nullptr,nullptr,nullptr,nullptr,&filter);
+            if(!result.scanned) {strcpy_s(p->status,"Recruitment eligibility unavailable; nothing queued.");return;}
             if(result.queued) {pending=true;sent_world=g.world;sent_date=date;}
             sprintf_s(p->status,"%u orders queued; %u left out. Unpause to process them.",result.queued,result.missing+unknown);
             return;
@@ -243,6 +277,10 @@ static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
             if(selected>=next.size)return;
             for(unsigned i=selected+1;i<next.size;++i)next.item[i-1]=next.item[i];
             next.item[--next.size]={};selected=next.size?(std::min)(selected,next.size-1):0;
+        } else if(action==TGCX_TPL_CULTURE_ACCEPTED || action==TGCX_TPL_CULTURE_PRIMARY) {
+            if(selected>=next.size)return;
+            unsigned mode=action==TGCX_TPL_CULTURE_ACCEPTED?TGCX_CULTURE_ACCEPTED:TGCX_CULTURE_PRIMARY;
+            next.item[selected].culture=next.item[selected].culture==mode?TGCX_CULTURE_ALL:mode;
         } else if(action>=TGCX_TPL_MINUS_0 && action<=TGCX_TPL_PLUS_7) {
             if(selected>=next.size)return;
             unsigned u=p->unit_page*8+(action-TGCX_TPL_MINUS_0)/2;if(u>=tgcx_tpl_kinds)return;

@@ -17,10 +17,14 @@ ABBR = "Inf Gds Irr Art Eng Cui Dra Hus Cav Tnk Air".split()
 FOLDERS = [17, 1, 2, 3, 16, 18, 14, 13, 15, 20, 19]
 FOLDERS += [n for n in range(1024) if n not in FOLDERS]
 ROWS, SLOTS = 8, 12
+# TPL-5: the template's culture row sits under the eight unit rows; TPL-6: the continent selector belongs to the action,
+# next to Recruit in the footer.
+CHECKS = {"accepted": (60, 439), "primary": (204, 439)}
+CONTINENT_X, CONTINENT_Y = 304, 468
 
 
 from tgcx_army_catalog import units as catalog_units, metadata
-from tgcx_army_art import sprites, texture, sprite, unit_frames, sprite_specs
+from tgcx_army_art import sprites, texture, sprite, unit_frames, sprite_specs, filter_checkbox
 
 
 def units(tgc=DEFAULT_TGC, profile=None):
@@ -43,6 +47,9 @@ def buttons():
     # GFX_button_standard_177 is a textSpriteType: as a bare button (no
     # buttonText) it neither draws nor binds, so a spriteType copy is used.
     result += [("recruit", "recruit", 7, 482, 177, 34)]
+    result += [(f"culture_{k}", "check", x, y, 20, 20) for k, (x, y) in CHECKS.items()]
+    result += [("continent_prev", "left", CONTINENT_X, CONTINENT_Y, 24, 24),
+               ("continent_next", "right", CONTINENT_X+126, CONTINENT_Y, 24, 24)]
     result += [(f"native_{n}", "", 0, 0, 0, 0) for n in FOLDERS]
     return result
 
@@ -62,9 +69,14 @@ def texts():
         result += [(f"unit_{i}", "", 42, 188+i*31, 150, 16, "Arial12_bold_black", "left"),
                    (f"days_{i}", "", 42, 202+i*31, 150, 14, "Arial12_black", "left"),
                    (f"count_{i}", "", 257, 192+i*31, 40, 18, "vic_18", "centre")]
-    result += [("summary", "", 231, 487, 420, 16, "Arial12_bold_black", "left"),
-               ("status", "One build order per regiment, from provinces with free soldier pops.", 231, 503, 420, 22, "Arial12_black", "left"),
+    result += [("summary", "", 231, 494, 420, 16, "Arial12_bold_black", "left"),
+               ("status", "One build order per regiment, from provinces with free soldier pops.", 231, 510, 420, 16, "Arial12_black", "left"),
                ("recruit", "Recruit Template", 7, 490, 177, 20, "vic_18_black", "centre")]
+    result += [("culture", "Culture", 10, 442, 46, 18, "Arial12_bold_black", "left"),
+               ("culture_accepted", "Primary + accepted", CHECKS["accepted"][0]+24, 442, 114, 18, "Arial12_black", "left"),
+               ("culture_primary", "Primary only", CHECKS["primary"][0]+24, 442, 120, 18, "Arial12_black", "left"),
+               ("continent_caption", "Recruit from", 231, 472, 72, 18, "Arial12_black", "left"),
+               ("continent", "Any continent", CONTINENT_X+24, 472, 102, 18, "Arial12_bold_black", "centre")]
     return result
 
 
@@ -100,6 +112,10 @@ def layout(tgc=DEFAULT_TGC, profile=None, universal=False):
         parts[0] = 'windowType={name="tgcx_tpl_tab" position={x=30000 y=30000} size={x=20 y=20} moveable=0 fullScreen=no backGround=""'
         parts[1] = 'guiButtonType={name="tgcx_tpl_open" quadTextureSprite="tgcx_tpl_compact" position={x=0 y=0} clicksound=click}'
     parts += [f'iconType={{name="tgcx_tpl_erow_{i}" spriteType="GFX_province_recruit_button" position={{x=2 y={186+i*31}}}}}' for i in range(ROWS)]
+    # A ticked box is the native "on" frame beneath its button, shown by the DLL.
+    for k, (x, y) in CHECKS.items():
+        parts += _window(f"tgcx_tpl_check_on_{k}", x, y, 20, 20,
+                         [f'iconType={{name="tgcx_tpl_check_on_icon_{k}" spriteType="tgcx_tpl_check_on" position={{x=0 y=0}}}}'])
     for name, art, x, y, _, _ in buttons()[1:]:
         if not art:
             continue
@@ -194,6 +210,12 @@ def generate(output, tgc=DEFAULT_TGC, profile=None):
     images = {}
     # The left column, wide enough to cover the native list's scrollbar.
     images['bg'] = section(405,466)
+    # The culture row has no band of its own (user, 2026-10-19): the native
+    # unticked boxes are painted on the column, their buttons sit on top.
+    off, on, shared = filter_checkbox(tgc, profile)
+    for x, y in CHECKS.values():
+        images['bg'].alpha_composite(off,(x,y))
+    images['check'], images['check_on'] = shared, on
     native_bg = texture(tgc,table['GFX_military_build_unit_bg'],profile)
     images['header'] = native_bg.crop((6,8,401,31))
     images['bar'] = native_bg.crop((6,538,658,600))

@@ -79,6 +79,7 @@ struct tgcx_CfTask {
     int unit,origin;unsigned regiments;tgcx_CfId regiment[tgcx_cf_regiments];   // JOIN origin: recruitment province; FILL: extras
     bool appeared,merge_sent,construction_seen;int moved_to;uint32_t merge_date,created_date;unsigned misses;
     bool transfer_sent;uint32_t transfer_date;unsigned retries;   // FILL: TPL-4 checks the extras arrived
+    unsigned record;   // 1-based saved order (TPL-7), 0 for none
 };
 // What the native layer reads each game day; ids only, never pointers kept.
 struct tgcx_CfSeen {
@@ -147,4 +148,67 @@ static void tgcx_CfPending(const tgcx_CfTracker& k,const tgcx_CfId& target,int* 
     for(const auto& t:k.task)
         if(t.used && t.kind==TGCX_CF_JOIN && tgcx_CfSame(t.target,target) && t.unit>=0 && t.unit<static_cast<int>(tgcx_tpl_units))
             ++pending[t.unit];
+}
+
+// ---------------------------------------------------------------- saved orders (pure; TPL-7, D13 revised)
+
+// A JOIN of a regiment being built, kept in a local file so a reload resumes
+// it. The save stores a construction's own id and its future stack id
+// ("unit"), so both survive. An order applies to a loaded game of the same
+// tag whose date lies from its creation up to (not including) its end: a
+// save made before the order, or after it finished, never resumes it.
+constexpr unsigned tgcx_cf_orders_max=512;
+struct tgcx_CfOrder { uint32_t tag,created,done;tgcx_CfId target,stack,construction;int unit;bool active; };
+struct tgcx_CfOrders { unsigned count;tgcx_CfOrder item[tgcx_cf_orders_max]; };
+static bool tgcx_CfOrderApplies(const tgcx_CfOrder& r,uint32_t tag,uint32_t date) {
+    return r.tag==tag && r.created<=date && (!r.done || date<r.done);
+}
+// Full: the oldest finished order goes first, else the oldest open one.
+// *dropped: the index removed (later ones moved down one), or the maximum.
+static unsigned tgcx_CfOrderAdd(tgcx_CfOrders* k,const tgcx_CfOrder& r,unsigned* dropped=nullptr) {
+    if(dropped)*dropped=tgcx_cf_orders_max;
+    if(k->count>=tgcx_cf_orders_max) {
+        unsigned drop=0;bool done=false;
+        for(unsigned i=0;i<k->count;++i) {
+            const auto& c=k->item[i];bool d=c.done!=0;
+            if((d && !done) || (d==done && c.created<k->item[drop].created)) { drop=i;done=d; }
+        }
+        for(unsigned i=drop+1;i<k->count;++i)k->item[i-1]=k->item[i];
+        --k->count;if(dropped)*dropped=drop;
+    }
+    k->item[k->count]=r;k->item[k->count].active=false;
+    return k->count++;
+}
+static bool tgcx_CfOrderLine(const tgcx_CfOrder& r,char* line,size_t size) {
+    return sprintf_s(line,size,"order tag=%08X created=%u done=%u target=%u/%u stack=%u/%u construction=%u/%u unit=%d\r\n",
+        r.tag,r.created,r.done,r.target.type,r.target.id,r.stack.type,r.stack.id,r.construction.type,r.construction.id,r.unit)>0;
+}
+static size_t tgcx_CfOrdersWrite(const tgcx_CfOrders& k,char* out,size_t size) {
+    size_t used=0;char line[192];
+    const char* header="tgcx_conform_orders 1\r\n";size_t n=strlen(header);
+    if(n>=size)return 0;memcpy(out,header,n);used=n;
+    for(unsigned i=0;i<k.count;++i) {
+        if(!tgcx_CfOrderLine(k.item[i],line,sizeof(line)))return 0;
+        n=strlen(line);if(used+n>=size)return 0;memcpy(out+used,line,n);used+=n;
+    }
+    out[used]=0;return used;
+}
+// Strict: every line must print back byte for byte; anything else refuses
+// the whole file (nothing is resumed from a damaged one).
+static bool tgcx_CfOrdersParse(const char* text,tgcx_CfOrders* out) {
+    out->count=0;
+    const char* header="tgcx_conform_orders 1\r\n";
+    if(strncmp(text,header,strlen(header)))return false;
+    for(const char* at=text+strlen(header);*at;) {
+        const char* end=strstr(at,"\r\n");if(!end || end-at>=190 || out->count>=tgcx_cf_orders_max)return false;
+        char line[192];memcpy(line,at,end-at);line[end-at]=0;
+        tgcx_CfOrder r={};
+        if(sscanf_s(line,"order tag=%8X created=%u done=%u target=%u/%u stack=%u/%u construction=%u/%u unit=%d",
+            &r.tag,&r.created,&r.done,&r.target.type,&r.target.id,&r.stack.type,&r.stack.id,&r.construction.type,&r.construction.id,&r.unit)!=10)return false;
+        char back[192];
+        if(!tgcx_CfOrderLine(r,back,sizeof(back)) || strncmp(back,at,end-at+2) || back[end-at+2])return false;
+        if(tgcx_CfNone(r.target) || tgcx_CfNone(r.stack) || r.unit<0 || r.unit>=static_cast<int>(tgcx_tpl_units))return false;
+        out->item[out->count++]=r;at=end+2;
+    }
+    return true;
 }

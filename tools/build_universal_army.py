@@ -1,4 +1,4 @@
-"""Build the same additive Army package for every supported 3.04 base."""
+"""Build the files-only ATCU filter candidate for supported 3.04 bases."""
 import argparse
 import hashlib
 import json
@@ -10,13 +10,16 @@ from PIL import Image
 import tgcx_templates_gui as tpl
 import tgcx_conform_gui as cf
 
+VERSION = '0.11.2'
+MARKER = b'TGCX TPL-7 0.11.2 tgcx.dll'
+
 
 def build(output, art, dll, loader):
     output, art, dll, loader = map(lambda p: Path(p).resolve(), (output, art, dll, loader))
     if output.exists() or Path(str(output)+'.zip').exists():
         raise ValueError('output folder/ZIP must be new')
-    if b'TGCX MOD-6 0.10.4 tgcx.dll' not in dll.read_bytes():
-        raise ValueError('universal package requires current MOD-6 DLL')
+    if MARKER not in dll.read_bytes():
+        raise ValueError('filter package requires the matching 0.11.2 DLL and GUI')
     package = output/'mod/tgcx_army_universal'
     (package/'interface').mkdir(parents=True)
     (package/'gfx/interface').mkdir(parents=True)
@@ -37,35 +40,55 @@ def build(output, art, dll, loader):
     loc = ['CODE;ENGLISH;FRENCH;GERMAN;POLISH;SPANISH;ITALIAN;SWEDISH;CZECH;HUNGARIAN;DUTCH;PORTUGUESE;RUSSIAN;FINNISH;x']
     loc += [k+';'+v+';'*13+'x' for k,v in (tloc|cloc).items()]
     (package/'localisation/tgcx_army.csv').write_bytes(('\n'.join(loc)+'\n').encode('cp1252'))
-    (package/'tgcx_package.txt').write_text('package = army\nbase = universal\nmodules = "templates conform"\nversion = 0.10.4\n')
+    (package/'tgcx_package.txt').write_text(f'package = army\nbase = universal\nmodules = "templates conform"\nversion = {VERSION}\n')
     (package/'tgcx_universal.txt').write_bytes(b'army_gui 1\n')
     shutil.copy2(dll, package/'tgcx.dll')
     shutil.copy2(dll, package/'v2dll_mod.dll')
-    (output/'mod/tgcx_army_universal.mod').write_text('name = "Army Templates and Conform (Universal)"\npath = "mod/tgcx_army_universal"\n', encoding='cp1252')
+    (output/'mod/tgcx_army_universal.mod').write_text('name = "ATCU - Army Template and Conform Universal"\npath = "mod/tgcx_army_universal"\n', encoding='cp1252')
     shutil.copy2(loader, output/'lua51.dll')
     (output/'README.txt').write_text(
-        'Army Templates and Conform 0.10.4 - universal prototype\n\n'
+        'ATCU - Army Template and Conform Universal\n'
+        'Saved Conform orders test candidate, internal version 0.11.2\n\n'
         'The SAME mod folder/descriptor and DLL work with the active supported 3.04 base.\n'
         'No installer, scripts, per-base preparation or original GUI overrides.\n'
         'Close the game normally before copying. Keep backups of existing files.\n'
         'With our existing loader: copy mod/ into the game folder. In the normal\n'
-        'launcher select ONLY Universal Army plus your base (if any). Untick\n'
-        'old base-specific Army packages. Never select two Army packages.\n'
+        'launcher select ONLY ATCU plus your base (if any). Untick old Army\n'
+        'and TGCX Politics packages. Keep the complete previous ATCU folder\n'
+        'and descriptor outside mod/ before replacing an earlier ATCU build.\n'
         'Clean game: retain original lua51.dll as lua51_real.dll, then copy the\n'
         'included lua51.dll loader. Do not replace a V2DLL installation with it.\n'
         'V2DLL users: the identical logic is included as v2dll_mod.dll in the Army folder,\n'
         'with LOAD_DLL_FROM_MOD_FOLDER=1 and Army first in the mod list.\n\n'
-        'Uses shared native panel definitions and live unit keys/icons/build times.\n'
-        'Conform recruits only within land reach of the target; shortages are left out.\n'
-        'Templates uses a compact button after native folders, or in the title\n'
-        'band for crowded DoD rows. Current Conform design retained.\n'
-        'PROTOTYPE: automated checks do not prove native game integration yet.\n'
-        'Test Templates, custom unit icons, Conform detach/recruit/march/merge,\n'
-        'native tab switching, Navy/fleet hiding, repeated army selection and\n'
-        'save/reload. Preserve Logs/tgcx.log; do not share private game art publicly.\n', encoding='utf-8')
+        'CULTURE: each template saves either Primary + accepted, Primary only,\n'
+        'or unrestricted (neither box ticked). Clicking the selected box clears it.\n'
+        'Both Build Army and Conform missing builds use this preference.\n'
+        'Existing regiments are counted by type and are not removed for culture.\n'
+        'CONTINENT: builder arrows select Any or a continent where you own provinces.\n'
+        'This session-only recruitment choice is not saved with the template.\n'
+        'Conform keeps its separate land-reach restriction and ignores this selector.\n'
+        'Filters combine with normal unit eligibility and free soldier capacity.\n'
+        'Recruitment queues what fits and reports what is left out.\n\n'
+        'CONFORM ORDERS: regiments being built for a Conform are also listed in\n'
+        'tgcx_conform_orders.txt in the same settings folder (country tag, date,\n'
+        'stack and construction ids). Loading a save of the same country dated\n'
+        'within an order resumes it: the regiment still joins its conformed\n'
+        'stack, even from a rally point. Not part of the save; deleting the file\n'
+        'only stops resuming after a load.\n\n'
+        'SETTINGS: imports the old tgcx_templates.txt without rewriting it.\n'
+        'Edits save atomically to tgcx_templates_v2.txt in the same Victoria II\n'
+        'user settings folder. Continent membership is cached from engine data;\n'
+        'the mod TXT files are not parsed on each click.\n'
+        'ROLLBACK: restore the previous complete ATCU folder and descriptor.\n'
+        'The old build reads the retained v1 file; edits made in this candidate\n'
+        'remain in v2 and will not appear in the old build. Keep both files.\n\n'
+        'TEST CANDIDATE: automated checks pass; filter gameplay and visuals\n'
+        'still need player verification. Check allowed cultures, continents,\n'
+        'Conform shortages, paused switching, save/reload and native Navy tabs.\n'
+        'Preserve Logs/tgcx.log. This ZIP is for local testing, not publication.\n', encoding='utf-8')
     manifest={p.relative_to(output).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
               for p in sorted(output.rglob('*')) if p.is_file()}
-    (output/'SHA256.json').write_text(json.dumps(manifest,indent=2))
+    Path(str(output)+'.SHA256.json').write_text(json.dumps(manifest,indent=2))
     archive=Path(str(output)+'.zip')
     with zipfile.ZipFile(archive,'x',zipfile.ZIP_DEFLATED) as z:
         for p in sorted(output.rglob('*')):

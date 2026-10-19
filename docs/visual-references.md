@@ -26,3 +26,37 @@ within land reach of the selected army, with shortages reported. 0.10.1
 keeps layout/art, changes summary/shortfall wording to "within land reach".
 Existing overseas troops are not moved automatically. Runtime visual
 acceptance of the universal controls and wording remains pending.
+
+
+## Current main-copy screenshots and filter layout (2026-10-19)
+
+The three newer user captures are retained unaltered as:
+
+- mockups/6-conform-main-current-1019.png: current Conform preview.
+- mockups/6-conform-main-queued-1019.png: current Conform after queueing.
+- mockups/5-templates-main-current-1019.png: current Military Templates.
+
+They are the baseline for TPL-5/TPL-6. Previous boards remain historical.
+Accepted Universal0.10.4 already passed the four-base short matrix; that
+acceptance does not apply to the new filter layout.
+
+New local references are mockups/5-templates-filters-1019.{png,svg} and
+mockups/6-conform-filters-1019.{png,svg}. They use staged native-style art
+and actual generated coordinates, with sample labels in Arial. They are
+layout previews, not gameplay captures. The historical remote artifact
+was not republished. All game-derived images stay ignored by git.
+
+Builder stays652x528, eight composition rows; culture controls at442 and
+continent in the right footer468. Conform stays332x594; culture at202,
+Changes moved32px down and reduced to seven visible rows. Existing overflow
+summary preserves totals. These deviations reserve room for the requested
+filters without expanding the current frames. Player visibility, native
+font layout and hit-testing acceptance remains pending on installed0.11.0.
+
+## 0.11.1 filter GUI previews (2026-10-19)
+
+mockups/5-templates-filters-1019b.png and mockups/6-conform-filters-1019b.png
+supersede the 0.11.0 filter previews: native GFX_checkbox_default boxes with a
+"Culture" caption (builder row without background, at the user's request;
+Conform row keeps its regiment-row band) and the compact builder footer
+`Recruit from < Any continent >`. Generated from staged art; not game captures.

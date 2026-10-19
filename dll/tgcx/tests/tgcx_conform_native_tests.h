@@ -52,8 +52,10 @@ static bool tgcx_CfStubPost(void* command) {
 }
 static int tgcx_cf_s_recruited[tgcx_tpl_units];
 static uintptr_t tgcx_cf_s_recruit_target;
-static tgcx_TplResult tgcx_CfStubRecruit(uintptr_t target,const int* counts,tgcx_TplQueued queued,void* context) {
+static unsigned tgcx_cf_s_culture;
+static tgcx_TplResult tgcx_CfStubRecruit(uintptr_t target,const int* counts,tgcx_TplQueued queued,void* context,unsigned culture) {
     tgcx_cf_s_recruit_target=target;
+    tgcx_cf_s_culture=culture;
     tgcx_TplResult r={true,0,0,0};
     for(unsigned u=0;u<tgcx_tpl_units;++u)for(int k=0;k<counts[u];++k) {
         uint32_t cons[2]={0x20,500+r.queued},stack[2]={0x1269,600+r.queued};
@@ -154,7 +156,10 @@ static void tgcx_ConformNativeTests() {
     // ---- the daily driver: march, then merge
     tgcx_CfNative stub={tgcx_CfStubMove,tgcx_CfStubMerge,tgcx_CfStubTransfer,tgcx_CfStubCreate,tgcx_CfStubNewId,tgcx_CfStubLand,
         tgcx_CfStubPost,tgcx_CfStubRecruit,tgcx_CfStubReach};
-    memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_world=g.world;tgcx_cf_date=99;tgcx_cf_stack_vtable=0x7AB0;
+    // No real orders file in tests: the store is marked read and unusable.
+    tgcx_cf_orders_loaded=true;tgcx_cf_orders_ok=false;tgcx_cf_orders.count=0;
+    memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_world=g.world;tgcx_cf_player=7;tgcx_cf_step=0;tgcx_cf_date=99;
+    tgcx_cf_stack_vtable=0x7AB0;
     uintptr_t built=tgcx_CfMakeStack(2,60,20,7);
     tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,{0x1269,50},{0x1269,60},{},3,99);
     tgcx_CfDaily(g,stub);
@@ -165,7 +170,7 @@ static void tgcx_ConformNativeTests() {
     tgcx_CfDaily(g,stub);
     tgcx_Expect(tgcx_cf_s_merges==1 && tgcx_cf_s_merge_target==target && tgcx_cf_s_merge_other==built,"conform driver merges into the target");
     tgcx_CfPut<uint32_t>(world,0xB0C,50);tgcx_CfDaily(g,stub);
-    tgcx_Expect(!tgcx_cf_tracker.task[0].used,"conform driver forgets on a reload (D13)");
+    tgcx_Expect(!tgcx_cf_tracker.task[0].used,"conform driver forgets session tasks on a load (only saved orders resume, TPL-7)");
 
     // ---- one Conform: 2 infantry(3) + 1 cavalry(5) to 2 infantry + 2 artillery(4)
     memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_date=50;
@@ -174,7 +179,8 @@ static void tgcx_ConformNativeTests() {
     uintptr_t idle=tgcx_CfMakeStack(3,70,11,7);tgcx_CfAddRegiment(idle,3,3,7,4);
     int want[tgcx_tpl_units]={};want[3]=2;want[4]=2;
     static tgcx_CfPlan plan;
-    tgcx_CfResult r=tgcx_CfConformWith(g,stub,target,tgcx_cf_f_units,want,&plan);
+    tgcx_CfResult r=tgcx_CfConformWith(g,stub,target,tgcx_cf_f_units,want,&plan,TGCX_CULTURE_PRIMARY);
+    tgcx_Expect(tgcx_cf_s_culture==TGCX_CULTURE_PRIMARY,"Conform forwards the selected culture mode to actual missing-unit recruitment");
     tgcx_Expect(r.read && r.refusal==TGCX_CF_OK && r.detached==1 && !r.gathered && r.queued==2 && !r.failed,"conform plans detach and build, gathers nothing");
     tgcx_Expect(tgcx_cf_s_creates==1 && tgcx_cf_s_recruited[4]==2,"conform creates one stack and builds both artillery");
     tgcx_Expect(tgcx_cf_s_recruit_target==target,"conform recruitment receives the actual target army for its land scope");
@@ -213,6 +219,71 @@ static void tgcx_ConformNativeTests() {
     tgcx_Expect(stranded && !stranded->used && tgcx_cf_s_posts==posts_before,
         "Conform daily driver does not order an unreachable reinforcement to march");
     tgcx_cf_s_unreachable=-1;
-    tgcx_cf_stack_vtable=0;memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_world=0;tgcx_cf_date=0;
+
+    // ---- TPL-7 saved orders (D13 revised): the file format
+    static tgcx_CfOrders orders;static char text[8192];orders.count=0;
+    tgcx_CfOrder a={0x415246,99,0,{0x1269,50},{0x1269,600},{0x20,500},4,false};
+    tgcx_CfOrderAdd(&orders,a);a.done=120;a.stack.id=601;a.construction.id=501;a.unit=3;tgcx_CfOrderAdd(&orders,a);
+    size_t used=tgcx_CfOrdersWrite(orders,text,sizeof(text));
+    static tgcx_CfOrders back;
+    tgcx_Expect(used && tgcx_CfOrdersParse(text,&back) && back.count==2 && back.item[1].done==120 && back.item[1].stack.id==601 &&
+        back.item[0].construction.type==0x20 && back.item[0].construction.id==500 && back.item[0].unit==4 && back.item[0].tag==0x415246,
+        "saved orders: write and parse round trip");
+    char* unit=strstr(text,"unit=4");if(unit)unit[5]='x';
+    tgcx_Expect(unit && !tgcx_CfOrdersParse(text,&back) && !back.count,"saved orders: a damaged line refuses the whole file");
+    tgcx_Expect(!tgcx_CfOrdersParse("tgcx_conform_orders 2\r\n",&back) && tgcx_CfOrdersParse("tgcx_conform_orders 1\r\n",&back) && !back.count,
+        "saved orders: header version checked, empty file accepted");
+    tgcx_Expect(tgcx_CfOrderApplies(orders.item[1],0x415246,99) && tgcx_CfOrderApplies(orders.item[1],0x415246,119) &&
+        !tgcx_CfOrderApplies(orders.item[1],0x415246,120) && !tgcx_CfOrderApplies(orders.item[1],0x415246,98) &&
+        !tgcx_CfOrderApplies(orders.item[0],0x474E45,110),"saved orders: only the same tag, from creation up to the end date");
+    {
+        static tgcx_CfOrders full;full.count=0;unsigned dropped=0;
+        for(unsigned i=0;i<tgcx_cf_orders_max;++i) { tgcx_CfOrder o=a;o.done=0;o.created=1000+i;tgcx_CfOrderAdd(&full,o); }
+        full.item[7].done=1100;
+        tgcx_CfOrder o=a;o.done=0;o.created=5000;unsigned at=tgcx_CfOrderAdd(&full,o,&dropped);
+        tgcx_Expect(full.count==tgcx_cf_orders_max && dropped==7 && at==tgcx_cf_orders_max-1 && full.item[at].created==5000,
+            "saved orders: a full file drops the oldest finished order first");
+        at=tgcx_CfOrderAdd(&full,o,&dropped);
+        tgcx_Expect(dropped==0 && full.item[0].created==1001,"saved orders: with none finished, the oldest open order goes");
+    }
+
+    // ---- TPL-7: a load resumes the saved orders that apply
+    // Order 1: still being built. Order 2: finished at a rally point (province 20).
+    memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_stack_vtable=0;
+    tgcx_CfPut<int>(tgcx_cf_f_province[0],0x58,10);
+    tgcx_CfPut<uintptr_t>(reinterpret_cast<void*>(tgcx_cf_f_stack[0]),0,0x7AB0);
+    uintptr_t rallied=tgcx_CfMakeStack(5,601,20,7);(void)rallied;
+    tgcx_cf_orders=orders;tgcx_cf_orders_ok=true;tgcx_cf_orders_dirty=false;tgcx_cf_orders_path[0]=0;   // no file: Save is a no-op
+    tgcx_cf_date=200;tgcx_CfPut<uint32_t>(world,0xB0C,110);
+    unsigned moves_before=tgcx_cf_s_moves;
+    tgcx_CfDaily(g,stub);
+    tgcx_Expect(tgcx_cf_tracker.task[0].used && tgcx_cf_tracker.task[0].record==1 && tgcx_cf_tracker.task[0].construction.id==500 &&
+        tgcx_cf_tracker.task[1].used && tgcx_cf_tracker.task[1].record==2 && tgcx_cf_orders.item[0].active && tgcx_cf_orders.item[1].active,
+        "a load resumes every saved order of the player's tag in its date window");
+    tgcx_Expect(tgcx_cf_stack_vtable==0x7AB0 && tgcx_cf_s_moves==moves_before,"resume takes the land-stack class from the target; sends nothing that day");
+    tgcx_CfPut<uint32_t>(world,0xB0C,111);tgcx_CfDaily(g,stub);
+    tgcx_Expect(tgcx_cf_s_moves==moves_before+1 && tgcx_cf_s_move_province==10,"a resumed regiment at the rally point marches to the conformed stack");
+    tgcx_CfPut<uint32_t>(world,0xB0C,112);tgcx_CfDaily(g,stub);
+    tgcx_Expect(!tgcx_cf_tracker.task[0].used && !tgcx_cf_orders.item[0].active && tgcx_cf_orders.item[0].done==112 && tgcx_cf_orders_dirty,
+        "a resumed order whose construction is gone ends, and its record is closed that day");
+    tgcx_Expect(tgcx_cf_tracker.task[1].used && tgcx_cf_orders.item[1].active,"the other resumed order continues");
+    tgcx_CfPut<uint32_t>(world,0xB0C,112+46);tgcx_CfDaily(g,stub);
+    tgcx_Expect(!tgcx_cf_tracker.task[1].used && !tgcx_cf_orders.item[1].active,
+        "a 46-day jump at one-day steps is a load: nothing in its window resumes");
+    tgcx_CfPut<uint32_t>(world,0xB0C,105);tgcx_CfPut<uint32_t>(reinterpret_cast<void*>(tgcx_cf_f_stack[0]),0xC0,0x474E45);
+    tgcx_CfDaily(g,stub);
+    tgcx_Expect(!tgcx_cf_tracker.task[0].used && !tgcx_cf_tracker.task[1].used,"orders of another tag are not resumed");
+    tgcx_CfPut<uint32_t>(reinterpret_cast<void*>(tgcx_cf_f_stack[0]),0xC0,0x415246);
+    // Conform records the orders of the regiments it builds.
+    memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_orders.count=0;tgcx_cf_date=105;
+    want[4]=3;
+    r=tgcx_CfConformWith(g,stub,target,tgcx_cf_f_units,want,&plan);
+    tgcx_Expect(r.queued && tgcx_cf_orders.count==r.queued && tgcx_cf_orders.item[0].tag==0x415246 && tgcx_cf_orders.item[0].created==105 &&
+        tgcx_cf_orders.item[0].target.id==50 && tgcx_cf_orders.item[0].construction.id==500 && tgcx_cf_orders.item[0].stack.id==600 &&
+        tgcx_cf_orders.item[0].active,"Conform saves an order per regiment it builds: tag, date, stack and construction ids");
+    bool linked=true;for(const auto& t:tgcx_cf_tracker.task)if(t.used && t.kind==TGCX_CF_JOIN && !t.record)linked=false;
+    tgcx_Expect(linked,"every built regiment's task is linked to its saved order");
+    tgcx_cf_orders_ok=false;tgcx_cf_orders.count=0;tgcx_cf_orders_dirty=false;
+    tgcx_cf_stack_vtable=0;memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_world=0;tgcx_cf_date=0;tgcx_cf_player=-1;tgcx_cf_step=0;
     printf("Conform native: registry walk, stack read, command ABIs, id lock, driver and one Conform checked\n");
 }

@@ -1,3 +1,299 @@
+# Session58 - ATCU culture and continent filters (2026-10-19)
+
+User authorized both filters, chose a session-only continent choice defaulting to Any, supplied current GUI references, then confirmed normal exit and selected installation in the isolated TGC copy. Implemented0.11.0, validated and installed39mod files with rollback. Main0.0.1 retained. Player verification next. See report-army-filters-implementation-1019.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-19 (58). **Culture and continent filter research completed.
+Both are feasible. Culture implementation first; no new runtime code yet.**
+Session57 archived in docs/archive/sessions.md.
+
+## User decisions / boundaries
+
+- User requested viability research for both next features. Culture modes:
+  Primary + accepted / Primary only, neither means unrestricted; builder
+  and Conform missing builds. Continent selector is for builder initially;
+  its action-versus-template preference semantics remain a design choice.
+- Name ATCU - Army Template and Conform Universal. No em dashes.
+- Keep one files-only Universal package; no recipient scripts/installer.
+- Conform D17 land reach stays independent from continent membership.
+- User alone launches/exits. Fresh normal-exit confirmation/process gate
+  before any game-copy writes. Research made no game changes.
+- Politics waits. No new commit/push/tag/release/upload/contact authorized.
+
+
+## Main installation update
+
+ATCU0.0.1 is installed at E:/Victoria.II.v3.04.Inclu.ALL.DLC after fresh
+normal-exit confirmation;37/37files verified, old packages/loader/base
+anchors unchanged. Evidence work/main-atcu-001-1019/installed.json.
+User launcher: ATCU plus base only; untick old Army and old TGCX Politics
+(the older Politics DLL can take precedence). Main gameplay check remains
+unconfirmed; no game launched. instructions-atcu-main.md gives verification
+and rollback. Culture/continent filters are not installed.
+
+## Research evidence
+
+- report-army-filters-research-1019.md and docs/symbols.md final section:
+  CPop+0x6C culture; country primary+0xE64 and accepted list+0xE54/+0xE58/
+  +0xE5C; node value+0,next+8. Native construction retains exact chosen pop.
+- Province+0x16C continent pointer; loaded catalogue in provinceSource
+  +0x2A78..+0x2A7C, key+0x40, display+0x5C. Read engine data, no per-click
+  parsing or fixed six-continent list. Static inventory: vanilla6,HPM8,
+  DoD6,TGC2.5.2 fourteen. Work exports/inventory: filters-research-1019/.
+- Crucial: current tgcx_TplEligible caches per province. Culture is per-pop;
+  add pop-aware eligibility for mixed-culture provinces, shared across
+  preview and actual build. Preserve native unit eligibility/shortages.
+- v1 template parser rejects new non-unit/non-numeric fields. Need settings
+  migration/backup/rollback before adding culture modes or continent keys.
+- Thirteen new research-only byte guards pass. check_exe222total checks;
+  runtime table172 unchanged, gen_signatures --check passes. TGC scan green.
+  No filter implementation, DLL rebuild, live memory check or game test.
+- Viewed current Templates mockup/accepted Conform screenshot. New controls
+  need an intentional filter band and reference update before implementation;
+  existing eight rows/footer leave little spare space. No visual edits yet.
+
+## Existing release / baseline
+
+- Accepted gameplay remains Universal0.10.4 on vanilla/HPM/DoD/TGC+V2DLL5.82.
+- Slim ATCU0.0.1 ZIP: work/releases/final/ATCU-0.0.1.zip,39files,
+  1,041,444bytes,SHA256
+  9ee654e7b33fbe62444892a55388e24ecfc7246ace2fdef9bf1007585e4f799e.
+  One README.txt only in ZIP; extra manifests/release text stay alongside.
+  No release artifacts changed by research. Own license remains undecided;
+  V2DLL user clarification retained. Publication remains separate.
+
+## Next session in order
+
+1. **TPL-5 culture implementation**, docs/instructions-tpl-5.md: bounded
+   culture snapshot, pop-aware shared eligibility, v1 migration/rollback,
+   UI reference/control band, modes and immediate paused-preview invalidation.
+   Keep count-only treatment of existing regiments, no culture-based purge.
+2. Fixtures: mixed-culture same province, primary/accepted changes, empty
+   list, invalid reads, restricted unit types, shortage, preview/action
+   equality, old-file import/rollback and culture AND land reach. Stage
+   candidate; get fresh exit confirmation only when installation is ready.
+3. **TPL-6 continent selector**, docs/instructions-tpl-6.md: recommend Any
+   plus live catalogue, initial selection per recruitment action. Confirm
+   semantics if implementing persistent per-template geography instead.
+   Validate6/8/14catalogues/custom/absent keys; no silent fallback to Any.
+4. Preserve accepted rollback and slim ZIP. Public release review remains
+   docs/instructions-release-0.md, not a prerequisite to filter research.
+   No publication or repeated short matrix without relevant changes.
+5. Report actual static/runtime scope; close under ROADMAP7.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| ATCU-MAIN | installed0.0.1; main-copy runtime unconfirmed | instructions-atcu-main.md; report-atcu-main-install-1019.md |
+| TPL-5 | feasibility established; next implementation, not runtime tested | instructions-tpl-5.md; report-army-filters-research-1019.md |
+| TPL-6 | feasibility established; UI/preference semantics next | instructions-tpl-6.md; report-army-filters-research-1019.md |
+| RELEASE-0 | slim local0.0.1 candidate retained; publication separate | instructions-release-0.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | four-base short accepted; extended pending | instructions-mod-6.md |
+| TPL-3 / TPL-4 / V2D-082 | accepted baselines | existing reports |
+| LAW-4 / U-12 Bill | deferred | respective instructions |
+| V2D-2 | separate author-side enhancement | report-v2dll-mod-slot-1018.md |
+| MOD-1 / MOD-2 / LAW-3 / U-11 | accepted baselines; G1/G3 deferred | existing reports |
+| TPL-0 / TPL-1 / U-8 | accepted | existing reports |
+| TPL-2 | on hold; Conform covers it | instructions-tpl-2.md |
+| GOV-0 / Economy / COMPAT-0 | not selected / deferred | technical-plan.md; instructions-compat-0.md |
+
+Next pitfall P59. Native exports, art and binaries stay ignored work/.
+
+
+---
+
+# Session57 - ATCU0.0.1 main installation (2026-10-19)
+
+User requested main E: installation and confirmed normal exit. Staged/backed up and verified existing loader with actual package in isolated probe, then added37verified files. Protected originals/old packages/base anchors unchanged. No game launch. See report-atcu-main-install-1019.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-19 (57). **Culture and continent filter research completed.
+Both are feasible. Culture implementation first; no new runtime code yet.**
+Session56 archived in docs/archive/sessions.md.
+
+## User decisions / boundaries
+
+- User requested viability research for both next features. Culture modes:
+  Primary + accepted / Primary only, neither means unrestricted; builder
+  and Conform missing builds. Continent selector is for builder initially;
+  its action-versus-template preference semantics remain a design choice.
+- Name ATCU - Army Template and Conform Universal. No em dashes.
+- Keep one files-only Universal package; no recipient scripts/installer.
+- Conform D17 land reach stays independent from continent membership.
+- User alone launches/exits. Fresh normal-exit confirmation/process gate
+  before any game-copy writes. Research made no game changes.
+- Politics waits. No new commit/push/tag/release/upload/contact authorized.
+
+## Research evidence
+
+- report-army-filters-research-1019.md and docs/symbols.md final section:
+  CPop+0x6C culture; country primary+0xE64 and accepted list+0xE54/+0xE58/
+  +0xE5C; node value+0,next+8. Native construction retains exact chosen pop.
+- Province+0x16C continent pointer; loaded catalogue in provinceSource
+  +0x2A78..+0x2A7C, key+0x40, display+0x5C. Read engine data, no per-click
+  parsing or fixed six-continent list. Static inventory: vanilla6,HPM8,
+  DoD6,TGC2.5.2 fourteen. Work exports/inventory: filters-research-1019/.
+- Crucial: current tgcx_TplEligible caches per province. Culture is per-pop;
+  add pop-aware eligibility for mixed-culture provinces, shared across
+  preview and actual build. Preserve native unit eligibility/shortages.
+- v1 template parser rejects new non-unit/non-numeric fields. Need settings
+  migration/backup/rollback before adding culture modes or continent keys.
+- Thirteen new research-only byte guards pass. check_exe222total checks;
+  runtime table172 unchanged, gen_signatures --check passes. TGC scan green.
+  No filter implementation, DLL rebuild, live memory check or game test.
+- Viewed current Templates mockup/accepted Conform screenshot. New controls
+  need an intentional filter band and reference update before implementation;
+  existing eight rows/footer leave little spare space. No visual edits yet.
+
+## Existing release / baseline
+
+- Accepted gameplay remains Universal0.10.4 on vanilla/HPM/DoD/TGC+V2DLL5.82.
+- Slim ATCU0.0.1 ZIP: work/releases/final/ATCU-0.0.1.zip,39files,
+  1,041,444bytes,SHA256
+  9ee654e7b33fbe62444892a55388e24ecfc7246ace2fdef9bf1007585e4f799e.
+  One README.txt only in ZIP; extra manifests/release text stay alongside.
+  No release artifacts changed by research. Own license remains undecided;
+  V2DLL user clarification retained. Publication remains separate.
+
+## Next session in order
+
+1. **TPL-5 culture implementation**, docs/instructions-tpl-5.md: bounded
+   culture snapshot, pop-aware shared eligibility, v1 migration/rollback,
+   UI reference/control band, modes and immediate paused-preview invalidation.
+   Keep count-only treatment of existing regiments, no culture-based purge.
+2. Fixtures: mixed-culture same province, primary/accepted changes, empty
+   list, invalid reads, restricted unit types, shortage, preview/action
+   equality, old-file import/rollback and culture AND land reach. Stage
+   candidate; get fresh exit confirmation only when installation is ready.
+3. **TPL-6 continent selector**, docs/instructions-tpl-6.md: recommend Any
+   plus live catalogue, initial selection per recruitment action. Confirm
+   semantics if implementing persistent per-template geography instead.
+   Validate6/8/14catalogues/custom/absent keys; no silent fallback to Any.
+4. Preserve accepted rollback and slim ZIP. Public release review remains
+   docs/instructions-release-0.md, not a prerequisite to filter research.
+   No publication or repeated short matrix without relevant changes.
+5. Report actual static/runtime scope; close under ROADMAP7.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| TPL-5 | feasibility established; next implementation, not runtime tested | instructions-tpl-5.md; report-army-filters-research-1019.md |
+| TPL-6 | feasibility established; UI/preference semantics next | instructions-tpl-6.md; report-army-filters-research-1019.md |
+| RELEASE-0 | slim local0.0.1 candidate retained; publication separate | instructions-release-0.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | four-base short accepted; extended pending | instructions-mod-6.md |
+| TPL-3 / TPL-4 / V2D-082 | accepted baselines | existing reports |
+| LAW-4 / U-12 Bill | deferred | respective instructions |
+| V2D-2 | separate author-side enhancement | report-v2dll-mod-slot-1018.md |
+| MOD-1 / MOD-2 / LAW-3 / U-11 | accepted baselines; G1/G3 deferred | existing reports |
+| TPL-0 / TPL-1 / U-8 | accepted | existing reports |
+| TPL-2 | on hold; Conform covers it | instructions-tpl-2.md |
+| GOV-0 / Economy / COMPAT-0 | not selected / deferred | technical-plan.md; instructions-compat-0.md |
+
+Next pitfall P59. Native exports, art and binaries stay ignored work/.
+
+---
+
+# Session56 - Culture and continent filter feasibility (2026-10-19)
+
+User requested research into both features. Bounded read-only Ghidra confirms culture fields/list, exact command pop selection, province continent pointer and dynamic loaded catalogue/key/label. Inventory: vanilla6/HPM8/DoD6/TGC14continents. Thirteen research guards added;222total checks and unchanged172-runtime header pass. Main integration trap: culture cannot use province-cached eligibility. No feature code, binary, install, release, commit/push or game controls. report-army-filters-research-1019.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-19 (56). **ATCU0.0.1 release candidate prepared locally using the
+accepted internal0.10.4 build. User license choice: undecided for candidate.**
+Session55 archived in docs/archive/sessions.md. No release/tag/upload,
+commit/push or game-copy changes during preparation.
+
+## User decisions / boundaries
+
+- Public name: **ATCU - Army Template and Conform Universal**. Internal
+  tgcx paths remain for upgrade/library compatibility. No em dashes.
+- License stays undecided for this candidate. Keep V2DLL attribution and
+  owner's clarification that its code use is no problem; no invented license.
+- Same files-only package; no recipient installer/PS1/BAT/Python needed.
+- User alone launches/exits; installs require fresh normal-exit confirmation
+  and process gate. Existing accepted game copies are unchanged.
+- Primary+accepted / primary-only culture buttons remain next feature
+  (TPL-5), then consider continent choice in builder (TPL-6). Neither is in
+  this candidate. Politics/LAW-4 still wait. Conform D17 land reach retained.
+- Preparation does not authorize publication, new push, tag or messages.
+
+## Candidate and evidence
+
+- **Superseded 2026-10-19 (user: too many docs in the ZIP):**
+  work/releases/final/ATCU-0.0.1.zip, 1,041,444 bytes, 39 files: one
+  README.txt (CRLF, ASCII), lua51.dll and mod/ only. SHA256
+  9ee654e7b33fbe62444892a55388e24ecfc7246ace2fdef9bf1007585e4f799e,
+  reproduced. SHA256/RELEASE/PROVENANCE JSON now sit beside the ZIP.
+  Split docs archived in docs/archive/release-0.0.1-candidate-1019/;
+  RELEASE_NOTES.md is the GitHub release body. Mod payload unchanged.
+- Earlier candidate: ATCU-0.0.1-candidate.zip, 1,054,050 bytes, 49 files,
+  SHA256 4e84a34b167b3fc97aef52fffd58dc2d75d2ae3305f0ca3d08d49aa491a28eaf.
+- 36/37mod files identical to accepted payload; only descriptor display name
+  changed. DLL build0.10.4/loader unchanged. Distribution version0.0.1
+  explicitly separate; logs retain old internal build. No game integration
+  claim for new branding beyond the previously accepted behavior.
+- ZIP includes README/INSTALL/CHANGELOG/CREDITS/KNOWN_ISSUES/BUG_REPORT/
+  RIGHTS_STATUS/RELEASE_NOTES plus RELEASE/PROVENANCE/SHA256 JSON. No game
+  executable, original Lua, base mods, V2DLL distribution or recipient scripts.
+- tools/prepare_atcu_release.py reproduces candidate from accepted ZIP.
+  Five release tests pass, CRC/manifest/content pass, reproducible ZIP hash
+  matches. Clean proxy and packaged plugin probes/file-layout/removal
+  simulations pass; evidence work/releases/recipient-probes/verification.json.
+  These are not second-PC or full-game tests. No game launched.
+- report-release-0-candidate-1019.md records exact scope and provenance.
+  28textures:9original drawn,19game/effective-base-derived. Public derived-art
+  permission status/ancestry still to record; preserve accepted appearance.
+- Accepted gameplay matrix remains vanilla/HPM/DoD/TGC2.5.2 + V2DLL5.82,
+  report-universal-tgc-passed-1019.md. Other mods and MP not established.
+
+## Next session in order
+
+1. **RELEASE-0 candidate review**, docs/instructions-release-0.md: review
+   docs/art provenance and check candidate branding/install with recipient.
+   Record artwork publication status or propose user-approved alternatives.
+   Do not repeat the V2DLL code-use question or select a license silently.
+2. No public upload until exact final ZIP/hash/tag/destination authorized.
+   Proposed release title ATCU0.0.1, tag v0.0.1, existing repository
+   github.com/azha2005/victoria2tgcx. Keep prerelease status and precise scope.
+3. **TPL-5 next feature**, docs/instructions-tpl-5.md: verify native culture
+   fields, update visual references, implement shared preview/build filters
+   with backwards compatible preferences. Stage/tests/normal-exit/game check.
+4. **TPL-6 prospective**, docs/instructions-tpl-6.md: dynamic continent
+   selector proposal in template builder after culture; distinct from land
+   reach. Extended regression remains instructions-mod-6.md.
+5. Report actual results; close under ROADMAP7 and preserve rollback.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RELEASE-0 | local0.0.1 candidate ready for review; not published | instructions-release-0.md; report-release-0-candidate-1019.md |
+| TPL-5 | next feature; not implemented | instructions-tpl-5.md |
+| TPL-6 | prospective continent-builder design | instructions-tpl-6.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | four-base short accepted; extended pending | instructions-mod-6.md; report-universal-tgc-passed-1019.md |
+| TPL-3 / TPL-4 / V2D-082 | accepted baselines | existing reports |
+| LAW-4 / U-12 Bill | user-deferred | respective instructions |
+| V2D-2 | separate author-side enhancement | report-v2dll-mod-slot-1018.md |
+| MOD-1 / MOD-2 / LAW-3 / U-11 | accepted baselines; G1/G3 deferred | existing reports |
+| TPL-0 / TPL-1 / U-8 | accepted | existing reports |
+| TPL-2 | on hold; Conform covers it | instructions-tpl-2.md |
+| GOV-0 / Economy / COMPAT-0 | not selected / deferred | technical-plan.md; instructions-compat-0.md |
+
+Next pitfall P59. Art/binaries/local release outputs remain ignored work/.
+
+---
+
 # Session55 - ATCU0.0.1 release candidate prepared (2026-10-19)
 
 User selected release preparation, chose license undecided for this candidate, named it ATCU - Army Template and Conform Universal, and requested no em dashes. Files-only candidate and release docs prepared from accepted0.10.4 binaries; manifest/CRC, five release tests, clean/plugin probes and reproducible ZIP hash verified. No publication/tag/commit/push/game changes. See report-release-0-candidate-1019.md.

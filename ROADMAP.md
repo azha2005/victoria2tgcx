@@ -43,6 +43,12 @@
 
 ## 1. Status by stage (as of 2026-10-19)
 
+2026-10-19 filter candidate: user authorized culture/continent filters and session-only continent default Any, then confirmed normal exit and selected isolated TGC. Implemented0.11.0,223guards/179runtime header, Win32/native real-D3D9,109full-suite Python cases plus added package-mismatch guard and packaged loader/plugin probes pass.39/39mod files installed with0.10.4rollback; main0.0.1 and accepted ZIP unchanged. Current screenshots retained, local layout previews generated; player verification next. report-army-filters-implementation-1019.md.
+
+2026-10-19 main install: ATCU0.0.1 added to main E: game after fresh normal-exit confirmation and process gate;37/37payload hashes pass. Existing MOD-2 loader, original Lua, old Army/Politics and checked base files unchanged. Main-loader/package probe passed. Select ATCU+base only; untick old Army/Politics. No game launch; report-atcu-main-install-1019.md.
+
+2026-10-19 filter research: native culture fields/accepted list and province continent/catalogue/key/label verified statically; exact construction pop selection retained. Existing bases define6/8/6/14continents. Both feasible; culture needs pop-level eligibility, not province-cached predicate, and v1 settings migration. Added13research guards;222total checks/unchanged172runtime header and TGC scan pass. No feature code, runtime test, binaries/install/release/commit/push/game controls. report-army-filters-research-1019.md.
+
 2026-10-19 ATCU release preparation: user selected release work, named Army Template and Conform Universal (ATCU), requested no em dashes and kept license undecided. Local0.0.1 candidate packages accepted0.10.4 DLL/loader with launcher-name-only mod change. ZIP49files/1,054,050bytes, five tests and clean/plugin probes pass, reproducible hash. Docs/provenance ready for review; derived-art publication status, recipient check and publication authorization pending. No commit/push/tag/upload/game changes. report-release-0-candidate-1019.md.
 
 2026-10-19 Universal checkpoint: user accepts TGC2.5.2 + V2DLL5.82, completing vanilla/HPM/DoD/TGC short matrix on0.10.4. Preserved logs show11types,2builds,3/3detach; extended cases remain. Native/GPU and installer checks pass. User authorizes source commit/push and selects culture buttons next (TPL-5), continent-builder selection a prospective follow-up (TPL-6). User clarifies V2DLL code use is no problem; retain attribution. report-universal-tgc-passed-1019.md.
@@ -113,6 +119,12 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 ---
 
 ## 2. The version matrix
+
+2026-10-19 filter candidate: user authorized culture/continent filters and session-only continent default Any, then confirmed normal exit and selected isolated TGC. Implemented0.11.0,223guards/179runtime header, Win32/native real-D3D9,109full-suite Python cases plus added package-mismatch guard and packaged loader/plugin probes pass.39/39mod files installed with0.10.4rollback; main0.0.1 and accepted ZIP unchanged. Current screenshots retained, local layout previews generated; player verification next. report-army-filters-implementation-1019.md.
+
+2026-10-19 main install: ATCU0.0.1 added to main E: game after fresh normal-exit confirmation and process gate;37/37payload hashes pass. Existing MOD-2 loader, original Lua, old Army/Politics and checked base files unchanged. Main-loader/package probe passed. Select ATCU+base only; untick old Army/Politics. No game launch; report-atcu-main-install-1019.md.
+
+2026-10-19 filter research: native culture fields/accepted list and province continent/catalogue/key/label verified statically; exact construction pop selection retained. Existing bases define6/8/6/14continents. Both feasible; culture needs pop-level eligibility, not province-cached predicate, and v1 settings migration. Added13research guards;222total checks/unchanged172runtime header and TGC scan pass. No feature code, runtime test, binaries/install/release/commit/push/game controls. report-army-filters-research-1019.md.
 
 2026-10-19 ATCU release preparation: user selected release work, named Army Template and Conform Universal (ATCU), requested no em dashes and kept license undecided. Local0.0.1 candidate packages accepted0.10.4 DLL/loader with launcher-name-only mod change. ZIP49files/1,054,050bytes, five tests and clean/plugin probes pass, reproducible hash. Docs/provenance ready for review; derived-art publication status, recipient check and publication authorization pending. No commit/push/tag/upload/game changes. report-release-0-candidate-1019.md.
 
@@ -231,6 +243,12 @@ When closing, in this order:
    session** that lacks a current one, and add them to `docs/README.md`.
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
+
+2026-10-19 filter candidate: user authorized culture/continent filters and session-only continent default Any, then confirmed normal exit and selected isolated TGC. Implemented0.11.0,223guards/179runtime header, Win32/native real-D3D9,109full-suite Python cases plus added package-mismatch guard and packaged loader/plugin probes pass.39/39mod files installed with0.10.4rollback; main0.0.1 and accepted ZIP unchanged. Current screenshots retained, local layout previews generated; player verification next. report-army-filters-implementation-1019.md.
+
+2026-10-19 main install: ATCU0.0.1 added to main E: game after fresh normal-exit confirmation and process gate;37/37payload hashes pass. Existing MOD-2 loader, original Lua, old Army/Politics and checked base files unchanged. Main-loader/package probe passed. Select ATCU+base only; untick old Army/Politics. No game launch; report-atcu-main-install-1019.md.
+
+2026-10-19 filter research: native culture fields/accepted list and province continent/catalogue/key/label verified statically; exact construction pop selection retained. Existing bases define6/8/6/14continents. Both feasible; culture needs pop-level eligibility, not province-cached predicate, and v1 settings migration. Added13research guards;222total checks/unchanged172runtime header and TGC scan pass. No feature code, runtime test, binaries/install/release/commit/push/game controls. report-army-filters-research-1019.md.
 
 2026-10-19 ATCU release preparation: user selected release work, named Army Template and Conform Universal (ATCU), requested no em dashes and kept license undecided. Local0.0.1 candidate packages accepted0.10.4 DLL/loader with launcher-name-only mod change. ZIP49files/1,054,050bytes, five tests and clean/plugin probes pass, reproducible hash. Docs/provenance ready for review; derived-art publication status, recipient check and publication authorization pending. No commit/push/tag/upload/game changes. report-release-0-candidate-1019.md.
 

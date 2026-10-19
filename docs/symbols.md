@@ -872,3 +872,55 @@ Read-only work/conform-land-native-policy-abi-1019.txt and existing
 conform-reach-policy-1019.txt; full native suite/172 guards pass.
 DoD log proves old rejection18/18, user identifies sources as reachable.
 0.10.4 integrated query/recruitment still requires runtime acceptance.
+
+## Culture and continent filters: read-only evidence (2026-10-19)
+
+Research for TPL-5/TPL-6, not a runtime implementation. All fields below
+have **C static** confidence on the supported executable; none has been
+sampled by a new live filter. Full conclusions and limitations:
+`report-army-filters-research-1019.md`. Private exports live under
+`work/filters-research-1019/`. Thirteen new entries are in
+check_exe.RESEARCH_SIGNATURES, not the generated runtime table.
+
+| Function / data | VA | RVA | Observed evidence |
+|---|---|---|---|
+| FUN_00522310 | 0x00522310 | 0x122310 | Accepted list scan/appender: country in ESI; head+0xE54, tail+0xE58, count+0xE5C; node+0 culture, +4 previous, +8 next. Mutator inspected only; do not call for filtering. |
+| FUN_00893490 | 0x00893490 | 0x493490 | Accepted-union effect reads country primary+0xE64 and iterates culture group; independently confirms primary identity/list membership. |
+| FUN_008F84D0 | 0x008F84D0 | 0x4F84D0 | Native primary trigger compares CPop+0x6C with CCountry+0xE64, resolving owner through pop+0x64 province. |
+| FUN_008F8DB0 | 0x008F8DB0 | 0x4F8DB0 | Accepted trigger uses pop+0x4C cached byte in pop scope; other scopes compare culture object with list+0xE54 and primary+0xE64. |
+| FUN_005141D0, existing runtime target | 0x005141D0 | 0x1141D0 | Existing recruitment eligibility checks unit+0x30 restriction against pop+0x4C; culture preference must retain this native gate. |
+| FUN_0057D1B0 / FUN_0057D2F0, existing | 0x0057D1B0 / 0x0057D2F0 | 0x17D1B0 / 0x17D2F0 | CConstructUnitCommand+0x64 stores chosen CPop*; execute copies pop+8/+0xC identity to construction+0x90/+0x94. |
+| FUN_008CF460 | 0x008CF460 | 0x4CF460 | Native continent trigger resolves province via world+0xACC and compares province+0x16C with CContinent*; country scope uses capital+0xBE4. |
+| Continent comparison instruction | 0x008CF4C5 | 0x4CF4C5 | Province-array lookup followed by CMP [province+0x16C],EDI. Field belongs to province data, not render-map flags. |
+| FUN_008CF240 | 0x008CF240 | 0x4CF240 | Named continent token parsed through FUN_0049D040(g_provinceSource,key). |
+| g_provinceSource, existing symbol | 0x0125870C | 0xE5870C | Dereferenced manager's +0x2A78/+0x2A7C/+0x2A80 is a vector of CContinent* (begin/end/capacity). |
+| FUN_0049C710 | 0x0049C710 | 0x09C710 | Constructs continent objects and appends pointers to that vector. |
+| FUN_0049D040 | 0x0049D040 | 0x09D040 | Iterates +0x2A78..+0x2A7C; slot11 returns canonical key for comparison; null on no match. |
+| FUN_00494320 | 0x00494320 | 0x094320 | CContinent constructor, key string+0x40, resolved display string+0x5C. |
+| FUN_00494550 | 0x00494550 | 0x094550 | CContinent slot11 returns copied key from+0x40, RET4. Use existing guarded string reader instead of introducing an unnecessary native call. |
+| FUN_00494520 | 0x00494520 | 0x094520 | CContinent slot6 returns copied display string from+0x5C, RET4. |
+| FUN_00732720 | 0x00732720 | 0x332720 | CBuildQueueEntry binds a continent text label. This does not establish an existing filter/selector. |
+
+Culture is pop-specific, continent/land reach province-specific. The
+current province-only tgcx_TplEligible callback must not cache culture
+decisions. Canonical culture objects can be compared within a validated
+snapshot; persist modes/continent keys, never runtime pointers.
+
+
+## Filter implementation guards and confidence (2026-10-19, 0.11.0)
+
+The research section above records the earlier checkpoint. Implementation now
+promotes RVAs0x122310,0x4F84D0,0x4CF4C5,0x09D040,0x094520,0x094550 to runtime
+and adds CContinent vtable VA0x00DFC1DC / RVA0x9FC1DC (first six relocated
+slots). Generated table179, research44,223total checked. No new native
+mutator or function call was introduced. Field reads remain **C static**
+plus independent engine-shaped fixture evidence, not live-game sampling.
+
+The accepted list is validated by bounded count, previous chain, null end and
+tail before sorting its culture pointers. A pop-specific filter intersects
+culture and continent with native can-build/free-capacity. Conform also
+intersects its existing land-scope predicate. Exact selected CPop* still
+reaches the engine command. Canonical continent keys are session preferences,
+not pointers on disk. Culture mode alone is persisted in a separate v2 library.
+Catalogue pointers/strings are cached only for a world/manager/vector identity.
+Implementation, test limits and installation: report-army-filters-implementation-1019.md.

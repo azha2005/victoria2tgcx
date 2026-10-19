@@ -1,12 +1,24 @@
 # Index of `docs/`
 
+- `report-army-filters-implementation-1019.md`:0.11.0culture/continent filters, migration, exact checks, isolated TGC installation and rollback; player test pending.
+- `report-tpl-7-orders-1019.md`: 0.11.2 Conform orders saved to a local file and resumed after a load (D13 revised); installed in the isolated TGC copy, passed in game (pre-Conform save case unconfirmed).
+- `report-army-filters-gui-1019.md`: 0.11.1 filter GUI refinement (native checkboxes, compact continent selector, owned-province continents only); installed in isolated TGC copy, player test pending.
+- `instructions-tpl-5.md` / `instructions-tpl-6.md`: current step-by-step culture and continent player checks.
+- `archive/instructions-{tpl-5,tpl-6}-before-implementation-1019.md`: research-stage instructions retained verbatim.
+
+- report-atcu-main-install-1019.md: verified ATCU0.0.1 main E: installation and retained rollback.
+- instructions-atcu-main.md: launcher selection, main-copy check and rollback.
+
+- `report-army-filters-research-1019.md`: culture/continent static feasibility, native fields,6/8/6/14catalogues, shared-filter/settings/UI integration and limits.
+- `archive/instructions-{tpl-5,tpl-6}-before-feasibility-1019.md`: prior instructions retained verbatim.
+
 - `report-release-0-candidate-1019.md`: ATCU0.0.1 local candidate, unchanged binary, packaging checks and remaining review.
 - `release-0.0.1/`: recipient README/install/known issues/changelog/credits/provenance status/bug reports and draft release text.
 - `archive/instructions-release-0-before-candidate-1019.md`: earlier release preparation instructions, verbatim.
 
 - `report-universal-tgc-passed-1019.md`: TGC/V2DLL accepted, four-base short matrix complete, source checkpoint and user V2DLL provenance clarification.
 - `instructions-tpl-5.md`: selected culture buttons, shared eligibility and persistence steps.
-- `instructions-tpl-6.md`: proposed continent builder selector after culture filtering.
+- `instructions-tpl-6.md`: installed session-only continent selector, player checks next.
 - `archive/instructions-tpl-5-before-selection-1019.md`: previous deferred instructions, verbatim.
 
 - `report-universal-tgc-1019.md`: vanilla/HPM/DoD Universal acceptance; identical0.10.4 installed in isolated TGC2.5.2 + V2DLL5.82, player test pending.

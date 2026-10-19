@@ -42,7 +42,7 @@ struct tgcx_CfPanel {
     bool open,disabled,land,bound[TGCX_CF_BUTTONS];
     uintptr_t seen;                       // the stack the unit panel showed last tick
     tgcx_CfId stack;uintptr_t vtable;     // the stack being conformed, found again by id
-    unsigned selected,list_page;uint32_t preview_date;
+    unsigned selected,list_page,filter_revision;uint32_t preview_date;
     bool planned;tgcx_CfRefusal refusal;tgcx_CfRows rows;int kind[tgcx_tpl_units];   // unit index -> catalogue kind
     unsigned char glue[TGCX_CF_BUTTONS][44];
     char text[TGCX_CF_TEXTS][192],summary[192],status[192];bool text_set[TGCX_CF_TEXTS];
@@ -62,7 +62,7 @@ static uintptr_t tgcx_CfShownStack(const tgcx_CfGlobals& g,uintptr_t stack) {
 enum {TGCX_CF_SHOW_SEL=0,TGCX_CF_SHOW_BLANK=4,TGCX_CF_SHOW_PAGER=8,TGCX_CF_SHOW_ROW=9,
     TGCX_CF_SHOW_ICON=TGCX_CF_SHOW_ROW+tgcx_cf_changes,TGCX_CF_SHOW_MINI=TGCX_CF_SHOW_ICON+tgcx_cf_slots*tgcx_tpl_capacity,
     TGCX_CF_SHOW_CHANGE=TGCX_CF_SHOW_MINI+tgcx_cf_slots*tgcx_cf_minis*tgcx_tpl_capacity,
-    TGCX_CF_SHOW_END=TGCX_CF_SHOW_CHANGE+tgcx_cf_changes*tgcx_tpl_capacity};
+    TGCX_CF_SHOW_CHECK=TGCX_CF_SHOW_CHANGE+tgcx_cf_changes*tgcx_tpl_capacity,TGCX_CF_SHOW_END=TGCX_CF_SHOW_CHECK+2};
 
 static void tgcx_CfText(tgcx_CfPanel* p,unsigned id,const char* format,...) {
     char text[192];va_list args;va_start(args,format);_vsnprintf_s(text,sizeof(text),_TRUNCATE,format,args);va_end(args);
@@ -127,6 +127,7 @@ static void tgcx_CfPreview(tgcx_CfPanel* p) {
     static tgcx_TplCountry country;static tgcx_CfPlan plan;static tgcx_CfStack target;static tgcx_TplPop pops[tgcx_tpl_pops];
     static tgcx_TplPlan builds;
     p->planned=false;p->summary[0]=0;memset(&p->rows,0,sizeof(p->rows));
+    p->filter_revision=tgcx_tpl_revision;
     auto g=tgcx_CfLiveGlobals();
     p->preview_date=g.world?tgcx_TplRead<uint32_t>(g.world+0xB0C):0;
     if(p->selected>=tgcx_tpl_library.size) {
@@ -145,6 +146,10 @@ static void tgcx_CfPreview(tgcx_CfPanel* p) {
     if(plan.refusal==TGCX_CF_TOO_LARGE) { strcpy_s(p->summary,"Armies and templates are limited to 128 regiments.");return; }
     int placed[tgcx_tpl_units]={};
     memcpy(pops,country.pops,sizeof(tgcx_TplPop)*country.pop_count);
+    tgcx_ArmyFilter filter={tgcx_tpl_library.item[p->selected].culture,0};
+    if(!tgcx_ArmyApply(country.country,pops,country.pop_count,filter)) {
+        strcpy_s(p->summary,"Culture eligibility unavailable: nothing can be built now.");return;
+    }
     tgcx_CfScopePops(tgcx_cf_native,stack,pops,country.pop_count);
     tgcx_TplMakePlan(plan.build,pops,country.pop_count,&builds);
     for(unsigned i=0;i<builds.count;++i)++placed[builds.orders[i].unit];
@@ -209,7 +214,7 @@ static void tgcx_CfLabels(tgcx_CfPanel* p) {
             tgcx_CfText(p,text+1,"built; marches and joins (%d days)",k>=0?tgcx_tpl_catalog[k].days:0);break;
         case TGCX_CF_ROW_SHORT:
             tgcx_CfText(p,text,"\xA7Y+%u %s\xA7!",row.count,label);
-            tgcx_CfText(p,text+1,"no free soldier pop within land reach: not built");break;
+            tgcx_CfText(p,text+1,"no eligible pop in land reach: not built");break;
         case TGCX_CF_ROW_GATHER:
             tgcx_CfText(p,text,"\xA7G+%u %s\xA7!",row.count,label);
             tgcx_CfText(p,text+1,"a finished regiment nearby marches and joins");break;
@@ -219,6 +224,10 @@ static void tgcx_CfLabels(tgcx_CfPanel* p) {
         }
     }
     tgcx_CfText(p,TGCX_CF_T_TITLE,"Conform to template");
+    unsigned mode=p->selected<tgcx_tpl_library.size?tgcx_tpl_library.item[p->selected].culture:0;
+    // A ticked box is the native "on" frame shown beneath its button.
+    tgcx_CfShow(p,TGCX_CF_SHOW_CHECK,"tgcx_cf_check_on_accepted",mode==TGCX_CULTURE_ACCEPTED);
+    tgcx_CfShow(p,TGCX_CF_SHOW_CHECK+1,"tgcx_cf_check_on_primary",mode==TGCX_CULTURE_PRIMARY);
     tgcx_CfText(p,TGCX_CF_T_CHANGES,"Changes");
     if(p->planned && p->rows.more)tgcx_CfText(p,TGCX_CF_T_SUMMARY,"%s (%u more rows)",p->summary,p->rows.more);
     else tgcx_CfText(p,TGCX_CF_T_SUMMARY,"%s",p->summary);
@@ -240,12 +249,17 @@ static void tgcx_CfOpen(tgcx_CfPanel* p,uintptr_t stack) {
 }
 static void tgcx_CfConformClick(tgcx_CfPanel* p) {
     static tgcx_TplCountry country;static tgcx_CfPlan plan;
+    if(p->selected>=tgcx_tpl_library.size) {p->planned=false;strcpy_s(p->status,"Select a template again.");return;}
     if(!p->planned) { strcpy_s(p->status,"Nothing to do: see above.");return; }
     auto g=tgcx_CfLiveGlobals();uintptr_t stack=tgcx_CfTarget(g,p);
     if(!stack || !tgcx_TplScan(tgcx_TplLiveGlobals(),tgcx_tpl_native,&country)) { strcpy_s(p->status,"Cannot read this army now.");return; }
     if(!tgcx_TplCatalogueFits(country)) { strcpy_s(p->status,"Unit catalogue changed; regenerate Army for this base.");return; }
     int want[tgcx_tpl_units];tgcx_CfWant(p,country,want,p->kind);
-    tgcx_CfResult r=tgcx_CfConformWith(g,tgcx_cf_native,stack,country.unit,want,&plan);
+    tgcx_ArmyFilter filter={tgcx_tpl_library.item[p->selected].culture,0};
+    if(!tgcx_ArmyApply(country.country,country.pops,country.pop_count,filter)) {
+        strcpy_s(p->status,"Culture eligibility unavailable; nothing sent.");return;
+    }
+    tgcx_CfResult r=tgcx_CfConformWith(g,tgcx_cf_native,stack,country.unit,want,&plan,filter.culture);
     if(!r.read)strcpy_s(p->status,"Cannot read this army now.");
     else if(r.refusal!=TGCX_CF_OK)strcpy_s(p->status,"Nothing sent: the plan changed. See above.");
     else sprintf_s(p->status,"%u to detach, %u orders queued, %u left out%s. Unpause to process them.",
@@ -264,6 +278,14 @@ static void tgcx_CfClickImpl(tgcx_CfPanel* p,unsigned action) {
         }
         if(!p->open)return;
         p->tick=0;
+        if(action==TGCX_CF_B_CULTURE_ACCEPTED || action==TGCX_CF_B_CULTURE_PRIMARY) {
+            if(p->selected>=tgcx_tpl_library.size)return;
+            tgcx_TplLibrary next=tgcx_tpl_library;
+            unsigned mode=action==TGCX_CF_B_CULTURE_ACCEPTED?TGCX_CULTURE_ACCEPTED:TGCX_CULTURE_PRIMARY;
+            auto& choice=next.item[p->selected].culture;choice=choice==mode?TGCX_CULTURE_ALL:mode;
+            if(!tgcx_TplCommit(next)) {strcpy_s(p->status,"Could not save culture preference; previous choice kept.");return;}
+            p->status[0]=0;tgcx_CfPreview(p);return;
+        }
         if(action==TGCX_CF_B_CLOSE || action==TGCX_CF_B_CANCEL) { tgcx_CfClose(p);return; }
         if(action>=TGCX_CF_B_SLOT_0 && action<=TGCX_CF_B_SLOT_3) {
             unsigned s=p->list_page*tgcx_cf_slots+action-TGCX_CF_B_SLOT_0;
@@ -381,7 +403,7 @@ static void tgcx_CfPanelTick(tgcx_CfPanel* p) {
             auto g=tgcx_CfLiveGlobals();
             // Once per game day: regiments arrive, merge, or finish building.
             step="preview";
-            if(g.world && tgcx_TplRead<uint32_t>(g.world+0xB0C)!=p->preview_date)tgcx_CfPreview(p);
+            if(g.world && (tgcx_TplRead<uint32_t>(g.world+0xB0C)!=p->preview_date || p->filter_revision!=tgcx_tpl_revision))tgcx_CfPreview(p);
             step="labels";
             tgcx_CfLabels(p);
         }

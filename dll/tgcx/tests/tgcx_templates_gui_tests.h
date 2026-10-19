@@ -25,7 +25,7 @@ static void tgcx_TplGuiTests() {
     FILE* file=nullptr;_wfopen_s(&file,pending,L"wb");if(file)fclose(file);
     tgcx_Expect(!tgcx_TplSaveFile(path,a) && GetFileAttributesW(pending)!=INVALID_FILE_ATTRIBUTES,
         "Templates interrupted pending write is preserved instead of overwritten");DeleteFileW(pending);
-    const char* bad[]={"tgcx_templates 2\n", "tgcx_templates 1\ntemplate\ninfantry=-1\nend\n",
+    const char* bad[]={"tgcx_templates 3\n", "tgcx_templates 1\ntemplate\ninfantry=-1\nend\n",
         "tgcx_templates 1\ntemplate\ninfantry=4294967297\nend\n",
         "tgcx_templates 1\ntemplate\ninfantry=1\ninfantry=2\nend\n",
         "tgcx_templates 1\ntemplate\nunknown_unit=1\nend\n",

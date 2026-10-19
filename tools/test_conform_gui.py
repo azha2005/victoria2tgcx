@@ -103,7 +103,7 @@ class ConformGuiTests(unittest.TestCase):
         for row in range(gui.SLOTS):
             self.assertGreater(fragment.index(f'name="tgcx_cf_slot_blank_{row}"'), last)
             self.assertGreater(fragment.index(f'name="tgcx_cf_slot_sel_{row}"'), last)
-        self.assertGreater(fragment.index('name="tgcx_cf_text_title"'), fragment.index('name="tgcx_cf_change_icon_7_plane"'))
+        self.assertGreater(fragment.index('name="tgcx_cf_text_title"'), fragment.index(f'name="tgcx_cf_change_icon_{gui.CHANGES-1}_plane"'))
         tab = fragment.index('name="tgcx_cf_tab"'); end = fragment.index('\n}', tab)
         self.assertIn('name="tgcx_cf_open"', fragment[tab:end])
         self.assertLess(tab, fragment.index('name="tgcx_cf_window"'))

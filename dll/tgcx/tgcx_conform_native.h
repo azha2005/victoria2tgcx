@@ -215,12 +215,13 @@ struct tgcx_CfNative {
     bool(*new_id)(const tgcx_CfGlobals& g,tgcx_CfId* out);
     bool(*land)(uintptr_t stack);
     bool(*post)(void* command);
-    tgcx_TplResult(*recruit)(uintptr_t target,const int* counts,tgcx_TplQueued queued,void* context);
+    tgcx_TplResult(*recruit)(uintptr_t target,const int* counts,tgcx_TplQueued queued,void* context,unsigned culture);
     bool(*reachable)(uintptr_t target,int province);
 };
 static bool tgcx_CfRecruitEligible(void* target,int province) {return tgcx_CfReachNative(reinterpret_cast<uintptr_t>(target),province);}
-static tgcx_TplResult tgcx_CfRecruitNative(uintptr_t target,const int* counts,tgcx_TplQueued queued,void* context) {
-    return tgcx_TplRecruit(counts,queued,context,tgcx_CfRecruitEligible,reinterpret_cast<void*>(target));
+static tgcx_TplResult tgcx_CfRecruitNative(uintptr_t target,const int* counts,tgcx_TplQueued queued,void* context,unsigned culture) {
+    tgcx_ArmyFilter filter={culture,0};
+    return tgcx_TplRecruit(counts,queued,context,tgcx_CfRecruitEligible,reinterpret_cast<void*>(target),&filter);
 }
 static tgcx_CfNative tgcx_cf_native={tgcx_CfMoveNative,tgcx_CfMergeNative,tgcx_CfTransferNative,tgcx_CfCreateNative,
     tgcx_CfNewIdNative,tgcx_CfLandNative,tgcx_TplPostNative,tgcx_CfRecruitNative,tgcx_CfReachNative};
@@ -239,17 +240,106 @@ static bool tgcx_CfSend(void* command,uintptr_t vtable,const tgcx_CfNative& n) {
     return n.post(command);
 }
 
-// ---------------------------------------------------------------- the session (D13: memory only)
+// ---------------------------------------------------------------- the session (D13; TPL-7 saved orders)
 
 static tgcx_CfTracker tgcx_cf_tracker;
-static uintptr_t tgcx_cf_world=0;static uint32_t tgcx_cf_date=0;
+static uintptr_t tgcx_cf_world=0;static uint32_t tgcx_cf_date=0,tgcx_cf_step=0;static int tgcx_cf_player=-1;
+// TPL-7 (D13 revised): regiments being built for a Conform are also kept in a
+// local file beside the templates, an interface preference outside the save.
+// Resuming only sends the same Move/Merge commands (R5).
+static tgcx_CfOrders tgcx_cf_orders;
+static bool tgcx_cf_orders_loaded=false,tgcx_cf_orders_ok=false,tgcx_cf_orders_dirty=false,tgcx_cf_orders_failed=false;
+static wchar_t tgcx_cf_orders_path[MAX_PATH]={};
+static char tgcx_cf_orders_text[131072];
+static void tgcx_CfOrdersLoad() {
+    if(tgcx_cf_orders_loaded)return;
+    tgcx_cf_orders_loaded=true;tgcx_cf_orders.count=0;tgcx_cf_orders_ok=false;
+    tgcx_TplLoadLibrary();   // sets the settings folder the templates live in
+    const wchar_t* leaf=wcsrchr(tgcx_tpl_path,L'\\');if(!tgcx_tpl_path[0] || !leaf)return;
+    size_t folder=static_cast<size_t>(leaf+1-tgcx_tpl_path);
+    if(folder+wcslen(L"tgcx_conform_orders.txt")>=MAX_PATH)return;
+    wcsncpy_s(tgcx_cf_orders_path,tgcx_tpl_path,folder);wcscat_s(tgcx_cf_orders_path,L"tgcx_conform_orders.txt");
+    HANDLE file=CreateFileW(tgcx_cf_orders_path,GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);
+    if(file==INVALID_HANDLE_VALUE) {
+        DWORD error=GetLastError();tgcx_cf_orders_ok=error==ERROR_FILE_NOT_FOUND;
+        if(!tgcx_cf_orders_ok)tgcx_Log("Conform orders file unreadable (%lu); orders are not resumed after a load",error);
+        return;
+    }
+    DWORD read=0;bool whole=ReadFile(file,tgcx_cf_orders_text,sizeof(tgcx_cf_orders_text)-1,&read,nullptr) && read<sizeof(tgcx_cf_orders_text)-1;
+    CloseHandle(file);tgcx_cf_orders_text[whole?read:0]=0;
+    tgcx_cf_orders_ok=whole && tgcx_CfOrdersParse(tgcx_cf_orders_text,&tgcx_cf_orders);
+    if(!tgcx_cf_orders_ok) { tgcx_cf_orders.count=0;tgcx_Log("Conform orders file invalid: kept as is, not resumed or overwritten"); }
+    else tgcx_Log("Conform orders file: %u saved orders",tgcx_cf_orders.count);
+}
+// Written whole to a .pending file, then moved over the old one.
+static void tgcx_CfOrdersSave() {
+    if(!tgcx_cf_orders_dirty || !tgcx_cf_orders_ok || !tgcx_cf_orders_path[0])return;
+    size_t used=tgcx_CfOrdersWrite(tgcx_cf_orders,tgcx_cf_orders_text,sizeof(tgcx_cf_orders_text));
+    wchar_t temporary[MAX_PATH];bool ok=used && swprintf_s(temporary,L"%s.pending",tgcx_cf_orders_path)>0;
+    HANDLE file=ok?CreateFileW(temporary,GENERIC_WRITE,0,nullptr,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr):INVALID_HANDLE_VALUE;
+    DWORD written=0;
+    ok=file!=INVALID_HANDLE_VALUE && WriteFile(file,tgcx_cf_orders_text,static_cast<DWORD>(used),&written,nullptr) && written==used &&
+       FlushFileBuffers(file);
+    if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);
+    ok=ok && MoveFileExW(temporary,tgcx_cf_orders_path,MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH);
+    if(!ok) {
+        if(file!=INVALID_HANDLE_VALUE)DeleteFileW(temporary);
+        if(!tgcx_cf_orders_failed)tgcx_Log("Conform orders file not saved; this session's orders will not resume after a load");
+        tgcx_cf_orders_failed=true;return;
+    }
+    tgcx_cf_orders_dirty=false;
+}
+// A dropped (oldest) record moves the later ones down: keep the tasks' links.
+static void tgcx_CfOrderNew(tgcx_CfTask* task,const tgcx_CfOrder& r) {
+    tgcx_CfOrdersLoad();if(!tgcx_cf_orders_ok)return;
+    unsigned dropped=tgcx_cf_orders_max,index=tgcx_CfOrderAdd(&tgcx_cf_orders,r,&dropped);
+    if(dropped<tgcx_cf_orders_max)
+        for(auto& t:tgcx_cf_tracker.task)if(t.used && t.record) {
+            if(t.record==dropped+1)t.record=0;else if(t.record>dropped+1)--t.record;
+        }
+    task->record=index+1;tgcx_cf_orders.item[index].active=true;tgcx_cf_orders_dirty=true;
+}
 static void tgcx_CfForget(const char* why) {
     unsigned n=0;for(auto& t:tgcx_cf_tracker.task)if(t.used) { t.used=false;++n; }
-    if(n)tgcx_Log("Conform: %u pending orders forgotten (%s); Conform the stack again to gather them",n,why);
+    for(unsigned i=0;i<tgcx_cf_orders.count;++i)tgcx_cf_orders.item[i].active=false;
+    if(n)tgcx_Log("Conform: %u pending orders forgotten (%s)",n,why);
 }
 // One step per game day for every task. vtable is the class of land stacks,
-// remembered from the stack the player conformed.
+// remembered from the stack the player conformed (or one resumed).
 static uintptr_t tgcx_cf_stack_vtable=0;
+// After a load: every saved order of the player's tag whose date window holds
+// the loaded date, and whose target is again the player's land stack, is
+// tracked again. A regiment still being built waits for its construction; one
+// already built (perhaps sent to a rally point) marches and merges as usual;
+// one gone is dropped after two days, as in the session.
+static void tgcx_CfResume(const tgcx_CfGlobals& g,const tgcx_CfNative& n,uint32_t date) {
+    tgcx_CfOrdersLoad();if(!tgcx_cf_orders_ok || !tgcx_cf_orders.count)return;
+    unsigned resumed=0,building=0,refused=0;int player=tgcx_CfPlayer(g);
+    for(unsigned i=0;i<tgcx_cf_orders.count;++i) {
+        auto& r=tgcx_cf_orders.item[i];r.active=false;
+        if(r.created>date || (r.done && date>=r.done))continue;
+        uintptr_t entry=tgcx_CfLookup(g,r.target),target=entry?entry-8:0;
+        if(!target || tgcx_TplRead<int>(target+0xC4)!=player || !tgcx_CfOrderApplies(r,tgcx_TplRead<uint32_t>(target+0xC0),date))continue;
+        uintptr_t vt=tgcx_TplRead<uintptr_t>(target);
+        if(tgcx_cf_stack_vtable?vt!=tgcx_cf_stack_vtable:!n.land(target)) { ++refused;continue; }
+        tgcx_cf_stack_vtable=vt;
+        auto* t=tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,r.target,r.stack,r.construction,r.unit,r.created);
+        if(!t) { ++refused;continue; }
+        bool alive=tgcx_CfLookup(g,r.construction)!=0;
+        t->record=i+1;t->construction_seen=true;r.active=true;++resumed;building+=alive;
+    }
+    if(resumed || refused)tgcx_Log("Conform: %u saved orders resumed after a load (%u still being built), %u refused",resumed,building,refused);
+}
+// Records whose task ended are finished from today: a save made from now on
+// does not resume them.
+static void tgcx_CfOrdersClose(uint32_t date) {
+    for(unsigned i=0;i<tgcx_cf_orders.count;++i) {
+        auto& r=tgcx_cf_orders.item[i];if(!r.active)continue;
+        bool live=false;for(const auto& t:tgcx_cf_tracker.task)if(t.used && t.record==i+1)live=true;
+        if(!live) { r.active=false;r.done=date;tgcx_cf_orders_dirty=true; }
+    }
+    tgcx_CfOrdersSave();
+}
 // A changed target location/access can strand an earlier reinforcement.
 // Release only our tracking; keep the unit/construction and all user orders.
 static void tgcx_CfPruneRoutes(const tgcx_CfGlobals& g,const tgcx_CfNative& n,const tgcx_CfId& target_id,uintptr_t target) {
@@ -266,8 +356,16 @@ static void tgcx_CfPruneRoutes(const tgcx_CfGlobals& g,const tgcx_CfNative& n,co
 static void tgcx_CfDaily(const tgcx_CfGlobals& g,const tgcx_CfNative& n) {
     if(!g.world)return;
     uint32_t date=tgcx_TplRead<uint32_t>(g.world+0xB0C);
-    if(g.world!=tgcx_cf_world || date<tgcx_cf_date) { tgcx_CfForget("another game or a reload");tgcx_cf_world=g.world; }
+    int player=tgcx_CfPlayer(g);
+    // A load: another world or country, the date going back, or a jump no
+    // game speed makes between two frames (45 times the smallest day step).
+    bool jump=date>tgcx_cf_date && tgcx_cf_step && date-tgcx_cf_date>tgcx_cf_step*45;
+    if(g.world!=tgcx_cf_world || player!=tgcx_cf_player || date<tgcx_cf_date || jump) {
+        tgcx_CfForget("another game or a load");tgcx_cf_world=g.world;tgcx_cf_player=player;tgcx_cf_step=0;tgcx_cf_date=date;
+        tgcx_CfResume(g,n,date);return;
+    }
     if(date==tgcx_cf_date)return;
+    if(!tgcx_cf_step || date-tgcx_cf_date<tgcx_cf_step)tgcx_cf_step=date-tgcx_cf_date;
     tgcx_cf_date=date;
     for(auto& t:tgcx_cf_tracker.task) {
         if(!t.used)continue;
@@ -329,16 +427,20 @@ static void tgcx_CfDaily(const tgcx_CfGlobals& g,const tgcx_CfNative& n) {
         default: break;
         }
     }
+    tgcx_CfOrdersClose(date);
 }
 
 // ---------------------------------------------------------------- conforming one stack
 
 struct tgcx_CfResult { tgcx_CfRefusal refusal;bool read;unsigned detached,gathered,queued,missing,failed; };
-struct tgcx_CfQueuedContext { tgcx_CfId target;uint32_t date;unsigned added; };
+struct tgcx_CfQueuedContext { tgcx_CfId target;uint32_t date;unsigned added;uint32_t tag; };
 static void tgcx_CfOnQueued(void* context,int unit,int province,const uint32_t construction[2],const uint32_t stack[2]) {
     auto* c=static_cast<tgcx_CfQueuedContext*>(context);
     tgcx_CfId s={stack[0],stack[1]},k={construction[0],construction[1]};
-    if(auto* task=tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,c->target,s,k,unit,c->date)) {task->origin=province;++c->added;}
+    if(auto* task=tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,c->target,s,k,unit,c->date)) {
+        task->origin=province;++c->added;
+        if(!tgcx_CfNone(k) && !tgcx_CfNone(s))tgcx_CfOrderNew(task,{c->tag,c->date,0,c->target,s,k,unit,false});
+    }
     else tgcx_Log("Conform: tracker full; regiment from province %d will not march by itself",province);
 }
 // The plan for one stack, read and planned but nothing sent: what the
@@ -366,7 +468,7 @@ static bool tgcx_CfLeaving(const tgcx_CfId& target) {
 // stacks: tracked, marched and merged by the daily driver. Builds: TPL-0's
 // recruit, each future stack tracked the same way.
 static tgcx_CfResult tgcx_CfConformWith(const tgcx_CfGlobals& g,const tgcx_CfNative& n,uintptr_t stack,const uintptr_t* units,
-                                        const int* want,tgcx_CfPlan* plan) {
+                                        const int* want,tgcx_CfPlan* plan,unsigned culture=0) {
     tgcx_CfResult r={};r.refusal=TGCX_CF_OK;
     static tgcx_CfStack target;
     __try {
@@ -409,9 +511,10 @@ static tgcx_CfResult tgcx_CfConformWith(const tgcx_CfGlobals& g,const tgcx_CfNat
             if(tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,target.id,plan->gather[i].stack,{},plan->gather[i].unit,date))++r.gathered;
             else ++r.failed;
         if(plan->build_total) {
-            tgcx_CfQueuedContext context={target.id,date,0};
-            tgcx_TplResult built=n.recruit(stack,plan->build,tgcx_CfOnQueued,&context);
+            tgcx_CfQueuedContext context={target.id,date,0,tgcx_TplRead<uint32_t>(stack+0xC0)};
+            tgcx_TplResult built=n.recruit(stack,plan->build,tgcx_CfOnQueued,&context,culture);
             r.queued=built.queued;r.missing=built.missing;r.failed+=built.failed;
+            tgcx_CfOrdersSave();
         }
         tgcx_Log("Conform stack %u: %u detach transfers queued, %u gathered, %u built, %u left out, %u failed",
             target.id.id,r.detached,r.gathered,r.queued,r.missing,r.failed);

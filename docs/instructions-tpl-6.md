@@ -1,27 +1,35 @@
-# TPL-6 - Consider continent selection in the template builder
+# TPL-6 - Verify the session-only continent selector
 
-2026-10-19. User suggests "perhaps specifying which continent" to recruit
-in from the template builder. Prospective follow-up after TPL-5; design
-and implementation are not yet settled. Do not block culture buttons on it.
+2026-10-19. Implemented internal0.11.0 and installed in isolated TGC copy.
+User chose current recruitment action, default Any. Read NEXT.md,
+instructions-tpl-5.md and report-army-filters-implementation-1019.md.
 
-1. Read NEXT.md and inspect accepted Universal builder, culture filtering
-   and live recruitment snapshot. Preserve the same package across mods.
-2. Research the running game's continent identity/membership and labels;
-   mods can change them. Verify native fields/signatures before use, record
-   evidence, and use existing cached engine data where possible. No fixed
-   vanilla continent list and no per-click parsing of all mod TXT files.
-3. Prepare a concrete native selector proposal in the template builder:
-   default unrestricted geography, named continent choices drawn from the
-   active game, clear eligibility/shortage summary. Decide whether preference
-   belongs per template or per recruitment action; present that choice if
-   it materially affects behavior. Keep culture and unit page controls clear.
-4. Geographic continent membership is not land connectivity. Preserve
-   D17 Conform land reach. Explain any proposed Conform interaction before
-   extending a builder-only selector to it; never route armies across sea
-   automatically or silently override the selected recruitment restriction.
-5. If selected for implementation, update visual references, filter shared
-   preview/action eligibility and add dynamic-mod/empty-continent/shortage/
-   persistence/culture-intersection cases. Use engine commands only.
-6. Build/check/stage, preserve rollback, install only after fresh confirmed
-   normal exit and process gate, then user runtime acceptance and report.
-   No release, game launch/exit or external contact on user's behalf.
+1. User launches the already prepared isolated TGC copy with ATCU+TGC only.
+   Do not reinstall, launch or terminate the game. First verify0.11.0log.
+2. Open Templates builder. Continent controls appear in the right footer;
+   default Any, arrows cycle active-mod continent labels. TGC catalogue
+   has14entries, not a fixed vanilla-six list. Verify readable names,
+   click targets and no overlap with composition/recruit/summary controls.
+3. Use a country owning eligible soldier pops on multiple continents.
+   With the same composition, compare Any, Europe and an overseas continent.
+   Inspect actual queued regiment source provinces and the native queue's
+   continent labels. Unpause between batches. Shortage should leave units
+   out rather than recruit elsewhere or silently switch back to Any.
+4. Combine continent selection with All / Primary + accepted / Primary
+   only. Both restrictions and native unit eligibility must hold. A
+   continent with no eligible soldier capacity queues none and reports
+   shortage; it does not fall back to other continents.
+5. Continent choice is session-only in the builder panel, not attached to
+   the selected template and not written to the library. After restarting
+   the game it defaults to Any. Culture mode persists separately in v2.
+6. Verify Conform ignores builder continent choice and retains independent
+   land reach plus selected template culture. Geographic membership does
+   not imply land connection or enable transport/marching across sea.
+7. After user normal exit preserve logs and actual observations with TPL-5
+   evidence. Any further installation needs fresh exit confirmation and
+   process gate. Keep accepted0.10.4rollback and main0.0.1 unchanged.
+8. After TGC acceptance, perform focused source-selection/layout regressions
+   on vanilla/HPM/DoD. Dynamic6/8/14catalogue fixtures and previous four-base
+   acceptance do not prove these new filters in those games.
+9. Record tested scope, failures and reference deviations in a new report;
+   archive/rewrite NEXT and update statuses. Publication remains separate.

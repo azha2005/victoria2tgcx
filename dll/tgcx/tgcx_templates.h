@@ -18,7 +18,7 @@ constexpr uint32_t tgcx_tpl_command_vtable_rva=0xA00CF4;
 // ---------------------------------------------------------------- planning (pure)
 
 // A soldier pop: free regiments it can still raise and the unit types it may build.
-struct tgcx_TplPop { uintptr_t pop,province;int province_id,free;std::bitset<tgcx_tpl_units> can_build; };
+struct tgcx_TplPop { uintptr_t pop,province;int province_id,free;std::bitset<tgcx_tpl_units> can_build;uintptr_t culture,continent; };
 struct tgcx_TplOrder { int unit,pop; };
 struct tgcx_TplPlan { unsigned count,missing;tgcx_TplOrder orders[tgcx_tpl_orders]; };
 
@@ -105,6 +105,7 @@ static tgcx_TplGlobals tgcx_TplLiveGlobals() {
             tgcx_base+tgcx_tpl_command_vtable_rva};
 }
 template<class T> static T tgcx_TplRead(uintptr_t at) { return *reinterpret_cast<T*>(at); }
+#include "tgcx_army_filters.h"
 
 // The player's country, its land unit types, and every soldier pop in its
 // provinces with its free regiments: what FUN_004B81D0/FUN_007353D0 list.
@@ -154,6 +155,10 @@ static bool tgcx_TplScanImpl(const tgcx_TplGlobals& g,const tgcx_TplNative& n,tg
                 if(out->pop_count>=tgcx_tpl_pops)return true;
                 tgcx_TplPop entry={pop,province,tgcx_TplRead<int>(province+0x58),n.free_regiments(pop),0};
                 if(entry.free<=0)continue;
+                if(tgcx_army_filters_enabled) {
+                    entry.culture=tgcx_TplRead<uintptr_t>(pop+0x6C);
+                    entry.continent=tgcx_TplRead<uintptr_t>(province+0x16C);
+                }
                 for(unsigned u=0;u<tgcx_tpl_units;++u)
                     if(out->unit[u] && n.can_build(out->unit[u],pop,country,province))entry.can_build.set(u);
                 if(entry.can_build.any())out->pops[out->pop_count++]=entry;
@@ -209,12 +214,16 @@ static bool tgcx_TplSendOrder(const tgcx_TplGlobals& g,const tgcx_TplNative& n,c
 // counts[unit index] regiments; recruit what fits and report the rest (D12).
 static tgcx_TplResult tgcx_TplRecruitWith(const tgcx_TplGlobals& g,const tgcx_TplNative& n,const int* counts,
                                           tgcx_TplQueued queued=nullptr,void* context=nullptr,
-                                          tgcx_TplEligible eligible=nullptr,void* eligibility_context=nullptr) {
+                                          tgcx_TplEligible eligible=nullptr,void* eligibility_context=nullptr,
+                                          const tgcx_ArmyFilter* filter=nullptr) {
     static tgcx_TplCountry country;static tgcx_TplPlan plan;
     tgcx_TplResult r={};
     int wanted[tgcx_tpl_units];unsigned total=0;
     for(unsigned u=0;u<tgcx_tpl_units;++u) { wanted[u]=counts[u]>0?counts[u]:0;total+=wanted[u]; }
     if(!(r.scanned=tgcx_TplScan(g,n,&country))) { r.missing=total;tgcx_Log("Template recruit refused: game read failed");return r; }
+    if(filter && !tgcx_ArmyApply(country.country,country.pops,country.pop_count,*filter)) {
+        r.scanned=false;r.missing=total;tgcx_Log("Template recruit refused: culture/continent eligibility unavailable");return r;
+    }
     for(unsigned u=0;u<tgcx_tpl_units;++u)if(wanted[u] && !country.unit[u]) { r.missing+=wanted[u];wanted[u]=0; }
     unsigned excluded=tgcx_TplFilterPops(country.pops,country.pop_count,eligible,eligibility_context);
     if(excluded)tgcx_Log("Template recruitment scope: %u soldier pops excluded (no land route to target)",excluded);
@@ -239,7 +248,8 @@ static void tgcx_InstallTemplates() {
     tgcx_templates_installed=true;tgcx_Log("Templates ready: CConstructUnitCommand via the engine queue");
 }
 static tgcx_TplResult tgcx_TplRecruit(const int* counts,tgcx_TplQueued queued=nullptr,void* context=nullptr,
-                                     tgcx_TplEligible eligible=nullptr,void* eligibility_context=nullptr) {
+                                     tgcx_TplEligible eligible=nullptr,void* eligibility_context=nullptr,
+                                     const tgcx_ArmyFilter* filter=nullptr) {
     if(!tgcx_templates_installed) { tgcx_TplResult r={};return r; }
-    return tgcx_TplRecruitWith(tgcx_TplLiveGlobals(),tgcx_tpl_native,counts,queued,context,eligible,eligibility_context);
+    return tgcx_TplRecruitWith(tgcx_TplLiveGlobals(),tgcx_tpl_native,counts,queued,context,eligible,eligibility_context,filter);
 }

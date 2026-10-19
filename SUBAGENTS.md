@@ -1,10 +1,15 @@
 # SUBAGENTS.md — The project, in cards
 
+2026-10-19 filter candidate: user authorized culture/continent filters and session-only continent default Any, then confirmed normal exit and selected isolated TGC. Implemented0.11.0,223guards/179runtime header, Win32/native real-D3D9,109full-suite Python cases plus added package-mismatch guard and packaged loader/plugin probes pass.39/39mod files installed with0.10.4rollback; main0.0.1 and accepted ZIP unchanged. Current screenshots retained, local layout previews generated; player verification next. report-army-filters-implementation-1019.md.
 > How the work is split between the coordinator (the main session) and the
 > subagents, and the status of each card. **What is done now: only
 > `NEXT.md`.** Hard rules: `AGENTS.md` §2.
 
 ---
+
+2026-10-19 main install: ATCU0.0.1 added to main E: game after fresh normal-exit confirmation and process gate;37/37payload hashes pass. Existing MOD-2 loader, original Lua, old Army/Politics and checked base files unchanged. Main-loader/package probe passed. Select ATCU+base only; untick old Army/Politics. No game launch; report-atcu-main-install-1019.md.
+
+2026-10-19 filter research: native culture fields/accepted list and province continent/catalogue/key/label verified statically; exact construction pop selection retained. Existing bases define6/8/6/14continents. Both feasible; culture needs pop-level eligibility, not province-cached predicate, and v1 settings migration. Added13research guards;222total checks/unchanged172runtime header and TGC scan pass. No feature code, runtime test, binaries/install/release/commit/push/game controls. report-army-filters-research-1019.md.
 
 2026-10-19 ATCU release preparation: user selected release work, named Army Template and Conform Universal (ATCU), requested no em dashes and kept license undecided. Local0.0.1 candidate packages accepted0.10.4 DLL/loader with launcher-name-only mod change. ZIP49files/1,054,050bytes, five tests and clean/plugin probes pass, reproducible hash. Docs/provenance ready for review; derived-art publication status, recipient check and publication authorization pending. No commit/push/tag/upload/game changes. report-release-0-candidate-1019.md.
 
@@ -181,9 +186,10 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 | MOD-2 | Installer with generic base profiles and per-base packages (Army, Politics); sprite check; DLL found through the `-mod=` list (D15) | **done** (0.8.0 installed and tested in game 2026-10-18) | `docs/instructions-mod-2.md`, `docs/report-mod-2-1018.md` |
 | LAW-4 | Bill view buttons do not stay ticked (user, 2026-10-18) | deferred while Army compatibility has priority | `docs/instructions-law-4.md`, `docs/report-tpl-4-1018.md` §3 |
 | TPL-3 | Alt-click 2, Ctrl-click 5 in the Templates editor | **user-confirmed passed 2026-10-19** | `docs/report-tpl-4-1018.md` |
-| TPL-5 | Culture filter (primary + accepted / primary only) for Templates and Conform | selected next after four-base Universal acceptance | `docs/instructions-tpl-5.md` |
+| ATCU-MAIN | Main E: ATCU installation | installed0.0.1; runtime unconfirmed | docs/instructions-atcu-main.md |
+| TPL-5 | Culture filter (primary + accepted / primary only) for Templates and Conform |0.11.0implemented and installed isolated TGC; player check next | `docs/instructions-tpl-5.md` |
 | RELEASE-0 | ATCU0.0.1 files-only release candidate | prepared locally; review/publication pending | `docs/instructions-release-0.md` |
-| TPL-6 | Continent selection in template builder | prospective design after TPL-5 | `docs/instructions-tpl-6.md` |
+| TPL-6 | Continent selection in template builder |0.11.0session-only selector installed isolated TGC; player check next | `docs/instructions-tpl-6.md` |
 | U-12 | Game check of 0.8.1 (TPL-3, TPL-4, LAW-4 screenshot) | Ctrl/Alt + detach passed; Bill deferred | `docs/instructions-u-12.md` |
 | MOD-3 | Army package on vanilla 3.04 in game (D15) | **short vanilla and Universal0.10.4 accepted**, extended pending | `docs/instructions-mod-3.md` |
 | MOD-4 | Army on HPM | 0.9.0 and Universal0.10.4 short accepted; extended pending | `docs/instructions-mod-4.md` |

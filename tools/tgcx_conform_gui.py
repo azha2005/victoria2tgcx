@@ -14,15 +14,19 @@ from tgc_scan import parse, read
 from tgcx_army_catalog import profile_for
 from tgcx_bill_gui import write_dds
 from tgcx_templates_gui import units
-from tgcx_army_art import sprites, texture, sprite, unit_frames
+from tgcx_army_art import sprites, texture, sprite, unit_frames, filter_checkbox
 
 LAYOUT = "tgcx_conform_layout.txt"
 WIDTH, HEIGHT = 332, 594
 ROW_W, ROW_H = 317, 30
-SLOTS, CHANGES, MINIS = 4, 8, 4
+SLOTS, CHANGES, MINIS = 4, 7, 4
 # Native 332px army-panel width and 317x30 regiment rows.
 SLOT_X, SLOT_Y = 7, 42
-CHANGE_X, CHANGE_Y = 7, 232
+CHANGE_X, CHANGE_Y = 7, 264
+# TPL-5: the template's culture row, a regiment-row band between the
+# templates and Changes.
+BAND_Y = 198
+CHECKS = {"accepted": (60, 203), "primary": (200, 203)}
 # The fixed 400x80 stack panel has no room for the board's wide bottom
 # button: the free cell between the location and the attrition icon. OPEN
 # retains the accepted TGC reference; other bases use opening_rect().
@@ -58,6 +62,7 @@ def buttons():
     result += [(f"slot_{i}", "slot", SLOT_X, SLOT_Y+i*32, ROW_W, ROW_H) for i in range(SLOTS)]
     result += [("list_prev", "left", 228, 172, 24, 24), ("list_next", "right", 300, 172, 24, 24),
                ("conform", "button", 12, 558, 148, 28), ("cancel", "button", 172, 558, 148, 28)]
+    result += [(f"culture_{k}", "check", x, y, 20, 20) for k, (x, y) in CHECKS.items()]
     return result
 
 
@@ -69,7 +74,7 @@ def texts():
                    (f"detail_{i}", "", x+40, y+16, 132, 14, "Arial12_black", "left")]
         result += [(f"mini_{i}_{k}", "", x+195+k*35, y+9, 18, 14, "Arial12_bold", "left") for k in range(MINIS)]
     result += [("list_page", "", 252, 176, 48, 16, "Arial12_black", "centre"),
-               ("changes", "Changes", 14, 203, 210, 20, "Arial12_bold_black", "left")]
+               ("changes", "Changes", 14, 235, 210, 20, "Arial12_bold_black", "left")]
     for i in range(CHANGES):
         x, y = CHANGE_X, CHANGE_Y+i*32
         result += [(f"change_{i}", "", x+40, y+1, 272, 14, "Arial12_bold_black", "left"),
@@ -78,6 +83,9 @@ def texts():
                ("status", "", 10, 522, 312, 26, "Arial12_black", "left"),
                ("conform", "Conform", 12, 565, 148, 18, "Arial12_bold_black", "centre"),
                ("cancel", "Cancel", 172, 565, 148, 18, "Arial12_bold_black", "centre")]
+    result += [("culture", "Culture", 14, 206, 44, 18, "Arial12_bold_black", "left"),
+               ("culture_accepted", "Primary + accepted", CHECKS["accepted"][0]+24, 206, 114, 18, "Arial12_black", "left"),
+               ("culture_primary", "Primary only", CHECKS["primary"][0]+24, 206, 98, 18, "Arial12_black", "left")]
     return result
 
 
@@ -112,6 +120,10 @@ def layout(tgc=DEFAULT_TGC, profile=None, universal=False):
              'iconType={name="tgcx_cf_bg_icon" spriteType="tgcx_cf_bg" position={x=0 y=0}}']
     if universal:
         parts.pop(0)  # Shared definitions are constructed by the DLL, not injected.
+    # A ticked box is the native "on" frame beneath its button, shown by the DLL.
+    for k, (bx, by) in CHECKS.items():
+        parts += _window(f"tgcx_cf_check_on_{k}", bx, by, 20, 20,
+                         [f'iconType={{name="tgcx_cf_check_on_icon_{k}" spriteType="tgcx_cf_check_on" position={{x=0 y=0}}}}'])
     for name, art, bx, by, _, _ in buttons()[1:]:
         sprite_name = art if art.startswith("GFX_") else f"tgcx_cf_{art}"
         parts.append(f'guiButtonType={{name="tgcx_cf_{name}" quadTextureSprite="{sprite_name}" position={{x={bx} y={by}}} clicksound=click}}')
@@ -207,7 +219,7 @@ def generate(output, tgc=DEFAULT_TGC, profile=None):
     bg.alpha_composite(top.crop((51, 5, 324, 27)).resize((317, 22)), (7, 5))
     bg.alpha_composite(top.crop((0, 58, WIDTH, 64)), (0, 27))
     band = native('GFX_unit_bg_28').crop((7, 0, 314, 28)).resize((ROW_W, 28))
-    bg.alpha_composite(band, (SLOT_X, 198))
+    bg.alpha_composite(band, (SLOT_X, 230))
     images['bg'] = bg
     # Native 317x30 regiment row with the two right-hand POP/bar columns
     # replaced by the clean dual-tone middle band.
@@ -215,6 +227,15 @@ def generate(output, tgc=DEFAULT_TGC, profile=None):
     slot = entry.copy()
     slot.paste(entry.crop((38, 0, 248, ROW_H)).resize((278, ROW_H)), (38, 0))
     images['slot'] = slot
+    # The culture row: the regiment row's light band across the whole row,
+    # with the native unticked boxes painted in (their buttons sit on top).
+    band = entry.copy()
+    band.paste(entry.crop((40, 0, 150, ROW_H)).resize((ROW_W-6, ROW_H)), (3, 0))
+    bg.alpha_composite(band, (SLOT_X, BAND_Y))
+    off, on, shared = filter_checkbox(tgc, profile)
+    for x, y in CHECKS.values():
+        bg.alpha_composite(off, (x, y))
+    images['check'], images['check_on'] = shared, on
     for row in range(SLOTS):
         y = SLOT_Y+row*32
         images[f'blank_{row}'] = images['bg'].crop((SLOT_X, y, SLOT_X+ROW_W, y+ROW_H))

@@ -1,4 +1,4 @@
-"""Prepare the release ZIP from the immutable, gameplay-accepted Army ZIP.
+"""Prepare the release ZIP from the immutable, gameplay-tested Army ZIP.
 
 Maintainer tool only. Never installs, launches the game, downloads or publishes.
 The ZIP holds README.txt, the root loader and the mod folder; nothing else.
@@ -7,17 +7,22 @@ The hash manifest, release identity and art provenance are written beside it.
 import argparse
 import hashlib
 import json
+import subprocess
 from pathlib import Path, PurePosixPath
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.0.1'
-BUILD = '0.10.4'
+VERSION = '0.0.2'
+BUILD = '0.11.2'
 NAME = 'ATCU - Army Template and Conform Universal'
-ACCEPTED_ZIP = '2e1d8cf974f2a7eea92e82067c0f505c891d0b517f8e7c9b60fb9696c029dff1'
-LOGIC = 'b53621609425f9c75135ba2fade947a6bf93197bcc14ec30182b105b9f7bba67'
-LOADER = '3172e716e0d5e1bb7a4baf91bbab9828a9f9f57d2389744b72cb14b03ca3a5ca'
-COMMIT = '1482eee841f0f56c040dc19a942c3bcf5a25bd73'
+# work/orders-0112/ATCU-orders-0.11.2-test.zip, the build installed and checked in game.
+ACCEPTED_ZIP = '42cb2b3bb07f4a8b81e2c3eb906590b0270660d3fa5ebc10c05037a1f6096fae'
+LOGIC = '7afefc61427be3c6dae12bd8004cdadba2b8c8866fd3cddb9c17dab76eb2c49e'
+LOADER = 'ab8e3653a8ea697fa29e05907659b13a69af43c223d0f50116fa58865d4b36dd'
+ART_COUNT = 32
+DOCS = 'docs/release-' + VERSION
+# The DLL and package sources must be committed: the release names that commit.
+SOURCE_PATHS = ('dll', 'tools')
 PACKAGE = 'mod/tgcx_army_universal/'
 DESCRIPTOR = 'mod/tgcx_army_universal.mod'
 README = 'README.txt'
@@ -69,6 +74,9 @@ def art_origin(name):
         code = 'tools/tgcx_conform_gui.py:generate'
         if leaf == 'ring':
             return 'original drawn UI', ['Pillow rectangle drawing'], code
+        if leaf in ('check', 'check_on'):
+            return ('game/effective-base derived UI', ['gfx/interface/checkbox_default.dds'],
+                    'tools/tgcx_army_art.py:filter_checkbox')
         if leaf in ('slot', 'change'):
             sprites = ['GFX_unit_entry_bg']
         elif leaf == 'button':
@@ -82,6 +90,9 @@ def art_origin(name):
         return 'game/effective-base derived UI', sprites, code
     leaf = key[len('tgcx_tpl_'):]
     code = 'tools/tgcx_templates_gui.py:generate'
+    if leaf in ('check', 'check_on'):
+        return ('game/effective-base derived UI', ['gfx/interface/checkbox_default.dds'],
+                'tools/tgcx_army_art.py:filter_checkbox')
     if leaf in ('bg', 'pager', 'ring', 'tabsel') or leaf.startswith('blank_'):
         return 'original drawn UI', ['Pillow drawing; tools/tgcx_bill_gui.py:section'], code
     if leaf in ('bar', 'header'):
@@ -125,7 +136,7 @@ def provenance(files, root):
 
 def readme_bytes(root):
     # CRLF for Notepad, and independent of how git checked the file out.
-    text = (root / 'docs/release-0.0.1' / README).read_text(encoding='ascii')
+    text = (root / DOCS / README).read_text(encoding='ascii')
     return text.replace('\r\n', '\n').replace('\n', '\r\n').encode('ascii')
 
 
@@ -152,37 +163,52 @@ def verify_release(files, manifest, identity):
         raise ValueError('README.txt must be plain ASCII (no em dashes)')
     if any(PACKAGE + 'interface/' + name in files for name in ('buildunit.gui', 'unitpanel.gui', 'country_politics.gui')):
         raise ValueError('base GUI override present')
-    if len([n for n in files if n.endswith('.dds')]) != 28:
+    if len([n for n in files if n.endswith('.dds')]) != ART_COUNT:
         raise ValueError('accepted art inventory changed')
     if (identity['version'], identity['internal_build'], identity['license']) != (VERSION, BUILD, 'undecided'):
         raise ValueError('release identity mismatch')
 
 
-def build(source, output, root=ROOT):
+def source_commit(root):
+    """HEAD, refused while the DLL or package sources differ from it."""
+    git = ['git', '-C', str(root)]
+    dirty = subprocess.run(git + ['status', '--porcelain', '--', *SOURCE_PATHS],
+                           capture_output=True, text=True, check=True).stdout.strip()
+    if dirty:
+        raise ValueError('commit the DLL and tool sources first: ' + ' '.join(dirty.split()))
+    return subprocess.run(git + ['rev-parse', 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
+
+
+def build(source, output, root=ROOT, commit=None):
     source, output, root = Path(source).resolve(), Path(output).resolve(), Path(root).resolve()
     if output.exists() or archive_path(output).exists():
         raise ValueError('output folder/ZIP must be new')
     if sha(source.read_bytes()) != ACCEPTED_ZIP:
-        raise ValueError('input is not the accepted 0.10.4 archive')
+        raise ValueError('input is not the accepted ' + BUILD + ' archive')
     accepted = read_archive(source)
-    check_manifest(accepted)
+    if 'SHA256.json' in accepted:
+        check_manifest(accepted)
+    else:   # test builds keep their manifest beside the ZIP
+        check_manifest(accepted, json.loads(source.with_suffix('.SHA256.json').read_text()))
     files = {name: data for name, data in accepted.items() if name.startswith('mod/') or name == 'lua51.dll'}
     files[DESCRIPTOR] = f'name = "{NAME}"\npath = "mod/tgcx_army_universal"\n'.encode('cp1252')
     files[README] = readme_bytes(root)
     # The accepted ZIP's own README.txt is replaced, not payload.
     changed = [name for name in files if name != README and name in accepted and files[name] != accepted[name]]
-    if changed != [DESCRIPTOR]:
+    if set(changed) - {DESCRIPTOR}:
         raise ValueError('only launcher branding may change in accepted payload')
     identity = {
         'name': NAME, 'version': VERSION, 'internal_build': BUILD,
         'status': 'beta release', 'license': 'undecided',
-        'gameplay_source_commit': COMMIT, 'accepted_archive_sha256': ACCEPTED_ZIP,
+        'gameplay_source_commit': commit or source_commit(root), 'accepted_archive_sha256': ACCEPTED_ZIP,
         'logic_sha256': LOGIC, 'loader_sha256': LOADER,
         'tested_executable_sha256': '62d48c204364dd706584777c2e2b3c7ab3c5f1dd0170872554943575d53d6648',
-        'runtime_checks': ['vanilla', 'HPM 0.4.5', 'DoD Fan Fork', 'TGC 2.5.2 + V2DLL 5.82'],
+        'runtime_checks': ['TGC 2.5.2 + V2DLL 5.82 (filters, saved Conform orders across a load)',
+                           'TGC 2.5.2 + ATCU loader (templates, Conform)'],
+        'earlier_runtime_checks_0_10_4': ['vanilla', 'HPM 0.4.5', 'DoD Fan Fork', 'TGC 2.5.2 + V2DLL 5.82'],
         'changed_accepted_payload_files': changed,
         'pending': ['own license undecided by user choice', 'bundled artwork publication status',
-                    'second-PC recipient test', 'branding in normal launcher'],
+                    'second-PC recipient test', '0.11.x filters not rechecked on vanilla, HPM or DoD'],
     }
     manifest = {name: sha(data) for name, data in sorted(files.items())}
     verify_release(files, manifest, identity)
