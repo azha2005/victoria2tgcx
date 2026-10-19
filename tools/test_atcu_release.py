@@ -52,6 +52,19 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'must be new'):
                 release.build(source, output)
 
+    def test_zip_holds_only_readme_loader_and_mod(self):
+        files = {'README.txt': b'ATCU', 'lua51.dll': b'x', 'mod/a.mod': b'x', 'INSTALL.txt': b'x'}
+        manifest = {name: release.sha(data) for name, data in files.items()}
+        with self.assertRaisesRegex(ValueError, 'top-level'):
+            release.verify_release(files, manifest, {})
+
+    def test_readme_is_crlf_whatever_the_checkout(self):
+        for text in ('a\nb\n', 'a\r\nb\r\n'):
+            with self.subTest(text=text), tempfile.TemporaryDirectory() as temp:
+                (Path(temp) / 'docs/release-0.0.1').mkdir(parents=True)
+                (Path(temp) / 'docs/release-0.0.1/README.txt').write_bytes(text.encode())
+                self.assertEqual(release.readme_bytes(Path(temp)), b'a\r\nb\r\n')
+
     def test_dotted_release_version_is_kept_in_archive_name(self):
         self.assertEqual(release.archive_path(Path('ATCU-0.0.1-candidate')).name,
                          'ATCU-0.0.1-candidate.zip')

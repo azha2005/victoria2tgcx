@@ -21,10 +21,15 @@ commit/push or game-copy changes during preparation.
 
 ## Candidate and evidence
 
-- work/releases/final/ATCU-0.0.1-candidate.zip:1,054,050bytes,49files.
+- **Superseded 2026-10-19 (user: too many docs in the ZIP):**
+  work/releases/final/ATCU-0.0.1.zip, 1,041,444 bytes, 39 files: one
+  README.txt (CRLF, ASCII), lua51.dll and mod/ only. SHA256
+  9ee654e7b33fbe62444892a55388e24ecfc7246ace2fdef9bf1007585e4f799e,
+  reproduced. SHA256/RELEASE/PROVENANCE JSON now sit beside the ZIP.
+  Split docs archived in docs/archive/release-0.0.1-candidate-1019/;
+  RELEASE_NOTES.md is the GitHub release body. Mod payload unchanged.
+- Earlier candidate: ATCU-0.0.1-candidate.zip, 1,054,050 bytes, 49 files,
   SHA256 4e84a34b167b3fc97aef52fffd58dc2d75d2ae3305f0ca3d08d49aa491a28eaf.
-  Extracted folder and .zip.sha256 sidecar beside it. Keep this final path;
-  earlier packaging-development outputs are not the deliverable.
 - 36/37mod files identical to accepted payload; only descriptor display name
   changed. DLL build0.10.4/loader unchanged. Distribution version0.0.1
   explicitly separate; logs retain old internal build. No game integration

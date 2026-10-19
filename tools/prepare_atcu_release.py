@@ -1,7 +1,8 @@
-"""Prepare a review candidate from the immutable, gameplay-accepted Army ZIP.
+"""Prepare the release ZIP from the immutable, gameplay-accepted Army ZIP.
 
 Maintainer tool only. Never installs, launches the game, downloads or publishes.
-The output ZIP contains no recipient scripts or original game libraries.
+The ZIP holds README.txt, the root loader and the mod folder; nothing else.
+The hash manifest, release identity and art provenance are written beside it.
 """
 import argparse
 import hashlib
@@ -19,8 +20,8 @@ LOADER = '3172e716e0d5e1bb7a4baf91bbab9828a9f9f57d2389744b72cb14b03ca3a5ca'
 COMMIT = '1482eee841f0f56c040dc19a942c3bcf5a25bd73'
 PACKAGE = 'mod/tgcx_army_universal/'
 DESCRIPTOR = 'mod/tgcx_army_universal.mod'
-DOCS = ('README.md', 'INSTALL.txt', 'KNOWN_ISSUES.md', 'CHANGELOG.md',
-        'CREDITS.md', 'RIGHTS_STATUS.md', 'BUG_REPORT.md', 'RELEASE_NOTES.md')
+README = 'README.txt'
+SIDECARS = ('SHA256.json', 'RELEASE.json', 'PROVENANCE.json')
 
 
 def sha(data):
@@ -51,9 +52,11 @@ def read_archive(path):
         return {name: z.read(name) for name in names}
 
 
-def check_manifest(files):
-    manifest = json.loads(files['SHA256.json'])
-    if set(manifest) != set(files) - {'SHA256.json'}:
+def check_manifest(files, manifest=None):
+    if manifest is None:
+        manifest = json.loads(files['SHA256.json'])
+        files = {name: data for name, data in files.items() if name != 'SHA256.json'}
+    if set(manifest) != set(files):
         raise ValueError('manifest inventory mismatch')
     if any(sha(files[name]) != digest for name, digest in manifest.items()):
         raise ValueError('manifest digest mismatch')
@@ -115,13 +118,21 @@ def provenance(files, root):
                                 'attribution': text.strip()})
     return {'artwork': origins, 'v2dll_source_attribution': markers,
             'v2dll_provenance': 'Owner reports author supports open source and has been informed of use; retain attribution.',
-            'license': 'undecided for this candidate',
+            'license': 'undecided',
             'excluded': ['game executable', 'original Lua library', 'base mod distributions',
                          'V2DLL distribution', 'game logs/saves', 'Ghidra/decompiled dumps']}
 
 
-def verify_release(files):
-    check_manifest(files)
+def readme_bytes(root):
+    # CRLF for Notepad, and independent of how git checked the file out.
+    text = (root / 'docs/release-0.0.1' / README).read_text(encoding='ascii')
+    return text.replace('\r\n', '\n').replace('\n', '\r\n').encode('ascii')
+
+
+def verify_release(files, manifest, identity):
+    check_manifest(files, manifest)
+    if {name.split('/')[0] for name in files} != {README, 'lua51.dll', 'mod'}:
+        raise ValueError('unexpected top-level content')
     if sha(files[PACKAGE + 'tgcx.dll']) != LOGIC or files[PACKAGE + 'tgcx.dll'] != files[PACKAGE + 'v2dll_mod.dll']:
         raise ValueError('accepted logic changed')
     if sha(files['lua51.dll']) != LOADER:
@@ -135,47 +146,46 @@ def verify_release(files):
     for name, data in files.items():
         if name.endswith(('.exe', '.py', '.ps1', '.bat', '.cmd', '.pdb', '.log', '.v2')) or 'lua51_real' in name:
             raise ValueError('unexpected recipient content')
-        if name.endswith(('.md', '.txt')) and '\u2014' in data.decode('utf-8', errors='replace'):
-            raise ValueError('em dash in release text')
+    try:
+        files[README].decode('ascii')
+    except UnicodeDecodeError:
+        raise ValueError('README.txt must be plain ASCII (no em dashes)')
     if any(PACKAGE + 'interface/' + name in files for name in ('buildunit.gui', 'unitpanel.gui', 'country_politics.gui')):
         raise ValueError('base GUI override present')
     if len([n for n in files if n.endswith('.dds')]) != 28:
         raise ValueError('accepted art inventory changed')
-    parsed = json.loads(files['RELEASE.json'])
-    if (parsed['version'], parsed['internal_build'], parsed['license']) != (VERSION, BUILD, 'undecided'):
+    if (identity['version'], identity['internal_build'], identity['license']) != (VERSION, BUILD, 'undecided'):
         raise ValueError('release identity mismatch')
 
 
 def build(source, output, root=ROOT):
     source, output, root = Path(source).resolve(), Path(output).resolve(), Path(root).resolve()
     if output.exists() or archive_path(output).exists():
-        raise ValueError('candidate output folder/ZIP must be new')
+        raise ValueError('output folder/ZIP must be new')
     if sha(source.read_bytes()) != ACCEPTED_ZIP:
         raise ValueError('input is not the accepted 0.10.4 archive')
     accepted = read_archive(source)
     check_manifest(accepted)
     files = {name: data for name, data in accepted.items() if name.startswith('mod/') or name == 'lua51.dll'}
     files[DESCRIPTOR] = f'name = "{NAME}"\npath = "mod/tgcx_army_universal"\n'.encode('cp1252')
-    for name in DOCS:
-        files[name] = (root / 'docs/release-0.0.1' / name).read_bytes()
-    changed = [name for name in files if name in accepted and files[name] != accepted[name]]
+    files[README] = readme_bytes(root)
+    # The accepted ZIP's own README.txt is replaced, not payload.
+    changed = [name for name in files if name != README and name in accepted and files[name] != accepted[name]]
     if changed != [DESCRIPTOR]:
         raise ValueError('only launcher branding may change in accepted payload')
-    files['PROVENANCE.json'] = json_bytes(provenance(files, root))
-    files['RELEASE.json'] = json_bytes({
+    identity = {
         'name': NAME, 'version': VERSION, 'internal_build': BUILD,
-        'status': 'review candidate; not published', 'license': 'undecided',
+        'status': 'beta release', 'license': 'undecided',
         'gameplay_source_commit': COMMIT, 'accepted_archive_sha256': ACCEPTED_ZIP,
         'logic_sha256': LOGIC, 'loader_sha256': LOADER,
         'tested_executable_sha256': '62d48c204364dd706584777c2e2b3c7ab3c5f1dd0170872554943575d53d6648',
         'runtime_checks': ['vanilla', 'HPM 0.4.5', 'DoD Fan Fork', 'TGC 2.5.2 + V2DLL 5.82'],
         'changed_accepted_payload_files': changed,
         'pending': ['own license undecided by user choice', 'bundled artwork publication status',
-                    'second-PC recipient test', 'candidate branding in normal launcher',
-                    'publication authorization'],
-    })
-    files['SHA256.json'] = json_bytes({name: sha(data) for name, data in sorted(files.items())})
-    verify_release(files)
+                    'second-PC recipient test', 'branding in normal launcher'],
+    }
+    manifest = {name: sha(data) for name, data in sorted(files.items())}
+    verify_release(files, manifest, identity)
     output.mkdir(parents=True)
     for name, data in files.items():
         path = output / name
@@ -188,7 +198,10 @@ def build(source, output, root=ROOT):
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
             z.writestr(info, data)
-    verify_release(read_archive(archive))
+    verify_release(read_archive(archive), manifest, identity)
+    sidecars = {'SHA256.json': manifest, 'RELEASE.json': identity, 'PROVENANCE.json': provenance(files, root)}
+    for name in SIDECARS:
+        Path(str(output) + '.' + name).write_bytes(json_bytes(sidecars[name]))
     archive.with_suffix('.zip.sha256').write_text(sha(archive.read_bytes()) + '  ' + archive.name + '\n', encoding='ascii')
     return archive
 

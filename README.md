@@ -8,17 +8,14 @@ The same mod folder works with the active base. Short gameplay checks have
 passed on vanilla, HPM 0.4.5, Divergences of Darkness Fan Fork and TGC 2.5.2.
 TGC was also checked with V2DLL 5.82. Other mods remain untested.
 
-## Candidate 0.0.1
+## Release 0.0.1
 
 The first public version is being prepared from the accepted internal
 build 0.10.4. The DLL still reports that internal build in its log.
 
-- [Installation and removal](docs/release-0.0.1/INSTALL.txt)
-- [Features and controls](docs/release-0.0.1/README.md)
-- [Known issues](docs/release-0.0.1/KNOWN_ISSUES.md)
-- [Changelog](docs/release-0.0.1/CHANGELOG.md)
-- [Credits](docs/release-0.0.1/CREDITS.md)
-- [Candidate rights status](docs/release-0.0.1/RIGHTS_STATUS.md)
+- [README.txt](docs/release-0.0.1/README.txt): install, controls, known
+  limits, bug reports and credits (the one file shipped in the ZIP)
+- [Release notes](docs/release-0.0.1/RELEASE_NOTES.md)
 
 The download is files only. Players do not need an installer, Python,
 PowerShell, batch files or development tools. Victoria II and any base mod
