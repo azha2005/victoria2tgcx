@@ -10,8 +10,11 @@ import re
 from pathlib import Path
 from PIL import Image, ImageDraw
 from gen_laws import DEFAULT_TGC, ROOT
-from tgcx_bill_gui import sprites, texture, sprite, nine, write_dds
-from tgcx_templates_gui import units, ORDER
+from tgc_scan import parse, read
+from tgcx_army_catalog import profile_for
+from tgcx_bill_gui import write_dds
+from tgcx_templates_gui import units
+from tgcx_army_art import sprites, texture, sprite, unit_frames
 
 LAYOUT = "tgcx_conform_layout.txt"
 WIDTH, HEIGHT = 332, 594
@@ -21,8 +24,33 @@ SLOTS, CHANGES, MINIS = 4, 8, 4
 SLOT_X, SLOT_Y = 7, 42
 CHANGE_X, CHANGE_Y = 7, 232
 # The fixed 400x80 stack panel has no room for the board's wide bottom
-# button: the free cell between the location and the attrition icon.
+# button: the free cell between the location and the attrition icon. OPEN
+# retains the accepted TGC reference; other bases use opening_rect().
 OPEN = (222, 68, 20, 20)
+
+
+def opening_rect(tgc=DEFAULT_TGC, profile=None):
+    # Vanilla's header is 26px higher than TGC's. Follow its attrition icon,
+    # leaving the same 3px gap; fixed TGC coordinates fall under vanilla's
+    # statistics row, which covers the button and intercepts its clicks.
+    base = profile or profile_for(tgc)
+    path = base.find('interface/unitpanel.gui')
+    if not path:
+        raise ValueError('missing effective unitpanel.gui')
+    roots = dict(parse(read(path))).get('guiTypes', [])
+    panels = [v for k, v in roots if k == 'windowType' and isinstance(v, list)
+              and dict(v).get('name', '').strip('"') == 'unitpanel']
+    if len(panels) != 1:
+        raise ValueError('require one native unitpanel for the Conform button')
+    anchors = [dict(v) for k, v in panels[0] if k == 'iconType' and isinstance(v, list)
+               and dict(v).get('name', '').strip('"') == 'unitattrition_icon']
+    if len(anchors) != 1:
+        raise ValueError('require one native unitattrition_icon for the Conform button')
+    position = dict(anchors[0].get('position', []))
+    x, y = int(position['x']) - 23, int(position['y'])
+    if x < 0 or y < 0:
+        raise ValueError('invalid native header position for the Conform button')
+    return x, y, 20, 20
 
 
 def buttons():
@@ -62,9 +90,11 @@ def _strip(name, x, y, frame, scale=None):
     return f'iconType={{name="{name}" spriteType="GFX_unit_strip" frame={frame} position={{x={x} y={y}}}{extra}}}'
 
 
-def layout():
-    icons = {key: icon for key, _, _, _, icon in units()}
-    x, y, w, h = OPEN
+def layout(tgc=DEFAULT_TGC, profile=None, universal=False):
+    rows = [("unit", "", "", 1, 1)] if universal else units(tgc, profile)
+    order = [row[0] for row in rows]
+    icons = {key: icon for key, _, _, _, icon in rows}
+    x, y, w, h = (30000, 30000, 20, 20) if universal else opening_rect(tgc, profile)
     # Fleets share the panel: the button sits in a window the DLL can hide.
     # A button lookup searches only its own window's children, so an
     # off-screen marker at the panel's level is the DLL's silent probe for our
@@ -80,6 +110,8 @@ def layout():
              # The same art as an icon right above it: a button draws its
              # hover highlight, which lit the whole window in 0.6.1.
              'iconType={name="tgcx_cf_bg_icon" spriteType="tgcx_cf_bg" position={x=0 y=0}}']
+    if universal:
+        parts.pop(0)  # Shared definitions are constructed by the DLL, not injected.
     for name, art, bx, by, _, _ in buttons()[1:]:
         sprite_name = art if art.startswith("GFX_") else f"tgcx_cf_{art}"
         parts.append(f'guiButtonType={{name="tgcx_cf_{name}" quadTextureSprite="{sprite_name}" position={{x={bx} y={by}}} clicksound=click}}')
@@ -99,13 +131,13 @@ def layout():
     # Each place has its own fixed unit icon; the DLL only shows one per place.
     for row in range(SLOTS):
         ry = SLOT_Y+row*32
-        for u in ORDER:
+        for u in order:
             parts += _window(f"tgcx_cf_slot_icon_{row}_{u}", SLOT_X+1, ry-2, 36, 36, [_strip(f"tgcx_cf_slot_sprite_{row}_{u}", 0, 0, icons[u])])
             for k in range(MINIS):
                 parts += _window(f"tgcx_cf_mini_{row}_{k}_{u}", SLOT_X+175+k*35, ry+3, 24, 24,
                                  [_strip(f"tgcx_cf_mini_sprite_{row}_{k}_{u}", 0, 0, icons[u], 0.66)])
     for row in range(CHANGES):
-        for u in ORDER:
+        for u in order:
             parts += _window(f"tgcx_cf_change_icon_{row}_{u}", CHANGE_X+1, CHANGE_Y+row*32-2, 36, 36,
                              [_strip(f"tgcx_cf_change_sprite_{row}_{u}", 0, 0, icons[u])])
     loc = {}
@@ -146,23 +178,25 @@ def header():
     return '\n'.join(lines)
 
 
-def generate(output, tgc=DEFAULT_TGC):
+def generate(output, tgc=DEFAULT_TGC, profile=None):
     output = Path(output)
     if not (output/'TGCX.mod').is_file():
         raise ValueError("Conform GUI needs a complete staged source")
-    fragment, loc = layout()
+    fragment, loc = layout(tgc, profile)
     (output/'TGCX'/LAYOUT).write_bytes(fragment.encode('cp1252'))
     gfx = output/'TGCX/gfx/interface'
     gfx.mkdir(parents=True, exist_ok=True)
     (output/'TGCX/interface').mkdir(parents=True, exist_ok=True)
     (output/'TGCX/localisation').mkdir(parents=True, exist_ok=True)
-    table = sprites(tgc)
+    table = sprites(tgc, profile)
+    def native(name, **kwargs):
+        return sprite(tgc, table, name, profile=profile, **kwargs)
     images = {}
     # Native 332px army panel: top/bottom gold braids and green name bar from
     # GFX_unit_toppanel_bg, unstretched parchment middle and recessed footer
     # tray from GFX_unit_bottom_bg, and GFX_unit_bg_28 section divider.
-    body = sprite(tgc, table, 'GFX_unit_bottom_bg')
-    top = sprite(tgc, table, 'GFX_unit_toppanel_bg', frames=2)
+    body = native('GFX_unit_bottom_bg')
+    top = native('GFX_unit_toppanel_bg', frames=2)
     bg = Image.new('RGBA', (WIDTH, HEIGHT))
     parchment = body.crop((0, 80, WIDTH, 360))
     for y in range(30, HEIGHT-35, parchment.height):
@@ -172,12 +206,12 @@ def generate(output, tgc=DEFAULT_TGC):
     bg.alpha_composite(top.crop((0, 0, WIDTH, 27)), (0, 0))
     bg.alpha_composite(top.crop((51, 5, 324, 27)).resize((317, 22)), (7, 5))
     bg.alpha_composite(top.crop((0, 58, WIDTH, 64)), (0, 27))
-    band = sprite(tgc, table, 'GFX_unit_bg_28').crop((7, 0, 314, 28)).resize((ROW_W, 28))
+    band = native('GFX_unit_bg_28').crop((7, 0, 314, 28)).resize((ROW_W, 28))
     bg.alpha_composite(band, (SLOT_X, 198))
     images['bg'] = bg
     # Native 317x30 regiment row with the two right-hand POP/bar columns
     # replaced by the clean dual-tone middle band.
-    entry = sprite(tgc, table, 'GFX_unit_entry_bg')
+    entry = native('GFX_unit_entry_bg')
     slot = entry.copy()
     slot.paste(entry.crop((38, 0, 248, ROW_H)).resize((278, ROW_H)), (38, 0))
     images['slot'] = slot
@@ -191,18 +225,18 @@ def generate(output, tgc=DEFAULT_TGC):
     d.rectangle((1, 1, ROW_W-2, ROW_H-2), outline=(243, 215, 124, 255)); d.rectangle((2, 2, ROW_W-3, ROW_H-3), outline=(243, 215, 124, 255))
     images['ring'] = ring
     for key, name in [('left', 'GFX_button_arrow_left'), ('right', 'GFX_button_arrow_right')]:
-        images[key] = sprite(tgc, table, name).resize((24, 24))
+        images[key] = native(name).resize((24, 24))
     # Native unit-panel footer button (148x28 steel/gold bevelled button).
-    images['button'] = sprite(tgc, table, 'GFX_unit_gunboat_diplo_button')
+    images['button'] = native('GFX_unit_gunboat_diplo_button')
     # The panel's own 20x20 button frame (disband), its centre cleared, with
     # the infantry figure of the unit strip: "this stack, by template".
-    frame = sprite(tgc, table, 'GFX_unit_disband')
+    frame = native('GFX_unit_disband')
     if frame.size != (20, 20):
-        raise ValueError("TGC v2.5.2 unit panel buttons are 20x20")
+        raise ValueError("Army requires native 20x20 unit panel buttons")
     fill = frame.getpixel((4, 4))
     ImageDraw.Draw(frame).rectangle((3, 3, 16, 16), fill=fill)
-    strip = texture(tgc, table['GFX_unit_strip'])
-    w = strip.width//21
+    strip = texture(tgc, table['GFX_unit_strip'], profile)
+    w = strip.width//unit_frames(tgc, profile)
     frame.alpha_composite(strip.crop((0, 0, w, strip.height)).resize((16, 16)), (2, 2))
     images['open'] = frame
     # Match the army's regiment rows for both templates and changes.

@@ -155,6 +155,57 @@ static bool tgcx_CfLandNative(uintptr_t stack) {
     return !reinterpret_cast<Test>(vt[0x3C/4])(stack,nullptr) && !reinterpret_cast<Test>(vt[0x40/4])(stack,nullptr);
 }
 
+static uintptr_t tgcx_cf_path_fn=0,tgcx_cf_path_clear_fn=0;
+// FUN_005B8500: EAX the explicit start province, four stack arguments, RET
+// 0x10. Use the same VerySafe predicate as our Move, without issuing orders
+// or changing the army's province. Its output list belongs to the game heap.
+struct tgcx_CfPath { uintptr_t head,tail;int count;uint32_t flags,extra; };
+static bool tgcx_CfPathQuery(uintptr_t start,uintptr_t stack,uintptr_t destination,uintptr_t finder,tgcx_CfPath* path) {
+    uintptr_t fn=tgcx_cf_path_fn;unsigned char result=0;
+    __asm { push path } __asm { push destination } __asm { push stack } __asm { push finder }
+    __asm { mov eax,start } __asm { call fn } __asm { mov result,al }
+    return result!=0;
+}
+static bool tgcx_CfReachNative(uintptr_t stack,int province) {
+    if(!tgcx_cf_path_fn || !tgcx_cf_path_clear_fn || !stack || province<0 || province>65535)return false;
+    tgcx_CfPath path={};bool result=false;
+    __try {
+        uintptr_t world=*reinterpret_cast<uintptr_t*>(tgcx_base+tgcx_world_rva);
+        uintptr_t provinces=world?tgcx_TplRead<uintptr_t>(world+0xACC):0;
+        uintptr_t start=provinces?tgcx_TplRead<uintptr_t>(provinces+province*4):0;
+        uintptr_t destination=tgcx_TplRead<uintptr_t>(stack+0xDC);
+        uintptr_t start_map=start?tgcx_TplRead<uintptr_t>(start+0x5C):0;
+        uintptr_t end_map=destination?tgcx_TplRead<uintptr_t>(destination+0x5C):0;
+        // +0x2A is IS LAND (nonzero), not is sea. Native naval edge policy
+        // rejects two nonzero endpoints and permits two zero endpoints;
+        // a mixed edge is allowed only through the land province's port.
+        // Straits remain native land edges; no embarked/sea node is admitted.
+        if(start_map && end_map && tgcx_TplRead<unsigned char>(start_map+0x2A) &&
+           tgcx_TplRead<unsigned char>(end_map+0x2A)) {
+            if(start==destination)result=true;
+            else {
+                uintptr_t finder=tgcx_base+0xA03794;
+                result=tgcx_CfPathQuery(start,stack,destination,reinterpret_cast<uintptr_t>(&finder),&path);
+                unsigned visited=0;
+                for(uintptr_t node=path.head;result && node;node=tgcx_TplRead<uintptr_t>(node+8)) {
+                    int id=tgcx_TplRead<int>(node);
+                    if(id<0 || id>65535 || ++visited>65536) {result=false;break;}
+                    uintptr_t p=tgcx_TplRead<uintptr_t>(provinces+id*4);
+                    uintptr_t map=p?tgcx_TplRead<uintptr_t>(p+0x5C):0;
+                    if(!map || !tgcx_TplRead<unsigned char>(map+0x2A))result=false;
+                }
+            }
+        }
+    } __except(EXCEPTION_EXECUTE_HANDLER) {result=false;}
+    // Match Move's cleanup on both successful and failed queries. Never
+    // cross allocators or retain native list nodes after this snapshot.
+    __try {
+        typedef void(__fastcall* Clear)(tgcx_CfPath*,void*);
+        reinterpret_cast<Clear>(tgcx_cf_path_clear_fn)(&path,nullptr);
+    } __except(EXCEPTION_EXECUTE_HANDLER) {result=false;tgcx_Log("Conform: route cleanup fault; recruitment refused");}
+    return result;
+}
+
 // Replaceable for the fixture tests; the defaults call the guarded game functions.
 struct tgcx_CfNative {
     void*(*move)(uintptr_t stack,int province);
@@ -164,11 +215,23 @@ struct tgcx_CfNative {
     bool(*new_id)(const tgcx_CfGlobals& g,tgcx_CfId* out);
     bool(*land)(uintptr_t stack);
     bool(*post)(void* command);
-    tgcx_TplResult(*recruit)(const int* counts,tgcx_TplQueued queued,void* context);
+    tgcx_TplResult(*recruit)(uintptr_t target,const int* counts,tgcx_TplQueued queued,void* context);
+    bool(*reachable)(uintptr_t target,int province);
 };
-static tgcx_TplResult tgcx_CfRecruitNative(const int* counts,tgcx_TplQueued queued,void* context) { return tgcx_TplRecruit(counts,queued,context); }
+static bool tgcx_CfRecruitEligible(void* target,int province) {return tgcx_CfReachNative(reinterpret_cast<uintptr_t>(target),province);}
+static tgcx_TplResult tgcx_CfRecruitNative(uintptr_t target,const int* counts,tgcx_TplQueued queued,void* context) {
+    return tgcx_TplRecruit(counts,queued,context,tgcx_CfRecruitEligible,reinterpret_cast<void*>(target));
+}
 static tgcx_CfNative tgcx_cf_native={tgcx_CfMoveNative,tgcx_CfMergeNative,tgcx_CfTransferNative,tgcx_CfCreateNative,
-    tgcx_CfNewIdNative,tgcx_CfLandNative,tgcx_TplPostNative,tgcx_CfRecruitNative};
+    tgcx_CfNewIdNative,tgcx_CfLandNative,tgcx_TplPostNative,tgcx_CfRecruitNative,tgcx_CfReachNative};
+
+struct tgcx_CfReachContext {const tgcx_CfNative* native;uintptr_t target;};
+static bool tgcx_CfScopedEligible(void* context,int province) {
+    auto* c=static_cast<tgcx_CfReachContext*>(context);return c->native->reachable(c->target,province);
+}
+static unsigned tgcx_CfScopePops(const tgcx_CfNative& n,uintptr_t stack,tgcx_TplPop* pops,unsigned count) {
+    tgcx_CfReachContext context={&n,stack};return tgcx_TplFilterPops(pops,count,tgcx_CfScopedEligible,&context);
+}
 
 // Only a command with its own class's vtable is posted; the queue owns it then.
 static bool tgcx_CfSend(void* command,uintptr_t vtable,const tgcx_CfNative& n) {
@@ -187,6 +250,19 @@ static void tgcx_CfForget(const char* why) {
 // One step per game day for every task. vtable is the class of land stacks,
 // remembered from the stack the player conformed.
 static uintptr_t tgcx_cf_stack_vtable=0;
+// A changed target location/access can strand an earlier reinforcement.
+// Release only our tracking; keep the unit/construction and all user orders.
+static void tgcx_CfPruneRoutes(const tgcx_CfGlobals& g,const tgcx_CfNative& n,const tgcx_CfId& target_id,uintptr_t target) {
+    for(auto& t:tgcx_cf_tracker.task) {
+        if(!t.used || t.kind!=TGCX_CF_JOIN || !tgcx_CfSame(t.target,target_id))continue;
+        uintptr_t stack=tgcx_CfStackOf(g,t.stack,tgcx_cf_stack_vtable);
+        int province=stack?tgcx_CfProvince(stack):t.origin;
+        if(province>=0 && !n.reachable(target,province)) {
+            t.used=false;tgcx_Log("Conform: reinforcement %u cannot reach target %u by land; left in place, no longer counted as pending",
+                t.stack.id,target_id.id);
+        }
+    }
+}
 static void tgcx_CfDaily(const tgcx_CfGlobals& g,const tgcx_CfNative& n) {
     if(!g.world)return;
     uint32_t date=tgcx_TplRead<uint32_t>(g.world+0xB0C);
@@ -198,6 +274,9 @@ static void tgcx_CfDaily(const tgcx_CfGlobals& g,const tgcx_CfNative& n) {
         uintptr_t target=tgcx_CfStackOf(g,t.target,tgcx_cf_stack_vtable),stack=tgcx_CfStackOf(g,t.stack,tgcx_cf_stack_vtable);
         tgcx_CfSeen s={target!=0,target?tgcx_CfProvince(target):-1,stack!=0,stack?tgcx_CfProvince(stack):-1,
                        !tgcx_CfNone(t.construction) && tgcx_CfLookup(g,t.construction)!=0};
+        if(t.kind==TGCX_CF_JOIN && target && stack && !n.reachable(target,s.stack_province)) {
+            t.used=false;tgcx_Log("Conform: reinforcement %u has no land route to target %u; left in place",t.stack.id,t.target.id);continue;
+        }
         int province=-1;
         switch(tgcx_CfStep(&t,s,date,&province)) {
         case TGCX_CF_MOVE:
@@ -212,13 +291,37 @@ static void tgcx_CfDaily(const tgcx_CfGlobals& g,const tgcx_CfNative& n) {
             // Only regiments still in the conformed stack, and only while the new
             // stack is beside it; the engine re-checks each one (FUN_00513F30).
             unsigned sent=0,skipped=0;
-            if(s.target_province!=s.stack_province) { tgcx_Log("Conform: the conformed stack moved before its extras left; nothing detached");break; }
+            if(s.target_province!=s.stack_province) { tgcx_Log("Conform: the conformed stack moved before its extras left; nothing detached");t.used=false;break; }
+            // TPL-4: what FUN_00513F30 checks, logged so a refusal can be read
+            // from tgcx.log: both stacks' +0x74 and +0x194 must be 0 and their
+            // +0xDC locations equal; each regiment's +0x74 is its stack.
+            tgcx_Log("Conform: transfer check new %u (+74 %X +194 %X +DC %X +40 %d) source %u (+74 %X +194 %X +DC %X +40 %d)",
+                t.stack.id,tgcx_TplRead<uint32_t>(stack+0x74),tgcx_TplRead<uint32_t>(stack+0x194),tgcx_TplRead<uint32_t>(stack+0xDC),
+                tgcx_TplRead<int>(stack+0x40),t.target.id,tgcx_TplRead<uint32_t>(target+0x74),tgcx_TplRead<uint32_t>(target+0x194),
+                tgcx_TplRead<uint32_t>(target+0xDC),tgcx_TplRead<int>(target+0x40));
             for(unsigned i=0;i<t.regiments;++i) {
                 uintptr_t entry=tgcx_CfLookup(g,t.regiment[i]);
                 if(!entry || !tgcx_CfStackHas(target,entry)) { ++skipped;continue; }
                 if(tgcx_CfSend(n.transfer(t.stack,entry),g.vt_transfer,n))++sent;else { ++skipped;break; }
             }
-            tgcx_Log("Conform: %u extras detached into stack %u, %u skipped",sent,t.stack.id,skipped);
+            tgcx_Log("Conform: %u extra transfers sent to stack %u, %u skipped",sent,t.stack.id,skipped);
+            break;
+        }
+        case TGCX_CF_VERIFY: {
+            // The engine refuses a Transfer silently: count what actually moved.
+            unsigned arrived=0,still=0;
+            for(unsigned i=0;i<t.regiments;++i) {
+                uintptr_t entry=tgcx_CfLookup(g,t.regiment[i]);
+                if(entry && stack && tgcx_CfStackHas(stack,entry))++arrived;
+                else if(entry && target && tgcx_CfStackHas(target,entry)) {
+                    ++still;
+                    if(still==1)tgcx_Log("Conform: regiment %u still in stack %u (+74 %X, its +38 type +42 %u)",t.regiment[i].id,t.target.id,
+                        tgcx_TplRead<uint32_t>(entry+0x74),tgcx_TplRead<unsigned char>(tgcx_TplRead<uintptr_t>(entry+0x38)+0x42));
+                }
+            }
+            tgcx_Log("Conform: %u of %u extras arrived in stack %u, %u still in stack %u",arrived,t.regiments,t.stack.id,still,t.target.id);
+            if(!stack)tgcx_Log("Conform: detach stack %u disappeared before verification; %u extras remain in the source",t.stack.id,still);
+            if(stack && still && !t.retries) { t.used=true;t.transfer_sent=false;++t.retries;tgcx_Log("Conform: sending the transfers again tomorrow"); }
             break;
         }
         case TGCX_CF_TARGET_GONE: tgcx_Log("Conform: stack %u stays: the stack it was joining is gone",t.stack.id);break;
@@ -235,7 +338,7 @@ struct tgcx_CfQueuedContext { tgcx_CfId target;uint32_t date;unsigned added; };
 static void tgcx_CfOnQueued(void* context,int unit,int province,const uint32_t construction[2],const uint32_t stack[2]) {
     auto* c=static_cast<tgcx_CfQueuedContext*>(context);
     tgcx_CfId s={stack[0],stack[1]},k={construction[0],construction[1]};
-    if(tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,c->target,s,k,unit,c->date))++c->added;
+    if(auto* task=tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,c->target,s,k,unit,c->date)) {task->origin=province;++c->added;}
     else tgcx_Log("Conform: tracker full; regiment from province %d will not march by itself",province);
 }
 // The plan for one stack, read and planned but nothing sent: what the
@@ -245,6 +348,7 @@ static bool tgcx_CfPrepare(const tgcx_CfGlobals& g,const tgcx_CfNative& n,uintpt
                            const int* want,tgcx_CfPlan* plan,tgcx_CfStack* target) {
     if(!g.world || !stack || tgcx_TplRead<int>(stack+0xC4)!=tgcx_CfPlayer(g) || !n.land(stack) ||
        !tgcx_CfReadStack(stack,units,target))return false;
+    tgcx_CfPruneRoutes(g,n,target->id,stack);
     int pending[tgcx_tpl_units];tgcx_CfPending(tgcx_cf_tracker,target->id,pending);
     // Missing regiments are always built (user, 2026-10-17): no idle stacks
     // are gathered, so the planner gets none.
@@ -257,7 +361,8 @@ static bool tgcx_CfLeaving(const tgcx_CfId& target) {
     return false;
 }
 // want[unit index] regiments. Plans first; nothing is sent unless the plan
-// is accepted. Extras: one Create, the Transfers once it exists. Gathered
+// is accepted. Extras: one Create immediately followed by the Transfers in
+// the same command queue submission, before an empty stack can be removed. Gathered
 // stacks: tracked, marched and merged by the daily driver. Builds: TPL-0's
 // recruit, each future stack tracked the same way.
 static tgcx_CfResult tgcx_CfConformWith(const tgcx_CfGlobals& g,const tgcx_CfNative& n,uintptr_t stack,const uintptr_t* units,
@@ -274,21 +379,41 @@ static tgcx_CfResult tgcx_CfConformWith(const tgcx_CfGlobals& g,const tgcx_CfNat
         if(plan->detach_count && leaving)tgcx_Log("Conform: extras of stack %u are already leaving",target.id.id);
         else if(plan->detach_count) {
             tgcx_CfId id={};
-            if(!n.new_id(g,&id) || !tgcx_CfSend(n.create(stack,id),g.vt_create,n)) { ++r.failed;tgcx_Log("Conform: Create not queued; nothing detached"); }
-            else if(tgcx_CfTask* t=tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_FILL,target.id,id,{},-1,date)) {
-                for(unsigned i=0;i<plan->detach_count;++i)t->regiment[t->regiments++]=plan->detach[i].id;
-                r.detached=plan->detach_count;tgcx_Log("Conform: new stack %u/%u for %u extras",id.type,id.id,r.detached);
-            } else { ++r.failed;tgcx_Log("Conform: tracker full; the new stack %u stays empty",id.id); }
+            tgcx_CfTask* t=nullptr;
+            if(!n.new_id(g,&id)) { ++r.failed;tgcx_Log("Conform: no new id; nothing detached"); }
+            else if(!(t=tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_FILL,target.id,id,{},-1,date))) {
+                ++r.failed;tgcx_Log("Conform: tracker full; no Create queued");
+            } else if(!tgcx_CfSend(n.create(stack,id),g.vt_create,n)) {
+                t->used=false;++r.failed;tgcx_Log("Conform: Create not queued; nothing detached");
+            } else {
+                // Waiting a game day left the destination empty and unselected.
+                // Transfer stores the existing regiment's reference; the new
+                // destination id is resolved later, when the command executes.
+                // Keep Create first, then all Transfers, in the engine queue.
+                for(unsigned i=0;i<plan->detach_count;++i) {
+                    t->regiment[t->regiments++]=plan->detach[i].id;
+                    uintptr_t entry=tgcx_CfLookup(g,plan->detach[i].id);
+                    if(i==0 && entry) {
+                        uintptr_t type=tgcx_TplRead<uintptr_t>(entry+0x38);
+                        tgcx_Log("Conform: first extra %u unit flags +40 %u +42 %u",plan->detach[i].id.id,
+                            tgcx_TplRead<unsigned char>(type+0x40),tgcx_TplRead<unsigned char>(type+0x42));
+                    }
+                    if(entry && tgcx_CfStackHas(stack,entry) && tgcx_CfSend(n.transfer(id,entry),g.vt_transfer,n))++r.detached;
+                    else ++r.failed;
+                }
+                t->transfer_sent=true;t->transfer_date=date;
+                tgcx_Log("Conform: Create then %u of %u extra transfers queued together for stack %u/%u",r.detached,t->regiments,id.type,id.id);
+            }
         }
         for(unsigned i=0;i<plan->gather_count;++i)
             if(tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,target.id,plan->gather[i].stack,{},plan->gather[i].unit,date))++r.gathered;
             else ++r.failed;
         if(plan->build_total) {
             tgcx_CfQueuedContext context={target.id,date,0};
-            tgcx_TplResult built=n.recruit(plan->build,tgcx_CfOnQueued,&context);
+            tgcx_TplResult built=n.recruit(stack,plan->build,tgcx_CfOnQueued,&context);
             r.queued=built.queued;r.missing=built.missing;r.failed+=built.failed;
         }
-        tgcx_Log("Conform stack %u: %u detached, %u gathered, %u built, %u left out, %u failed",
+        tgcx_Log("Conform stack %u: %u detach transfers queued, %u gathered, %u built, %u left out, %u failed",
             target.id.id,r.detached,r.gathered,r.queued,r.missing,r.failed);
     } __except(EXCEPTION_EXECUTE_HANDLER) { tgcx_Log("Conform rejected: guarded native read fault"); }
     return r;
@@ -389,6 +514,7 @@ static void tgcx_CfTick() {
 }
 
 static const uint32_t tgcx_cf_rvas[]={
+    0x1B8500,0x1B8830,0xA03794,0x449E90,0x1B984F,  // read-only land route, ABI, predicate, cleanup and sea flag
     0x1DE80F,0x1DE83E,0x1DE878,0x1DE897,0x1DE8D3,0x092342,                     // Move
     0x1E13F3,0x1E143B,0x1E1450,0x1E1580,0x26EC40,0x426A1F,                     // Merge
     0x1E1F1E,0x1E1F4D,0x1E1F67,0x1E1F81,0x1E1FBC,0x3944FF,                     // Transfer
@@ -403,6 +529,7 @@ static void tgcx_InstallConform() {
     if(!tgcx_RequireSignatures(tgcx_cf_rvas,_countof(tgcx_cf_rvas))) { tgcx_Log("Conform rejected: guards; nothing conformed");return; }
     tgcx_cf_move_fn=tgcx_base+0x1DE7D0;tgcx_cf_merge_fn=tgcx_base+0x1E13B0;tgcx_cf_transfer_fn=tgcx_base+0x1E1EE0;
     tgcx_cf_create_fn=tgcx_base+0x17DB30;tgcx_cf_lock_fn=tgcx_base+0x5C12D0;
+    tgcx_cf_path_fn=tgcx_base+0x1B8500;tgcx_cf_path_clear_fn=tgcx_base+0x449E90;
     tgcx_cf_refresh_original=tgcx_base+0x39B800;tgcx_cf_destroy_original=tgcx_base+0x399290;
     auto* table=reinterpret_cast<uintptr_t*>(tgcx_base+tgcx_cf_view_vt_rva);
     if(!tgcx_ReplacePointer(table,tgcx_cf_destroy_original,reinterpret_cast<uintptr_t>(tgcx_CfDestroyThunk)))return;

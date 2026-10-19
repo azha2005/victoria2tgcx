@@ -65,8 +65,8 @@ static void tgcx_TemplateTests() {
 
     // ---- synthetic engine memory for the scan
     static unsigned char world[0xC00],manager[8],country[0x1000],stats[0x400],db[0x20],kinds_db[0x20];
-    static unsigned char base_types[5][0x60],units[8][0x60],kinds[2][0x60],provinces[2][0x200],buckets[2][0x20],pop_mem[4][0x300];
-    static uintptr_t countries[1],types[8],db_vec[7],kind_vec[2],province_table[3];
+    static unsigned char base_types[5][0x60],units[8][0x100],kinds[2][0x60],provinces[2][0x200],buckets[2][0x20],pop_mem[4][0x300];
+    static uintptr_t countries[1],types[tgcx_tpl_units],db_vec[8],kind_vec[2],province_table[3];
     static int owned[2]={1,2};
     auto put=[](void* at,size_t off,uintptr_t v){ *reinterpret_cast<uintptr_t*>(static_cast<unsigned char*>(at)+off)=v; };
     auto ptr=[](const void* p){ return reinterpret_cast<uintptr_t>(p); };
@@ -102,8 +102,24 @@ static void tgcx_TemplateTests() {
     tgcx_Expect(scanned.unit[3]==ptr(units[3]),"Templates unit is the country's copy (+0xBCC +0x310)");
     tgcx_Expect(scanned.pop_count==2 && scanned.pops[0].pop==ptr(pop_mem[0]) && scanned.pops[1].pop==ptr(pop_mem[2]),
         "Templates soldier pops with free regiments only");
-    tgcx_Expect(scanned.pops[0].province_id==101 && (scanned.pops[0].can_build>>4&1) && !(scanned.pops[1].can_build>>4&1),
+    tgcx_Expect(scanned.pops[0].province_id==101 && scanned.pops[0].can_build.test(4) && !scanned.pops[1].can_build.test(4),
         "Templates per-pop unit eligibility from the predicate");
+    put(base_types[4],0x24,700);tgcx_ReformTestString(base_types[4]+8,"custom_musketeer");
+    put(units[7],0x24,700);types[700]=ptr(units[7]);db_vec[7]=ptr(base_types[4]);put(db,0x10,ptr(db_vec+8));
+    tgcx_Expect(tgcx_TplScan(g,stub,&scanned) && tgcx_TplUnitByName(scanned,"custom_musketeer")==700 && scanned.pops[0].can_build.test(700),
+        "Templates scan supports custom land units above the old 64-bit index limit");
+    int custom_counts[tgcx_tpl_units]={};custom_counts[700]=1;
+    tgcx_TplMakePlan(custom_counts,scanned.pops,scanned.pop_count,&plan);
+    tgcx_Expect(plan.count==1 && plan.orders[0].unit==700 && !plan.missing,"Templates planner preserves a high custom engine index");
+    for(unsigned i=0;i<5;++i){put(base_types[i],0x28,i+1);put(units[i+3],0xC0,90000);}
+    put(base_types[4],0x28,23);put(units[7],0xC0,60100);
+    bool universal_was=tgcx_army_universal;tgcx_army_universal=true;
+    tgcx_Expect(tgcx_TplScan(g,stub,&scanned) && scanned.icon[700]==23 && scanned.days[700]==61,
+        "Universal scan reads live icon and rounds thousandth-day build time up");
+    put(units[7],0xC0,0);
+    tgcx_Expect(!tgcx_TplScan(g,stub,&scanned),"Universal invalid build time refuses the scan");
+    put(units[7],0xC0,60100);tgcx_army_universal=universal_was;
+    put(db,0x10,ptr(db_vec+7));types[700]=0;
     country[0xBB8]=1;tgcx_Expect(tgcx_TplScan(g,stub,&scanned) && !scanned.pop_count,"Templates blocked country lists no pops");country[0xBB8]=0;
     tgcx_TplGlobals broken=g;broken.unit_db=0x10;
     tgcx_Expect(!tgcx_TplScan(broken,stub,&scanned),"Templates unreadable memory refused, not crashed");
@@ -114,6 +130,12 @@ static void tgcx_TemplateTests() {
     tgcx_TplResult r=tgcx_TplRecruitWith(g,stub,tpl);
     tgcx_Expect(r.scanned && r.queued==4 && r.missing==1 && !r.failed,"Templates recruit queues what fits; the naval unit is left out");
     tgcx_Expect(tgcx_tpl_s_last[3]==*reinterpret_cast<uint32_t*>(country+0x1C) && tgcx_tpl_s_last[4]==7,"Templates command tag and country");
+    tgcx_tpl_s_made=tgcx_tpl_s_posted=0;
+    int scoped[tgcx_tpl_units]={};scoped[3]=4;scoped[4]=1;
+    auto local_only=[](void*,int province){return province==101;};
+    r=tgcx_TplRecruitWith(g,stub,scoped,nullptr,nullptr,local_only);
+    tgcx_Expect(r.queued==2 && r.missing==3 && !r.failed && tgcx_tpl_s_last[1]==101,
+        "Conform scoped recruit ignores larger overseas capacity and reports local shortage");
     tgcx_tpl_s_made=tgcx_tpl_s_posted=0;tgcx_tpl_s_post_limit=1;
     r=tgcx_TplRecruitWith(g,stub,tpl);
     tgcx_Expect(r.queued==1 && r.failed==1 && r.missing==4,"Templates stop at the first refused post");

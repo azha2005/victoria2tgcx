@@ -97,7 +97,13 @@ static void tgcx_ConformTrackTests() {
     tgcx_CfSeen wait={true,10,false,0,false};
     tgcx_Expect(tgcx_CfStep(t,wait,1401,&prov)==TGCX_CF_WAIT,"conform waits for the detach stack");
     tgcx_CfSeen made={true,10,true,10,false};
-    tgcx_Expect(tgcx_CfStep(t,made,1402,&prov)==TGCX_CF_TRANSFER && !t->used,"conform transfers once the detach stack exists");
+    tgcx_Expect(tgcx_CfStep(t,made,1402,&prov)==TGCX_CF_TRANSFER && t->used,"conform transfers once the detach stack exists");
+    tgcx_Expect(tgcx_CfStep(t,made,1402,&prov)==TGCX_CF_WAIT && t->used,"conform waits a day for the transfers");
+    tgcx_Expect(tgcx_CfStep(t,made,1403,&prov)==TGCX_CF_VERIFY && !t->used,"conform checks the extras arrived the next day (TPL-4)");
+    t=tgcx_CfAdd(&k,TGCX_CF_FILL,target,fill,none,-1,1404);
+    t->transfer_sent=true;t->transfer_date=1404;
+    tgcx_Expect(tgcx_CfStep(t,made,1404,&prov)==TGCX_CF_WAIT,"conform does not duplicate the initial batch transfers");
+    tgcx_Expect(tgcx_CfStep(t,wait,1405,&prov)==TGCX_CF_VERIFY && !t->used,"conform reports a detach stack disappearing before verification");
     t=tgcx_CfAdd(&k,TGCX_CF_FILL,target,fill,none,-1,1500);
     tgcx_Expect(tgcx_CfStep(t,wait,1507,&prov)==TGCX_CF_CANCELLED && !t->used,"conform gives up on a detach stack after a week");
     tgcx_CfPending(k,target,pending);

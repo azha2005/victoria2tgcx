@@ -17,6 +17,8 @@ GAME = Path(r"E:\Victoria.II.v3.04.Inclu.ALL.DLC")
 PROBE = installer.ROOT / "dll/tgcx/Release/tests/tgcx_tests.exe"
 # The retained single-file build, the rollback from MOD-1 (0.6.5).
 MONOLITHIC = Path("E:/v2re/logs/tgcx-law3-1018/lua51-0.6.5.dll")
+# The retained MOD-1 loader, with tgcx.dll beside it (0.7.0): the rollback from MOD-2.
+MOD1 = Path("E:/v2re/logs/tgcx-mod1-1018/stage-070/lua51.dll")
 
 
 class InstallerTests(unittest.TestCase):
@@ -47,8 +49,10 @@ class InstallerTests(unittest.TestCase):
         installer.operate(self.folder)
         self.assertEqual(installer.digest(self.folder / "lua51_real.dll"), before["lua51.dll"])
         record = json.loads((self.folder / installer.STATE).read_text(encoding="utf-8"))
-        self.assertEqual(record["card"], "MOD-1")
-        self.assertEqual(record["logic_sha256"], installer.digest(self.folder / "tgcx.dll"))
+        self.assertEqual(record["card"], "MOD-2")
+        # MOD-2: tgcx.dll lives in the package folders, not beside the loader.
+        self.assertIsNone(record["logic_sha256"])
+        self.assertFalse((self.folder / "tgcx.dll").exists())
         installed = self.snapshot()
         installer.operate(self.folder)
         self.assertEqual(installed, self.snapshot())
@@ -57,7 +61,6 @@ class InstallerTests(unittest.TestCase):
         self.assertFalse((self.folder / "lua51_real.dll").exists())
         self.assertTrue((self.folder / "lua51_tgcx.dll.off").exists())
         self.assertFalse((self.folder / "tgcx.dll").exists())
-        self.assertTrue((self.folder / "tgcx.dll.off").exists())
         retained = self.snapshot()
         installer.operate(self.folder, remove=True)
         self.assertEqual(retained, self.snapshot())
@@ -122,27 +125,31 @@ class InstallerTests(unittest.TestCase):
             installer.operate(self.folder)
         self.assertEqual(before, self.snapshot())
 
-    def test_loader_without_logic_is_refused(self):
+    def test_mod1_loader_without_logic_is_refused(self):
+        if not MOD1.is_file():
+            self.skipTest(f"{MOD1} not retained")
         source = self.folder / "build"
         source.mkdir()
-        shutil.copy2(installer.SOURCE, source / "lua51.dll")
+        shutil.copy2(MOD1, source / "lua51.dll")
         before = self.snapshot()
         with self.assertRaises(ValueError):
             installer.operate(self.folder, source=source / "lua51.dll")
         self.assertEqual(before, self.snapshot())
 
-    def test_rollback_to_single_file_sets_logic_aside(self):
-        if not MONOLITHIC.is_file():
-            self.skipTest(f"{MONOLITHIC} not retained")
-        installer.operate(self.folder)
+    def test_mod2_sets_game_folder_logic_aside_and_rolls_back(self):
+        if not MOD1.is_file() or not MONOLITHIC.is_file():
+            self.skipTest("retained 0.7.0 or 0.6.5 build missing")
+        installer.operate(self.folder, source=MOD1)
         logic = installer.digest(self.folder / "tgcx.dll")
-        installer.operate(self.folder, source=MONOLITHIC)
+        installer.operate(self.folder)
         self.assertFalse((self.folder / "tgcx.dll").exists())
         self.assertEqual(installer.digest(self.folder / "tgcx.dll.off"), logic)
-        self.assertEqual(installer.digest(self.folder / "lua51.dll"), installer.digest(MONOLITHIC))
+        record = json.loads((self.folder / installer.STATE).read_text(encoding="utf-8"))
+        self.assertEqual((record["card"], record["logic_sha256"]), ("MOD-2", None))
+        installer.operate(self.folder, source=MONOLITHIC)
         record = json.loads((self.folder / installer.STATE).read_text(encoding="utf-8"))
         self.assertEqual((record["card"], record["logic_sha256"]), ("TPL-1", None))
-        installer.operate(self.folder)
+        installer.operate(self.folder, source=MOD1)
         self.assertEqual(installer.digest(self.folder / "tgcx.dll"), logic)
         installer.operate(self.folder, remove=True)
 
@@ -156,7 +163,7 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("tgcx_tests: ALL OK", result.stdout)
         log = (self.folder / "Logs/tgcx.log").read_text(encoding="ascii")
-        self.assertEqual(log.count("TGCX MOD-1 0.7.0 tgcx.dll loaded_by=V2DLL plugin API v1"), 1)
+        self.assertEqual(log.count("TGCX MOD-6 0.10.4 tgcx.dll loaded_by=V2DLL plugin API v1"), 1)
         self.assertIn("BAD sha256", log)
         self.assertIn("no game addresses read, no hooks installed", log)
         self.assertIn("Initialisation from second loader ignored: already initialised", log)
@@ -166,25 +173,29 @@ class InstallerTests(unittest.TestCase):
         installer.operate(self.folder)
         probe = self.folder / "tgcx_probe.exe"
         shutil.copy2(PROBE, probe)
-        result = subprocess.run([str(probe), "probe", str(self.folder / "lua51.dll")],
-                                cwd=self.folder, capture_output=True, text=True, timeout=30)
+        # MOD-2: a ticked package folder holds tgcx.dll; the probe gets its -mod=.
+        package = self.folder / "mod/tgcx_army_fixture"
+        package.mkdir(parents=True)
+        (self.folder / "mod/tgcx_army_fixture.mod").write_text('name = "Army"\npath = "mod/tgcx_army_fixture"\n')
+        (package / "tgcx_package.txt").write_text("package = army\n")
+        shutil.copy2(installer.SOURCE.parent / installer.LOGIC, package / installer.LOGIC)
+        args = [str(probe), "probe", str(self.folder / "lua51.dll"), "-mod=mod/tgcx_army_fixture.mod"]
+        result = subprocess.run(args, cwd=self.folder, capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("tgcx_tests: ALL OK", result.stdout)
         log = (self.folder / "Logs/tgcx.log").read_text(encoding="ascii")
-        self.assertIn("TGCX MOD-1 0.7.0 tgcx.dll loaded_by=TGCX loader MOD-1 0.7.0", log)
+        self.assertIn("TGCX MOD-6 0.10.4 tgcx.dll loaded_by=TGCX loader MOD-2 0.8.0", log)
         self.assertIn("BAD sha256", log)
         self.assertIn("no game addresses read, no hooks installed", log)
         self.assertNotIn("Tick hook installed", log)
         self.assertNotIn("upper_house", log)
-        # Without tgcx.dll the loader is a plain Lua proxy and says so.
-        (self.folder / "tgcx.dll").rename(self.folder / "tgcx.dll.moved")
-        result = subprocess.run([str(probe), "probe", str(self.folder / "lua51.dll")],
-                                cwd=self.folder, capture_output=True, text=True, timeout=30)
+        # With no package ticked the loader is a plain Lua proxy and says so.
+        result = subprocess.run(args[:3], cwd=self.folder, capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         log = (self.folder / "Logs/tgcx.log").read_text(encoding="ascii")
-        self.assertIn("TGCX loader MOD-1 0.7.0: tgcx.dll not loaded", log)
+        self.assertIn("TGCX loader MOD-2 0.8.0: no ticked TGCX package", log)
+        self.assertIn("tgcx.dll not loaded", log)
         self.assertIn("Lua forwarding only", log)
-        (self.folder / "tgcx.dll.moved").rename(self.folder / "tgcx.dll")
         installer.operate(self.folder, remove=True)
 
 

@@ -221,7 +221,8 @@ def layout():
 
 def game_root(tgc):
     tgc = Path(tgc)
-    return next(p for p in tgc.parents if (p / "v2game.exe").is_file())
+    # MOD-2: the base may be the game folder itself (vanilla).
+    return next(p for p in (tgc, *tgc.parents) if (p / "v2game.exe").is_file())
 
 
 def font_widths(tgc, font):

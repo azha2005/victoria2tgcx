@@ -1,12 +1,12 @@
 // TPL-0 local interface preferences (D12). Keys, never engine unit indices,
 // are persisted. Bounded parsing and atomic replacement preserve a bad file.
 #pragma once
-#include "tgcx_templates_catalog.h"
+#include "tgcx_templates_metadata.h"
 #include <shlobj.h>
 #pragma comment(lib,"shell32.lib")
 
-constexpr unsigned tgcx_tpl_kinds=_countof(tgcx_tpl_catalog),tgcx_tpl_slots=12;
-struct tgcx_TplComposition { int count[tgcx_tpl_kinds]; };
+constexpr unsigned tgcx_tpl_slots=12;
+struct tgcx_TplComposition { int count[tgcx_tpl_capacity]; };
 struct tgcx_TplLibrary { unsigned size; tgcx_TplComposition item[tgcx_tpl_slots]; };
 static tgcx_TplLibrary tgcx_tpl_library={};
 static bool tgcx_tpl_loaded=false,tgcx_tpl_storage_ok=false;
@@ -42,7 +42,7 @@ static bool tgcx_TplLoadFile(const wchar_t* path,tgcx_TplLibrary* out) {
             inside=true;++candidate.size;continue;
         }
         if(!strcmp(line,"end")) { if(!inside){valid=false;break;}inside=false;continue; }
-        char key[32]={};unsigned value=0;const char* equal=strchr(line,'=');
+        char key[64]={};unsigned value=0;const char* equal=strchr(line,'=');
         if(!inside || !equal || equal==line || equal-line>=static_cast<int>(sizeof(key)) || !equal[1]) {valid=false;break;}
         memcpy(key,line,equal-line);
         for(const char* digit=equal+1;*digit;++digit) {
@@ -64,11 +64,12 @@ static bool tgcx_TplSaveFile(const wchar_t* path,const tgcx_TplLibrary& library)
     // A stale pending file belongs to an interrupted write; do not replace it.
     HANDLE handle=CreateFileW(temporary,GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);
     if(handle==INVALID_HANDLE_VALUE)return false;
-    char bytes[16384];size_t used=0;
+    char bytes[262144];size_t used=0;
     auto append=[&](const char* text){size_t n=strlen(text);if(used+n>sizeof(bytes))return false;memcpy(bytes+used,text,n);used+=n;return true;};
     bool valid=append("tgcx_templates 1\r\n");
     for(unsigned s=0;s<library.size && valid;++s) {
         valid=tgcx_TplTotal(library.item[s])<=128 && append("template\r\n");
+        for(unsigned u=tgcx_tpl_kinds;u<tgcx_tpl_capacity;++u)if(library.item[s].count[u])valid=false;
         for(unsigned u=0;u<tgcx_tpl_kinds && valid;++u) {
             int n=library.item[s].count[u];if(n<0 || n>128) {valid=false;break;}
             if(n) {char line[80];sprintf_s(line,"%s=%d\r\n",tgcx_tpl_catalog[u].key,n);valid=append(line);}
@@ -82,13 +83,40 @@ static bool tgcx_TplSaveFile(const wchar_t* path,const tgcx_TplLibrary& library)
     if(!ok)DeleteFileW(temporary);
     return ok;
 }
+// MOD-2 (S4): the settings folder of the ticked combination, set at initialisation.
+static char tgcx_tpl_settings[MAX_PATH]="TGC252_TGCX";
+// A combination without templates yet takes the newest file another combination
+// saved (e.g. TGC252_TGCX -> TGC252 when only Army is ticked). Nothing is deleted.
+static void tgcx_TplCarryOver(const wchar_t* root,const wchar_t* path) {
+    if(GetFileAttributesW(path)!=INVALID_FILE_ATTRIBUTES)return;
+    wchar_t pattern[MAX_PATH],best[MAX_PATH]={},candidate[MAX_PATH];
+    FILETIME newest={};
+    WIN32_FIND_DATAW entry;
+    if(swprintf_s(pattern,L"%s\\*",root)<0)return;
+    HANDLE find=FindFirstFileW(pattern,&entry);
+    if(find==INVALID_HANDLE_VALUE)return;
+    do {
+        if(!(entry.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY) || entry.cFileName[0]==L'.')continue;
+        WIN32_FILE_ATTRIBUTE_DATA data;
+        if(swprintf_s(candidate,L"%s\\%s\\tgcx_templates.txt",root,entry.cFileName)<0)continue;
+        if(_wcsicmp(candidate,path)==0 || !GetFileAttributesExW(candidate,GetFileExInfoStandard,&data))continue;
+        tgcx_TplLibrary compatible={};
+        if(!tgcx_TplLoadFile(candidate,&compatible))continue;
+        if(CompareFileTime(&data.ftLastWriteTime,&newest)>0){newest=data.ftLastWriteTime;wcscpy_s(best,candidate);}
+    } while(FindNextFileW(find,&entry));
+    FindClose(find);
+    if(best[0] && CopyFileW(best,path,TRUE))tgcx_Log("Templates carried over from %ls",best);
+}
 static void tgcx_TplLoadLibrary() {
     if(tgcx_tpl_loaded)return;tgcx_tpl_loaded=true;
-    wchar_t docs[MAX_PATH];
+    wchar_t docs[MAX_PATH],root[MAX_PATH],settings[MAX_PATH];
     if(FAILED(SHGetFolderPathW(nullptr,CSIDL_PERSONAL,nullptr,SHGFP_TYPE_CURRENT,docs)))return;
-    if(swprintf_s(tgcx_tpl_path,L"%s\\Paradox Interactive\\Victoria II\\TGC252_TGCX\\tgcx_templates.txt",docs)<0)return;
+    if(!MultiByteToWideChar(CP_ACP,0,tgcx_tpl_settings,-1,settings,MAX_PATH))return;
+    if(swprintf_s(root,L"%s\\Paradox Interactive\\Victoria II",docs)<0)return;
+    if(swprintf_s(tgcx_tpl_path,settings[0]?L"%s\\%s\\tgcx_templates.txt":L"%s%s\\tgcx_templates.txt",root,settings)<0)return;
     wchar_t folder[MAX_PATH];wcscpy_s(folder,tgcx_tpl_path);*wcsrchr(folder,L'\\')=0;
     if(SHCreateDirectoryExW(nullptr,folder,nullptr)!=ERROR_SUCCESS && GetFileAttributesW(folder)==INVALID_FILE_ATTRIBUTES)return;
+    tgcx_TplCarryOver(root,tgcx_tpl_path);
     DWORD attributes=GetFileAttributesW(tgcx_tpl_path),error=GetLastError();
     if(attributes==INVALID_FILE_ATTRIBUTES && (error==ERROR_FILE_NOT_FOUND || error==ERROR_PATH_NOT_FOUND))tgcx_tpl_storage_ok=true;
     else tgcx_tpl_storage_ok=tgcx_TplLoadFile(tgcx_tpl_path,&tgcx_tpl_library);

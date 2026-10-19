@@ -25,7 +25,7 @@
    §11.
 2. Work on **one card at a time**; the next one does not start while the
    previous one is red. New pitfall: `Pnn` in `docs/pitfalls.md` and in the
-   index in `AGENTS.md` §8 (the next one is **P47**).
+   index in `AGENTS.md` §8 (the next one is **P59**).
 3. **When closing the session: §7** (required).
 
 **Process rules (not negotiable):**
@@ -33,7 +33,7 @@
 | # | Rule | Why |
 |---|---|---|
 | V1 | Before using or adding an executable address: `python tools/check_exe.py` green and the new address added to its signatures | P8: the docs may come from another build |
-| V2 | Every submod change that depends on TGC: `tools/tgc_scan.py` green on TGC v2.5.2 | D1 (revised: v2.5.2 only) |
+| V2 | Every submod change that depends on TGC: `tools/tgc_scan.py` green on TGC v 2.5.2 | D1 (revised: v 2.5.2 only) |
 | V3 | A mechanic is not done until the user sees it in game; until then it is written "done, not tested in game" | `AGENTS.md` §11 |
 | V4 | No third-party material in git (executable, Ghidra project, TGC, V2DLL) | R8 |
 | V5 | **[user]** decisions are not taken by the agent: it prepares the data, recommends and asks | R9 |
@@ -41,7 +41,52 @@
 
 ---
 
-## 1. Status by stage (as of 2026-10-18)
+## 1. Status by stage (as of 2026-10-19)
+
+2026-10-19 Universal checkpoint: user accepts TGC2.5.2 + V2DLL5.82, completing vanilla/HPM/DoD/TGC short matrix on0.10.4. Preserved logs show11types,2builds,3/3detach; extended cases remain. Native/GPU and installer checks pass. User authorizes source commit/push and selects culture buttons next (TPL-5), continent-builder selection a prospective follow-up (TPL-6). User clarifies V2DLL code use is no problem; retain attribution. report-universal-tgc-passed-1019.md.
+
+2026-10-19 TGC Universal installation: user confirms vanilla/HPM/DoD Universal0.10.4 work. Identical37-file payload installed after fresh normal-exit confirmation in isolated TGC2.5.2 + V2DLL5.82 copy; executable172 guards pass, protected hashes unchanged. Old Army/loader retained. TGC player check next; no game launched. report-universal-tgc-1019.md; instructions-mod-6.md.
+
+2026-10-19 release assessment: DoD Universal0.10.4 short check accepted; preserved five builds,2/2detach,four recorded joins (last march pending). Public beta candidate, not ready as-is: Universal vanilla/HPM/TGC/V2DLL/recipient checks, game-derived art and borrowed-code provenance, license/credits/release documentation pending. No publication, external messages, push or game changes. report-release-readiness-1019.md; instructions-release-0.md.
+
+2026-10-19 land polarity: user accepts DoD Universal0.10.3 GUI; reachable recruitment failed (18/18 pops excluded, 0/4 built; 3/3 detach). Map+2A was misread: nonzero LAND. Corrected endpoint/path checks and independently exercised actual native naval/port policy. 0.10.4 passes 172 guards/native-GPU/12 installer tests and ZIP checks; installed three copies after fresh exit confirmation with full 0.10.3 rollback. DoD land retry next. report-universal-land-flag-1019.md.
+
+2026-10-19 subtree correction: DoD0.10.2 failed again; full 29,113-byte log preserved, roots positioned but controls inaccessible. Real native-code fixture distinguishes root-only Show from secondary subtree activation. 0.10.3 activates children on hidden-to-visible transitions, 172 guards/native-GPU/12 installer + 8 Python tests pass; installed three Universal copies after fresh confirmed exit with full 0.10.2 backup. DoD retry next, no Universal acceptance. report-universal-subtree-1019.md.
+
+2026-10-19 Universal visibility: first DoD0.10.1 test failed (game opened, controls absent). Log confirms loaded/shared-root construction. 0.10.2 adds first-show/reopen foreground, host hiding and placement diagnostics; native reference regression/GPU/12 installer + 8 Python checks pass. Installed three copies after confirmed exit; full 0.10.1 rollback. DoD retry first; no Universal acceptance. report-universal-visibility-1019.md.
+
+2026-10-19 land-reach fix: user reports 0.9.0 overseas recruitment failure on all three bases; Universal not yet tested. User chose reachable land recruitment only with shortages. 0.10.1 shares route scope across preview/recruitment, releases stranded tracking, built/tested (169 signatures, native/GPU, 12 installer + 13 Python tests), installed in three Universal copies after fresh exit confirmation with full 0.10.0 backup. Runtime check next. report-conform-land-reach-1019.md.
+
+2026-10-19 universal update: HPM/DoD 0.9.0 short checks accepted. Universal 0.10.0 prototype built/tested and installed as 37 identical new files in vanilla/HPM/DoD after fresh exit confirmation. Shared native GUI/live catalogue; compact DoD entry. Old packages/loaders retained. Runtime check next, vanilla first. report-mod-6-1019.md; report-mod-4-5-passed-1019.md.
+
+2026-10-19 HPM/DoD preparation: two separate clean copies ready with our loader and Army0.9.0, source hashes and executable gates verified, installed after confirmed exit. HPM user check next, DoD follows. User approved universal package after those checks; initial native GUI factory evidence recorded, no new DLL behavior. docs/report-mod-4-5-prepared-1019.md.
+
+2026-10-19 vanilla acceptance: **Templates and Conform short check passed**, user confirmation plus log 7/7 and 3/3 detach, four builds and all four march/merge completions. Extended persistence/Navy checks unconfirmed. HPM/DoD game checks next; one universal package discussed as MOD-6 proposal, no implementation selected. docs/report-mod-3-passed-1019.md.
+
+2026-10-19 vanilla follow-up: **Templates passed** (two recruits, zero omitted); Conform opening failed. P53: fixed TGC y=68 covered by vanilla statistics; generator now follows effective header anchor (vanilla/HPM/DoD y=42, TGC unchanged). Six GUI tests plus catalogue/package checks pass; installed two generated GUI files after normal-exit confirmation, with backup. User retry next; report-mod-3-button-1019.md.
+
+2026-10-19 Army priority: **TPL-3 accepted by user; 0.9.0 compatibility candidate built/tested, runtime pending**. Per-base catalogue/GUI/art generated and ZIPs verified for vanilla, HPM, TGC 2.3.4/2.5.2 and DoD. Current Conform screenshot supersedes old mockup. Culture filters and Politics wait. Separate clean vanilla + own-loader copy ready at work/Victoria-II-clean-vanilla-Army090 (the prior TGC copy has V2DLL). See docs/report-mod-5-1019.md, docs/report-mod-3-fresh-1019.md; MOD-3 game check next. E: stays accepted 0.8.2.
+
+V2D-082 acceptance (2026-10-19): **passed** short fresh-user Army 0.8.2 + V2DLL 5.82 run after map-path repair; 5/5 extras arrived, five recruits queued, no plugin faults. `docs/report-v2d-082-passed-1019.md`. Remaining U-12/LAW-4 next.
+
+Fresh-copy map path (2026-10-19): V2DLL 5.82 loaded Army 0.8.2 successfully; base then failed on hardcoded mod/TGC definition.csv. Repaired fresh canonical layout and descriptor after confirmed exit; TGC files unchanged, old copy retained. `docs/report-fresh-map-path-1019.md`. V2D-082 gameplay retry next.
+
+Combined V2DLL handoff (2026-10-19): user requested the upstream distribution included; prepared Army 0.8.2 + pinned V2DLL de66ee61 ZIP, CRC/source hashes verified. No game copy installed or launched. `docs/report-v2d-bundle-1019.md`; V2D-082 remains next.
+
+TPL-4 runtime/fresh test (2026-10-19): 0.8.2 **passed detach** (3/3, 1/1, 6/6), no leftover extras/faults; our loader, Army only. Prepared clean original-Lua game + TGC with isolated profile and mod-only 0.8.2 ZIP for the user to install/test V2DLL. `docs/report-tpl-4-runtime-1019.md`; `docs/report-v2d-fresh-1019.md`; next `docs/instructions-v2d-082.md`.
+
+TPL-4 follow-up (2026-10-19): 0.8.1 detach failed in game; built/tested/installed 0.8.2 after normal exit confirmation. Create and Transfers queued together; vanished targets reported. Game check pending; `docs/report-tpl-4-1019.md`, `docs/instructions-tpl-4-082-check.md`. Other U-12 parts unconfirmed.
+
+Normal-launcher handoff (2026-10-18): mod-only 0.8.1 Army ZIP prepared, no installer or scripts; prior P50 evidence confirms Army precedes TGC in the normal launcher. `docs/report-army-launcher-1018.md`; U-12 pending.
+
+Drop-in Army handoff (2026-10-18): user requested files without installer; prepared Army-only 0.8.1 ZIP with generated folder, descriptor, plugin, manual launcher and placement README. No live changes. `docs/report-army-drop-in-1018.md`; U-12 remains next.
+
+Portable Army handoff (2026-10-18): automated setup/restore and the Army-only 0.8.1 ZIP prepared; Python/Pillow included, V2DLL prerequisite. Five transaction tests and portable generation checks pass. No live installation or launch. `docs/report-army-portable-1018.md`. U-12 remains next.
+
+Private test handoff (2026-10-18): maxioten bundle prepared locally, with unchanged staged 0.8.0/0.8.1 DLLs and recipient-side generators; no installation or external send. `docs/report-maxioten-test-1018.md`. U-12 remains next.
+
+
+MOD-2/TPL-4 update (2026-10-18): **0.8.0 (MOD-2) installed and tested in game**: per-base packages Army and Politics on TGC v 2.5.2, loader finds `tgcx.dll` through the `-mod=` list, templates carried over between settings folders (`docs/report-mod-2-1018.md`). **0.8.1 installed, not tested in game**: TPL-3 Ctrl/Alt-click, TPL-4 Conform detach verified and retried with refusal fields logged; LAW-4 open (`docs/report-tpl-4-1018.md`). Next: U-12 (`docs/instructions-u-12.md`).
 
 MOD-1 update (2026-10-18): **0.7.0 installed and passed the game check (2026-10-18)** (`docs/report-mod-1-1018.md`). Signature gates are per module (stages; drawing+laws; Templates; Conform), V2DLL's sites are logged FOREIGN and block nothing, and the logic is `tgcx.dll` behind a `lua51.dll` loader, with a `V2Mod_Init` export for V2DLL (D16). Installed on E: 2026-10-18 (0.6.5 backed up to `before-070-dll`).
 
@@ -51,28 +96,52 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 
 | # | Stage | Status | Numbers / evidence |
 |---|---|---|---|
-| 0 | **Infrastructure** | **done** | TGC v2.5.2 cloned (tag, `e06ade2`, 589 MB, no line-ending conversion); Ghidra 12.1.4 (zip SHA-256 equal to the published one); refs: RE repo `e299a02`, V2DLL `5d6f894`; initial `check_exe.py` 7/7 OK on `D:\` and `E:\`; TPL-0 gate now SHA-256 + 91 runtime signatures OK (`check_exe.py` ALL OK, 2026-10-17) on `E:\`; `tgc_scan.py` OK on v2.3.4, v2.5.2 and HPM; Ghidra analysis 752 s, 260/260 symbols imported, 1 500 vtables (`docs/report-initial-1012.md` §4) |
-| 1 | Submod skeleton + loading | **done** (SUB-0 + U-2, 2026-10-12) | loads on v2.5.2 and v2.3.4 (settings folders `TGC252_TGCX`, `TGC_TGCX`; `setup.log` lists our 2 files; `error.log` empty); `000_tgcx_` override wins; one event per click; install + remove leaves `mod\` identical (211 entries); P19-P21 found on the way |
-| 1b | TGC version matrix | **deferred** (D1 revised: v2.5.2 only) | v2.3.4 ↔ v2.5.2: what the submod uses is the same except `news.gui`, `topbar.gui`, `core.gfx` (the trees differ in 223 files, P18) |
+| 0 | **Infrastructure** | **done** | TGC v 2.5.2 cloned (tag, `e06ade2`, 589 MB, no line-ending conversion); Ghidra 12.1.4 (zip SHA-256 equal to the published one); refs: RE repo `e299a02`, V2DLL `5d6f894`; initial `check_exe.py` 7/7 OK on `D:\` and `E:\`; TPL-0 gate now SHA-256 + 91 runtime signatures OK (`check_exe.py` ALL OK, 2026-10-17) on `E:\`; `tgc_scan.py` OK on v 2.3.4, v 2.5.2 and HPM; Ghidra analysis 752 s, 260/260 symbols imported, 1 500 vtables (`docs/report-initial-1012.md` §4) |
+| 1 | Submod skeleton + loading | **done** (SUB-0 + U-2, 2026-10-12) | loads on v 2.5.2 and v 2.3.4 (settings folders `TGC252_TGCX`, `TGC_TGCX`; `setup.log` lists our 2 files; `error.log` empty); `000_tgcx_` override wins; one event per click; install + remove leaves `mod\` identical (211 entries); P19-P21 found on the way |
+| 1b | TGC version matrix | **deferred** (D1 revised: v 2.5.2 only) | v 2.3.4 ↔ v 2.5.2: what the submod uses is the same except `news.gui`, `topbar.gui`, `core.gfx` (the trees differ in 223 files, P18) |
 | 2 | Law negotiation (script) | LAW-1 short smoke accepted; LAW-2 0.3.3 placement/layering accepted; 0.3.4 board layout, controls and automatic favours: look accepted by the user ("splendid"); 0.3.5 visible buttons, Reforms tab, Decisions filter and no DLL popups: **U-7 partly passed in game (2026-10-18)**; F1 row refresh, F2 top-bar tooltip, F3 load test, D14 offer rule and Bill text overflow go to LAW-3, **0.6.4 installed, U-11 passed 2026-10-18** (G1 open) (`docs/report-law-3-1018.md`); Bill board 2 matches apart from listed deviations | 23 approved groups, 144 transitions; 27 catalogue / 8 GUI / 10 script installer tests; native controls/window/GPU fixtures and 8 DLL tests pass; `docs/report-law-2-controls-1017.md`; `docs/report-law-2-reforms-1017.md` |
 | 3 | Charts outside the game (ECO-A) | pending | — |
 | 4 | Ghidra: RTTI and subsystems | GH-1 steps 1-4 done; GH-2 hemicycle data/mapping/colours/coordinates and native ordered draw runtime-confirmed | 1 165 RTTI classes, 1 500 vtables; `docs/symbols.md`; `docs/report-u-5-1012.md`; 2026-10-17 external cross-check (Discord CE tables, smedley_kernel): 59 smedley RVAs on function starts, 10 decompiled, `docs/report-research-discord-1017.md` |
 | 5 | DLL base | DLL-0/U-4 done; DLL-1 **working prototype, tested in game on 0.2.4**; extended integration coverage still open | 23 guards, Win32 /MT, 128 forwards and native/GPU/installer gates passed; U-5 log: 11133 frames, 2687 ordered chart draws, paused cadence, show/hide, empty errors |
 | 6 | Hemicycle | HEMI-1 (DLL-2) **working prototype, tested in game**; user accepts function but says it looks clunky; HEMI-2 0.2.5 works in game; HEMI-3 0.2.6 hover **accepted in game**; 0.2.8 hover/header correction **accepted in game** | 100 seats/seven rows, native ordered GUI pass, native tooltip retained; `docs/report-u-5-1012.md`; 27 runtime guards, 5555 ordered draws, three UK native hover mappings; extended U-5 coverage remains; `docs/report-hemi-3-seam-1012.md` |
 | 7 | Charts in game (ECO-B) | renderer prerequisite available as a working prototype; GH-5/save-history work still needed; not selected | — |
-| 8 | Rulers and generals | GOV-0 data ready (D4); DLL-1 prototype available for future UI; not selected | TGC v2.5.2: 297 historical leaders, 44 own portraits; rulers: none |
+| 8 | Rulers and generals | GOV-0 data ready (D4); DLL-1 prototype available for future UI; not selected | TGC v 2.5.2: 297 historical leaders, 44 own portraits; rulers: none |
 | 9 | Army templates | **TPL-0 0.4.0 functional prototype accepted in game; 0.4.1 placement (owner-chain anchor, P40) confirmed in game; 0.4.2-0.4.4 board-5 details, Recruit (P41), reopen (P42) and navy tab accepted in game (0.4.4)**; TPL-1 Conform: research, native layer (0.5.0/0.5.1, U-9 passed), the Conform button and window (**0.6.2 accepted in game**, `docs/report-tpl-1-window-1017.md` §8), and the **0.6.3 332x594 native army-panel visual pass and flush placement tested and accepted in game** (`docs/report-tpl-1-visual-1017.md`); **U-8 extended cases all passed on 0.6.3 (2026-10-18)**; native Military build panel, local composition-named library, engine-command recruit; automatic replacement of regiments lost to rebellion (TPL-2) is on hold: Conform covers it | user screenshots/logs confirm 4 infantry + 4 artillery + 1 hussar and save/reload; `docs/report-tpl-0-runtime-1017.md`; 0.4.1: translated-parent fixture, `docs/report-tpl-0-placement-1017.md`; 0.4.1 anchor log (1104,490) and 0.4.2, `docs/report-tpl-0-visual-1017.md`; 144 runtime guards; native/reference-window/GPU and 8 DLL installer/Lua tests; 5 Conform GUI/rollback tests; `docs/report-tpl-1-visual-1017.md` |
 
 ---
 
 ## 2. The version matrix
 
-2026-10-18 refresh: TGC v2.5.2 scan and 0.6.3 generator gates pass; 0.6.3 is tested and accepted in game.
+2026-10-19 Universal checkpoint: user accepts TGC2.5.2 + V2DLL5.82, completing vanilla/HPM/DoD/TGC short matrix on0.10.4. Preserved logs show11types,2builds,3/3detach; extended cases remain. Native/GPU and installer checks pass. User authorizes source commit/push and selects culture buttons next (TPL-5), continent-builder selection a prospective follow-up (TPL-6). User clarifies V2DLL code use is no problem; retain attribution. report-universal-tgc-passed-1019.md.
+
+2026-10-19 TGC Universal installation: user confirms vanilla/HPM/DoD Universal0.10.4 work. Identical37-file payload installed after fresh normal-exit confirmation in isolated TGC2.5.2 + V2DLL5.82 copy; executable172 guards pass, protected hashes unchanged. Old Army/loader retained. TGC player check next; no game launched. report-universal-tgc-1019.md; instructions-mod-6.md.
+
+DoD Universal0.10.4 short GUI/recruit/land/detach/march-merge check accepted by user; snapshot has4/5join entries, last pending. Universal vanilla/HPM/TGC/V2DLL and extended cases still pending.
+
+DoD Universal0.10.3: short interface check accepted; land filter failed. 0.10.4 polarity correction installed, runtime pending. Universal vanilla/HPM/TGC/V2DLL untested.
+
+Universal0.10.2 DoD retry failed despite created/positioned roots. Universal0.10.3 subtree activation installed in three copies, runtime pending. No Universal base accepted.
+
+Universal0.10.1 DoD: loaded/created shared roots but controls missing, failed. 0.10.2 visibility candidate installed in three copies, runtime retry pending. Other Universal bases unaccepted.
+
+0.9.0 overseas edge case failed in vanilla/HPM/DoD per user. Local short checks remain accepted. Universal 0.10.1 land-reach correction installed in three copies, runtime untested.
+
+Latest: 0.9.0 vanilla/HPM/DoD short checks accepted; extended cases and TGC0.9 regression pending. Universal0.10 has passed automated dependency checks against five bases, installed in three, **no runtime acceptance yet**. HFM absent. Earlier entries below are historical snapshots.
+
+HPM and DoD 0.9.0 own-loader test copies installed/verified; neither has runtime acceptance yet. User HPM check next.
+
+Vanilla Army 0.9.0 short recruit/Conform/detach/march/merge check passed (report-mod-3-passed-1019.md). Other 0.9.0 base runtime checks still pending.
+
+Vanilla 0.9.0: Templates accepted by user and recruitment log; Conform opening correction installed, retry pending (report-mod-3-button-1019.md). Other base runtime rows remain pending.
+
+2026-10-19 Army 0.9.0 preparation: vanilla/HPM/TGC 2.3.4/TGC 2.5.2 have 11 land types; DoD has 13 and 24 strip frames. All generated and package checks pass; all 0.9 runtime rows pending, HFM absent. Details in report-mod-5-1019.md. Politics retains D1.
+
+2026-10-18 refresh: TGC v 2.5.2 scan and generator gates pass; MOD-2 0.8.0 packages tested in game on v 2.5.2; 0.8.1 installed, not tested in game. Vanilla (Army only) is MOD-3, not yet installed.
 
 | version | `tgc_scan.py` | generator | loads in game |
 |---|---|---|---|
-| **v2.5.2 (stable) — the target (D1)** | OK (2026-10-18, 0.6.3 gates) | LAW-0/LAW-1 gates pass; short U-6 smoke accepted; LAW-2 0.3.4 look accepted, 0.3.5 U-7 partly passed; LAW-3 0.6.4 installed, U-11 passed (G1 open); TPL-0 0.4.4 accepted, U-8 complete; TPL-1 0.6.3 accepted in game | yes (U-2/U-3/U-4); DLL-1/HEMI-1 0.2.4 functional checkpoint accepted in U-5, 0.2.5 accepted and retained; 0.2.6 scalar hover accepted; 0.2.8 hover/header accepted; LAW-1 corrected report/Count/save-reload smoke accepted; LAW-2 0.3.3 placement/layering and 0.3.4 look accepted; TPL-0 0.4.4 and TPL-1 0.6.3 tested and accepted in game |
-| v2.3.4 (the user's old install) | OK (2026-10-12) | — | yes, skeleton only (U-2); no longer tested |
+| **v 2.5.2 (stable) — the target (D1)** | OK (2026-10-18, 0.6.3 gates) | LAW-0/LAW-1 gates pass; short U-6 smoke accepted; LAW-2 0.3.4 look accepted, 0.3.5 U-7 partly passed; LAW-3 0.6.4 installed, U-11 passed (G1 open); TPL-0 0.4.4 accepted, U-8 complete; TPL-1 0.6.3 accepted in game | yes (U-2/U-3/U-4); DLL-1/HEMI-1 0.2.4 functional checkpoint accepted in U-5, 0.2.5 accepted and retained; 0.2.6 scalar hover accepted; 0.2.8 hover/header accepted; LAW-1 corrected report/Count/save-reload smoke accepted; LAW-2 0.3.3 placement/layering and 0.3.4 look accepted; TPL-0 0.4.4 and TPL-1 0.6.3 tested and accepted in game |
+| v 2.3.4 (the user's old install) | OK (2026-10-12) | — | yes, skeleton only (U-2); no longer tested |
 | `master` | not cloned | — | — (deferred) |
 
 ---
@@ -91,12 +160,12 @@ D10:
 | D7 | **political favours and ideological affinity**, deterministic; LAW-1 uses TGC conditional starting votes, affinity for bargaining/promises (user approved 2026-10-12) | `docs/law-design.md`; `docs/instructions-law-0.md` |
 | D9 | **hybrid interface, case by case**: each element chooses drawing on top (A) or a real game element (B) | `docs/technical-plan.md` §9.1; every interface card records its choice |
 | D10 | **everything in English**: code, docs, file names, in-game text, chat | `AGENTS.md` §7; the whole repository was translated on 2026-10-12 |
-| D1 (revised) | **TGC v2.5.2 only**; other versions deferred | `AGENTS.md` §1; `docs/tgc-compatibility.md` (header) |
+| D1 (revised) | **TGC v 2.5.2 only**; other versions deferred | `AGENTS.md` §1; `docs/tgc-compatibility.md` (header) |
 | D11 | favours: **virtual purchases per bill; automatic accrual like diplomatic points; the rate from prestige, stability, militancy, consciousness, voting pop, monarch/leader support** | `docs/law-design.md` §5, §11; mockup Bill board |
 | D12 | army templates (user, 2026-10-17): **stored in a local file** written by the DLL (not in the save); **names built from the composition**; **native windows** generated from TGC's `.gui` (route B); when soldier pops run short, **recruit what fits** and report the rest. Added the same day: a **"Conform to template" button on stacks in the field**; the template is **picked on each click**; missing regiments are **built, then marched to the stack and merged** by the DLL (engine move/merge commands); extra regiments are **detached into a new stack** | `docs/report-tpl-0-research-1017.md` §4; `docs/instructions-tpl-0.md` |
 
 | D13 | Conform: **session tracking; re-Conform after a reload** gathers finished unattached regiments (user, 2026-10-17) | `docs/report-tpl-1-research-1017.md` §4; `docs/instructions-tpl-1.md` |
-| D15 | **Templates + Conform: their own package that works almost anywhere**; D1 still holds for laws; LAW-3 first, then MOD-0..MOD-5 (user, 2026-10-18). Sub-decisions S1-S8 the same day: Army on any base (generic), packages Army ("Army Templates and Conform", no `user_dir`) and Politics (TGC v2.5.2, `user_dir` TGCX), later Economy and Cosmetic; one folder per base; own HPM descriptor; DLL in package folders; `mod\TGCX` replaced | `docs/report-modular-scope-1018.md` §6; `docs/instructions-mod-2.md` §2 |
+| D15 | **Templates + Conform: their own package that works almost anywhere**; D1 still holds for laws; LAW-3 first, then MOD-0..MOD-5 (user, 2026-10-18). Sub-decisions S1-S8 the same day: Army on any base (generic), packages Army ("Army Templates and Conform", no `user_dir`) and Politics (TGC v 2.5.2, `user_dir` TGCX), later Economy and Cosmetic; one folder per base; own HPM descriptor; DLL in package folders; `mod\TGCX` replaced | `docs/report-modular-scope-1018.md` §6; `docs/instructions-mod-2.md` §2 |
 | D16 | V2DLL: **(a) keep our own `lua51.dll` proxy now; (b) after MOD-1, one logic DLL `tgcx.dll` behind two thin loaders** (our proxy, and V2DLL by its mod slot or a setting) once the signature gate is per mechanic (user, 2026-10-18) | `docs/report-v2dll-mod-slot-1018.md` §5-6 |
 | D14 | Reforms tab offer: **only bills whose decision passes its own `allow`, and backward steps only where the game allows a backward reform** (user, 2026-10-18) | `docs/report-u-7-1018.md` F4; `docs/instructions-law-3.md` §4 |
 
@@ -122,7 +191,7 @@ hemicycle: **4-6**. Templates: not estimated until GH-4 is finished.
 | Risk | Effect | What is done about it |
 |---|---|---|
 | The launcher does not respect the submod's load order (P10) | the submod cannot see TGC's content, or TGC hides the submod's | **resolved** in U-2: `dependencies` with TGC's exact `name` (P19) |
-| A TGC version renames a law or a GUI element | the mechanic silently stops having an effect | D1 revised: only v2.5.2 is supported, so this only bites if the user upgrades TGC; `tgc_scan.py` + anchors still fail loudly |
+| A TGC version renames a law or a GUI element | the mechanic silently stops having an effect | D1 revised: only v 2.5.2 is supported, so this only bites if the user upgrades TGC; `tgc_scan.py` + anchors still fail loudly |
 | Creating GUI on the fly turns out too expensive to reverse | route A custom drawing still needs native ordering and hover ownership | D9 case by case: 0.2.4 hemicycle draws inside the ordered GUI pass (P28); native tooltip construction left intact (P27) |
 | V2DLL has no licence (P13) | anything using its code could not be published | D6: personal use; everything taken is marked (R8) so it can be removed if it is ever published |
 | Desync in MP (P12) | games cut short | R5; D5: MP later, but nothing written that would prevent it |
@@ -136,13 +205,13 @@ hemicycle: **4-6**. Templates: not estimated until GH-4 is finished.
 ```powershell
 cd C:\Users\JC\Downloads\victoria2template
 python tools/check_exe.py                       # reference executable
-python tools/tgc_scan.py --diff E:\Victoria.II.v3.04.Inclu.ALL.DLC\mod\TGC E:\Victoria.II.v3.04.Inclu.ALL.DLC\mod\TGC_v2.5.2\TGC
+python tools/tgc_scan.py --diff E:\Victoria.II.v3.04.Inclu.ALL.DLC\mod\TGC E:\Victoria.II.v3.04.Inclu.ALL.DLC\mod\TGC_v 2.5.2\TGC
 python tools/install_submod.py E:\Victoria.II.v3.04.Inclu.ALL.DLC\mod   # install the submod (--remove to remove it)
 E:\tools\ghidra_12.1.4_PUBLIC\ghidraRun.bat     # project E:\v2re\ghidra\v2game.gpr
 ```
 
 The game is started from the launcher (`victoria2.exe`) by choosing the
-mod; the stable version's `.mod` is called **"TGC v2.5.2 (stable)"**.
+mod; the stable version's `.mod` is called **"TGC v 2.5.2 (stable)"**.
 
 ---
 
@@ -159,6 +228,52 @@ When closing, in this order:
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
 
+2026-10-19 Universal checkpoint: user accepts TGC2.5.2 + V2DLL5.82, completing vanilla/HPM/DoD/TGC short matrix on0.10.4. Preserved logs show11types,2builds,3/3detach; extended cases remain. Native/GPU and installer checks pass. User authorizes source commit/push and selects culture buttons next (TPL-5), continent-builder selection a prospective follow-up (TPL-6). User clarifies V2DLL code use is no problem; retain attribution. report-universal-tgc-passed-1019.md.
+
+2026-10-19 TGC Universal installation: user confirms vanilla/HPM/DoD Universal0.10.4 work. Identical37-file payload installed after fresh normal-exit confirmation in isolated TGC2.5.2 + V2DLL5.82 copy; executable172 guards pass, protected hashes unchanged. Old Army/loader retained. TGC player check next; no game launched. report-universal-tgc-1019.md; instructions-mod-6.md.
+
+2026-10-19 release assessment: DoD Universal0.10.4 short check accepted; preserved five builds,2/2detach,four recorded joins (last march pending). Public beta candidate, not ready as-is: Universal vanilla/HPM/TGC/V2DLL/recipient checks, game-derived art and borrowed-code provenance, license/credits/release documentation pending. No publication, external messages, push or game changes. report-release-readiness-1019.md; instructions-release-0.md.
+
+2026-10-19 land polarity: user accepts DoD Universal0.10.3 GUI; reachable recruitment failed (18/18 pops excluded, 0/4 built; 3/3 detach). Map+2A was misread: nonzero LAND. Corrected endpoint/path checks and independently exercised actual native naval/port policy. 0.10.4 passes 172 guards/native-GPU/12 installer tests and ZIP checks; installed three copies after fresh exit confirmation with full 0.10.3 rollback. DoD land retry next. report-universal-land-flag-1019.md.
+
+2026-10-19 subtree correction: DoD0.10.2 failed again; full 29,113-byte log preserved, roots positioned but controls inaccessible. Real native-code fixture distinguishes root-only Show from secondary subtree activation. 0.10.3 activates children on hidden-to-visible transitions, 172 guards/native-GPU/12 installer + 8 Python tests pass; installed three Universal copies after fresh confirmed exit with full 0.10.2 backup. DoD retry next, no Universal acceptance. report-universal-subtree-1019.md.
+
+2026-10-19 Universal visibility: first DoD0.10.1 test failed (game opened, controls absent). Log confirms loaded/shared-root construction. 0.10.2 adds first-show/reopen foreground, host hiding and placement diagnostics; native reference regression/GPU/12 installer + 8 Python checks pass. Installed three copies after confirmed exit; full 0.10.1 rollback. DoD retry first; no Universal acceptance. report-universal-visibility-1019.md.
+
+2026-10-19 land-reach fix: user reports 0.9.0 overseas recruitment failure on all three bases; Universal not yet tested. User chose reachable land recruitment only with shortages. 0.10.1 shares route scope across preview/recruitment, releases stranded tracking, built/tested (169 signatures, native/GPU, 12 installer + 13 Python tests), installed in three Universal copies after fresh exit confirmation with full 0.10.0 backup. Runtime check next. report-conform-land-reach-1019.md.
+
+2026-10-19 universal update: HPM/DoD 0.9.0 short checks accepted. Universal 0.10.0 prototype built/tested and installed as 37 identical new files in vanilla/HPM/DoD after fresh exit confirmation. Shared native GUI/live catalogue; compact DoD entry. Old packages/loaders retained. Runtime check next, vanilla first. report-mod-6-1019.md; report-mod-4-5-passed-1019.md.
+
+2026-10-19 (HPM/DoD ready): separate copies verified and installed after exit; HPM game check next. Universal-package sequence approved, preliminary static factory evidence documented. No game launch/commit.
+
+2026-10-19 (vanilla accepted): preserved successful log, short vanilla check passed; HPM/DoD next, universal package proposal recorded; no game changes.
+
+2026-10-19 (vanilla button): Templates works; Conform opening coordinate fixed in generator and installed after exit. Two GUI files backed up; no DLL/base changes; retry next.
+
+2026-10-19 (Army compatibility): 0.9.0 built/fixture-tested and five base packages verified; user confirms Ctrl/Alt and current Conform look; separate clean vanilla copy prepared after V2DLL correction. MOD-3 user game check next, culture/Politics deferred. No game launch or commit.
+
+2026-10-19 (V2D-082 accepted): user and logs confirm Army 0.8.2 with V2DLL 5.82, 5/5 extras moved and five recruited. No new code or installation. Remaining U-12/LAW-4 next.
+
+2026-10-19 (fresh map repair): corrected the prepared test copy to canonical mod/TGC after confirmed exit. V2DLL/Army startup succeeded; full game retry next.
+
+2026-10-19 (V2DLL bundle): included pinned V2DLL distribution with Army 0.8.2 at user request; verified, no installations or launches. V2D-082 test next.
+
+2026-10-19 (runtime acceptance/fresh copy): confirmed TPL-4 0.8.2 passed; prepared a clean game + TGC folder and 0.8.2 mod-only ZIP for user-installed V2DLL testing. No game launched.
+
+2026-10-19 (TPL-4): 0.8.1 detach failed; 0.8.2 built, fixture-tested and installed after normal exit confirmation. Full 0.8.1 package backup retained. Next: short 0.8.2 game check.
+
+2026-10-18 (normal-launcher handoff): removed scripts from sharing ZIP; confirmed prior Army-first launcher evidence. No live changes.
+
+2026-10-18 (drop-in handoff): prepared the requested files-only Army 0.8.1 ZIP; no installation or launch. Existing next-card instructions remain current.
+
+2026-10-18 (portable Army handoff): user narrowed sharing to 0.8.1 Army only; portable Setup/restore, backups and manual launcher packaged and verified. No live installation, launch or external send. U-12 next.
+
+2026-10-18 (maxioten handoff): private test ZIP prepared, generator verified; no installation or external send. U-12 remains next.
+
+2026-10-18 (close 33): 0.8.0 installed after a normal exit (backups `before-080-dll`, `before-080-submod`) and tested in game (three runs, P50: mods sorted by display name); 0.8.1 (TPL-3, TPL-4) installed (backup `before-081-submod`), not tested in game; LAW-4 and TPL-5 opened; handoff written (U-12, LAW-4, TPL-5, MOD-3 instructions). Nothing committed since 938681b.
+
+2026-10-18 (MOD-2 built): 0.8.0 staged in `E:\v2re\logs\tgcx-mod2-1018\stage-080\`. Any `.mod` is a base (`tools/tgcx_bases.py`); the staged TGCX splits into Army (`tgcx_army_<base>`, no `user_dir`) and Politics (`tgcx_politics_tgc252`, `user_dir` TGCX) with a sprite/font check per base; Politics refused off TGC v 2.5.2; HPM gets our path-fixed descriptor; the loader loads `tgcx.dll` from the last ticked package and `tgcx.dll` switches modules per package; templates follow the settings folder. TGC v 2.5.2 packages byte-identical to the installed 0.7.0 TGCX. All gates green; not installed. `docs/report-mod-2-1018.md`.
+
 2026-10-18 (MOD-0 runs 2-3): three mods load with no warning (`-mod=` OrganizedStacks, TGC, TGCX: a mod with an unticked dependency goes first); TGCX alone gets only `-mod=mod/TGCX.mod`, runs on vanilla and crashed after loading (likely the TGC-generated `country_politics.gui`'s 14 TGC-only sprites; inferred). `mod\` unchanged. P49. MOD-0 done; P19 needs a recheck (V2D-1 contradicts it). `docs/report-mod-0-1018.md`.
 
 2026-10-18 (V2D-1): with V2DLL `de66ee61` installed and TGCX first on the command line, V2DLL loaded tgcx.dll 0.7.0 (`ModLoader … -> ok`); 146 OK + 7 FOREIGN (exactly V2DLL's sites), Direct3DCreate9 chained through V2DLL, slot 10 left alone, all modules on through ~11 months of play. TGCX script also worked with TGCX listed first (narrows P19). E: restored byte-identical to 0.7.0. Left: ask V2DLL for a load setting or a search of every `-mod=` (D16). `docs/report-v2d-1-1018.md`.
@@ -169,7 +284,7 @@ When closing, in this order:
 
 2026-10-18 (MOD-1): built 0.7.0 (`docs/report-mod-1-1018.md`): per-module gates, Direct3DCreate9 chaining, slot 10 no longer asserted, `tgcx.dll` + `lua51.dll` loader, installer handles both and the 0.6.5 rollback. Gates green (153 signatures, tgcx_tests ALL OK, installer 11/11, check_exe). Staged in `E:\v2re\logs\tgcx-mod1-1018\stage-070\`; not installed. Repaired four control-character paths in AGENTS/NEXT/symbols.
 
-2026-10-18 (MOD-0 run 1 / P47): run 1 played a year as France; the command line is `-mod=mod/TGC_v2.5.2.mod -mod=mod/TGCX.mod`. Conform stopped: unit-panel slots leaked (P47). 0.6.5 frees them and logs a full table; built, tests pass, installed after a normal exit (backup `before-065-dll`), not yet tested in game (`docs/report-tpl-1-slots-1018.md`).
+2026-10-18 (MOD-0 run 1 / P47): run 1 played a year as France; the command line is `-mod=mod/TGC_v 2.5.2.mod -mod=mod/TGCX.mod`. Conform stopped: unit-panel slots leaked (P47). 0.6.5 frees them and logs a full table; built, tests pass, installed after a normal exit (backup `before-065-dll`), not yet tested in game (`docs/report-tpl-1-slots-1018.md`).
 
 2026-10-18 (D16): committed LAW-3/U-11 (75e2077). The user chose V2DLL option (a) now and (b) after MOD-1. Next: MOD-0.
 
@@ -398,10 +513,10 @@ clicks than thought" -> 25-seat purchase lots (data `lots`), the Bill
 board's lot selector (artifact v29, PNGs re-exported). Test build with
 `debt_days` 60 installed for points 6-7.
 
-2026-10-12 (U-2 and law design v3): U-2 passed on TGC v2.5.2 and v2.3.4
+2026-10-12 (U-2 and law design v3): U-2 passed on TGC v 2.5.2 and v 2.3.4
 (after P19-P21: `dependencies` naming the TGC in use, `000_tgcx_`
 localisation overrides, branching in the firing effect). The user revised
-D1: **TGC v2.5.2 only**, other versions deferred. Docs research
+D1: **TGC v 2.5.2 only**, other versions deferred. Docs research
 (`docs/scripting-reference.md`, `docs/tgc-howto.md`) and R10 (the mockups
 are the spec). Law design v3 and LAW-0 v3 rebuilt on TGC's idioms: timed
 modifiers + polled events (the state of emergency), step-chains, the count
@@ -411,7 +526,7 @@ the Bill board mapped element by element; three options left to the user
 
 2026-10-12 (SUB-0 and D10): SUB-0 done, not tested in game: `submod\TGCX`
 with a decision and two events that say which TGC is loaded (the
-`great_gamer` flag that v2.5.2 gives the UK), a `DEN` key overridden on
+`great_gamer` flag that v 2.5.2 gives the UK), a `DEN` key overridden on
 purpose, and `tools/install_submod.py` (install + remove leaves `mod\`
 identical). P18: `tgc_scan.py --diff` compares the inventory, not the
 files. The user decided D10: everything in English; the whole repository
@@ -435,7 +550,7 @@ and Better Politics Mod); instructions for LAW-0, DLL-0 and GOV-0; P16 (no
 2026-10-12 (bootstrap): feasibility analysis (for each mechanic: what
 script gives, what needs the DLL, what is left to reverse); the user chose
 TGC as the base (D2) and compatibility with any version (D1). Downloaded
-TGC v2.5.2, Ghidra 12.1.4, V2DLL; Ghidra analysis with the repo's symbols;
+TGC v 2.5.2, Ghidra 12.1.4, V2DLL; Ghidra analysis with the repo's symbols;
 `check_exe.py` and `tgc_scan.py` gates; docs with the SMW port's layout.
 At the end: RTTI inventory exported and the upper house found in the code
 (`CCountry+0x8B0`). `docs/report-initial-1012.md`.

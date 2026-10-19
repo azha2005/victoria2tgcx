@@ -80,6 +80,11 @@ Breaking any of these invalidates the implementation.
 
 ---
 
+Current Conform reference (user, 2026-10-19): `mockups/6-conform-current-1019.png`
+is the accepted native army-panel appearance. The older `6-conform.png` and
+published Conform board are outdated for this panel; retain them historically.
+See `docs/visual-references.md`. Compatibility work preserves the current look.
+
 ## 3. Starting material
 
 ```
@@ -241,6 +246,9 @@ python tools/test_gen_laws.py
 
 # install / remove the submod in the game's mod\ folder (also generates common\event_modifiers.txt)
 python tools/install_submod.py E:\Victoria.II.v3.04.Inclu.ALL.DLC\mod [--remove]
+# MOD-2 packages per base (D15): army on any base, politics on TGC v2.5.2 only
+python tools/install_submod.py <mod> --base tgc252 --packages army,politics --source <stage> --dll <tgcx.dll> --backup <new dir>
+python tools/install_submod.py <mod> --restore <backup> | --remove-packages
 
 # Ghidra: open the project in the GUI
 E:\tools\ghidra_12.1.4_PUBLIC\ghidraRun.bat          # File > Open Project > E:\v2re\ghidra\v2game.gpr
@@ -258,7 +266,19 @@ E:\tools\ghidra_12.1.4_PUBLIC\support\analyzeHeadless.bat E:\v2re\ghidra v2game 
   -process v2game.exe -noanalysis -scriptPath <folder> -postScript <Script>.java
 ```
 
-Installed: **0.7.0 (MOD-1: per-module signature gates; `tgcx.dll` with all
+V2DLL check (2026-10-19): **Army 0.8.2 with V2DLL 5.82 passed** in the separate fresh-copy test (5/5 extras moved, five recruits queued). `docs/report-v2d-082-passed-1019.md`. Politics/MP/other bases are outside that check.
+
+Installed: **0.8.2 (TPL-4: Create and Transfer commands queued together,
+vanished-destination verification)** on E: 2026-10-19 after the user's normal
+exit confirmation. **TPL-4 passed in game** 2026-10-19 (Army only, our loader): 3/3, 1/1 and 6/6 extras arrived. V2DLL 0.8.2 and the other U-12
+parts remain unconfirmed. Full package backup:
+`E:\v2re\logs\tgcx-tpl4-1019\before-082-submod`; stage `stage-082` beside it.
+Loader unchanged (0.8.0). See `docs/report-tpl-4-1019.md` and
+`docs/instructions-tpl-4-082-check.md`.
+
+Previously installed: **0.8.1 (TPL-3 Ctrl/Alt-click, TPL-4 Conform detach verified and retried)** on E: 2026-10-18, not tested in game (`docs/report-tpl-4-1018.md`; backup `E:\v2re\logs\tgcx-tpl4-1018\before-081-submod`). Before it: **0.8.0 (MOD-2: Army and Politics packages per base, `tgcx.dll` in each package folder found through `-mod=`)**, tested in game 2026-10-18 (`docs/report-mod-2-1018.md`; rollback `before-080-*` in `E:\v2re\logs\tgcx-mod2-1018\`).
+
+Before it: **0.7.0 (MOD-1: per-module signature gates; `tgcx.dll` with all
 the logic behind a `lua51.dll` loader; `V2Mod_Init` for V2DLL)**, installed on E:
 2026-10-18 and **passed the game check** (rollback 0.6.5 in `before-070-dll`), staged in
 `E:\v2re\logs\tgcx-mod1-1018\stage-070\`
@@ -366,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P50**).
+number (**the next one is P59**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -427,7 +447,24 @@ number (**the next one is P50**).
 - **P46** A native row builder that ran once keeps its element state: a hook that only sets state never clears it; make the view rebuild or own the state (U-7 Reforms tab)
 - **P47** A fixed table of native objects freed only by our destructor hook fills up: free on vtable change and log a full table (0.6.4 Conform stopped after a year)
 - **P48** V2DLL writes `common\defines_v2dll.txt` into the first `-mod=` folder: expect it in R1 hash checks and move it out after a V2DLL run
-- **P49** The launcher does not enforce `dependencies`: a submod ticked alone loads on vanilla (TGCX alone crashed, MOD-0 run 3); an unticked dependency puts its mod first
+- **P49** The launcher does not enforce `dependencies`: a submod ticked alone loads on vanilla (TGCX alone crashed, MOD-0 run 3); an unticked dependency puts its mod first (order corrected by P50)
+- **P50** The launcher orders `-mod=` by display name, not by dependencies: "Army…" was listed before TGC; never rely on the order
+
+- **P51** An empty detach destination may vanish before next-day Transfers/verification; queue Create + Transfers together and verify membership, including a vanished destination (0.8.2 passed).
+
+- **P52** TGC map/default.map hardcodes `../mod/TGC/map/definition.csv`; a fresh nested-only copy fails even with a valid descriptor. Use canonical `mod/TGC` without editing TGC data.
+
+- **P53** TGC's army header controls sit 26px below vanilla's; fixed Conform button coordinates put it under vanilla's statistics row. Generate the opening position from the effective `unitattrition_icon` anchor.
+
+- **P54** Native GUI factories register roots for deferred collection. Hide and mark the subtree through native slot 20; direct scalar deletion leaves a manager entry dangling (MOD-6 static evidence).
+
+- **P55** Free soldier-pop capacity does not imply a land route to a target army. Scope Conform preview and recruitment together, and exclude stranded reinforcements from pending counts.
+
+- **P56** Independent native GUI entry roots need foreground promotion on first show/reopen and explicit host-hide synchronization. Position/show and successful construction do not prove visible controls.
+
+- **P57** CFixedWindow primary Show exposes only its root; independent windows need CGui secondary subtree Show to activate child controls. Apply on visibility transitions, not every poll (P42).
+
+- **P58** Map province+0x2A is IS LAND (nonzero), not sea. Old route fixture repeated the wrong polarity; validate field meaning independently with native coastal/port policy.
 
 ## 9. Decisions
 
@@ -448,9 +485,11 @@ number (**the next one is P50**).
 | **D15** | Templates + Conform as their own package | **Templates and Conform are the most important part of the mod and become their own package that works almost anywhere** (vanilla, other mods, alongside TGC); D1 stays for the laws. Order: LAW-3 first, then MOD-0 to MOD-5 (`docs/report-modular-scope-1018.md` §6.2). **Sub-decisions (user, 2026-10-18):** Army works on any base, as generic as possible (vanilla, TGC, HPM, HFM, others), Politics stays TGC v2.5.2; packages **Army** ("Army Templates and Conform", no `user_dir`) and **Politics** (keeps `user_dir` TGCX), later **Economy** and **Cosmetic**; one folder per base; our own HPM descriptor (P4); `tgcx.dll` in the package folders; `mod\TGCX` replaced. `docs/instructions-mod-2.md` §2 | **closed** (user, 2026-10-18) |
 | **D14** | Reforms tab offer | **A + B**: a row is offered only if its bill's decision passes its own `allow` (flag written by the favour collection), and backward steps only where the native game allows a backward reform. Mockup board 1 changes with it (R10) | **closed** (user, 2026-10-18); `docs/report-u-7-1018.md` F4, `docs/instructions-law-3.md` |
 | **D16** | V2DLL coexistence | **(a) own `lua51.dll` proxy now; (b) after MOD-1, one logic DLL (`tgcx.dll`) behind two thin loaders**: our own `lua51.dll` proxy, and V2DLL (its `v2dll_mod.dll` slot, or loading by a V2DLL setting as maxioten suggested). Per-mechanic signature gates first. (c), plugin only, rejected. Open: V2DLL's slot reads only the **first** `-mod=`, which is TGC's (MOD-0 run 1), so loading by setting, or V2DLL searching every `-mod=`, is asked of V2DLL | **closed** (user, 2026-10-18; shape agreed the same day); `docs/report-v2dll-mod-slot-1018.md` §7 |
+| **D17** | Overseas Conform recruitment | Recruit only from provinces that can reach the selected army by land; report shortages. Existing overseas troops remain for manual transport. | **closed** (user, 2026-10-19); docs/report-conform-land-reach-1019.md |
 | **D10** | Language | **English for everything**: code, comments, docs, file names, commit messages, in-game text and chat. Nothing is written in Spanish. All existing files were translated on 2026-10-12 | **closed** (user, 2026-10-12) |
 
 ---
+
 
 ## 10. Roadmap
 
@@ -499,6 +538,13 @@ the `tgc_scan.py` inventory before suspecting the logic.
 ---
 
 ## 13. Legal note
+
+2026-10-19 user clarification: V2DLL-derived code use is no problem; the
+author supports open source and has already been told this project uses
+his code. Keep source attribution. This is user-provided provenance, not
+a newly verified upstream license identifier. The user explicitly
+authorized the current source checkpoint commit/push; own release license
+and release assets are separate choices.
 
 The user has the game installed; studying it to make a personal mod is not
 a problem. Neither the executable nor parts of it, nor the Ghidra project,

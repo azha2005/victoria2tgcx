@@ -76,8 +76,9 @@ enum tgcx_CfKind { TGCX_CF_JOIN,TGCX_CF_FILL };
 struct tgcx_CfTask {
     bool used;tgcx_CfKind kind;
     tgcx_CfId target,stack,construction;   // construction: JOIN of a regiment still being built
-    int unit;unsigned regiments;tgcx_CfId regiment[tgcx_cf_regiments];   // FILL: extras to transfer
+    int unit,origin;unsigned regiments;tgcx_CfId regiment[tgcx_cf_regiments];   // JOIN origin: recruitment province; FILL: extras
     bool appeared,merge_sent,construction_seen;int moved_to;uint32_t merge_date,created_date;unsigned misses;
+    bool transfer_sent;uint32_t transfer_date;unsigned retries;   // FILL: TPL-4 checks the extras arrived
 };
 // What the native layer reads each game day; ids only, never pointers kept.
 struct tgcx_CfSeen {
@@ -86,7 +87,7 @@ struct tgcx_CfSeen {
     bool construction_alive;
 };
 enum tgcx_CfAction { TGCX_CF_WAIT,TGCX_CF_MOVE,TGCX_CF_MERGE,TGCX_CF_TRANSFER,TGCX_CF_DONE,
-                     TGCX_CF_TARGET_GONE,TGCX_CF_CANCELLED };
+                     TGCX_CF_TARGET_GONE,TGCX_CF_CANCELLED,TGCX_CF_VERIFY };
 
 // A stack that does not appear while its construction lives is still being
 // built. Two consecutive days with neither, once the construction was seen
@@ -99,6 +100,7 @@ enum tgcx_CfAction { TGCX_CF_WAIT,TGCX_CF_MOVE,TGCX_CF_MERGE,TGCX_CF_TRANSFER,TG
 static tgcx_CfAction tgcx_CfStep(tgcx_CfTask* t,const tgcx_CfSeen& s,uint32_t date,int* province) {
     if(!t->used)return TGCX_CF_DONE;
     if(!s.stack_alive) {
+        if(t->kind==TGCX_CF_FILL && t->appeared) { t->used=false;return TGCX_CF_VERIFY; }
         if(t->appeared) { t->used=false;return TGCX_CF_DONE; }   // merged, or gone after it existed
         if(t->kind==TGCX_CF_FILL) {
             if(date>=t->created_date+7) { t->used=false;return TGCX_CF_CANCELLED; }
@@ -114,7 +116,13 @@ static tgcx_CfAction tgcx_CfStep(tgcx_CfTask* t,const tgcx_CfSeen& s,uint32_t da
     }
     t->appeared=true;t->misses=0;
     if(!s.target_alive) { t->used=false;return TGCX_CF_TARGET_GONE; }
-    if(t->kind==TGCX_CF_FILL) { t->used=false;return TGCX_CF_TRANSFER; }
+    // Create and Transfers are queued together. The daily driver verifies the
+    // result; TRANSFER is also used for a retry into a surviving stack.
+    if(t->kind==TGCX_CF_FILL) {
+        if(!t->transfer_sent) { t->transfer_sent=true;t->transfer_date=date;return TGCX_CF_TRANSFER; }
+        if(date==t->transfer_date)return TGCX_CF_WAIT;
+        t->used=false;return TGCX_CF_VERIFY;
+    }
     if(s.stack_province==s.target_province) {
         if(t->merge_sent && t->merge_date==date)return TGCX_CF_WAIT;
         t->merge_sent=true;t->merge_date=date;return TGCX_CF_MERGE;
@@ -129,7 +137,7 @@ static tgcx_CfTask* tgcx_CfAdd(tgcx_CfTracker* k,tgcx_CfKind kind,const tgcx_CfI
     for(auto& t:k->task)if(t.used && tgcx_CfSame(t.stack,stack))return nullptr;   // one task per stack
     for(auto& t:k->task)if(!t.used) {
         memset(&t,0,sizeof(t));t.used=true;t.kind=kind;t.target=target;t.stack=stack;t.construction=construction;
-        t.unit=unit;t.moved_to=-1;t.created_date=date;return &t;
+        t.unit=unit;t.origin=-1;t.moved_to=-1;t.created_date=date;return &t;
     }
     return nullptr;
 }

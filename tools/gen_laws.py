@@ -560,7 +560,26 @@ def balanced(text):
     return depth == 0
 
 
+def check_names(tgc):
+    """Names in data/tgcx_laws.txt that the base does not define (MOD-2). Vic2
+    ignores an unknown name silently, so a law built on another base would
+    quietly do nothing."""
+    laws, affinity, groups, ideologies = load(tgc)
+    g = Gen(laws, affinity, groups, ideologies)
+    governments = set()
+    gov_file = os.path.join(tgc, "common", "governments.txt")
+    if os.path.isfile(gov_file):
+        governments = {name for name, body in parse(read(gov_file)) if isinstance(body, list)}
+    bad = [f"issue group {grp}" for grp, _, _ in g.bills if grp not in groups]
+    bad += [f"government {name}" for name in g.limited + g.full if name not in governments]
+    bad += [f"ideology {name}" for name in g.distrust if name not in ideologies]
+    return bad
+
+
 def generate(tgc, debt_days=None):
+    bad = check_names(tgc)
+    if bad:
+        sys.exit(f"gen_laws: {tgc} does not define {', '.join(bad[:6])}: laws are TGC v2.5.2 only (D1, D7)")
     laws, *rest = load(tgc)
     if debt_days:  # test builds only (U-3 point 6): let a promise expire within a test session
         laws = [(k, str(debt_days) if k == "debt_days" else v) for k, v in laws]

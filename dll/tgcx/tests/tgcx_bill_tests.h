@@ -156,6 +156,8 @@ static void tgcx_BillTests() {
 }
 
 static int tgcx_bill_test_width=2560,tgcx_bill_test_height=1440;
+static char __fastcall tgcx_LandFlagNavalKind(uintptr_t,void*) {return 1;}
+static char __fastcall tgcx_LandFlagCanEnter(uintptr_t,void*,uintptr_t) {return 1;}
 static void __fastcall tgcx_BillTestPosition(uintptr_t inner,void*,const int* xy) {
     *reinterpret_cast<float*>(inner+0xFC)=static_cast<float>(xy[0]);
     *reinterpret_cast<float*>(inner+0x100)=static_cast<float>(xy[1]);
@@ -177,13 +179,14 @@ static void tgcx_BillWindowTests(const wchar_t* reference) {
         const auto* dos=reinterpret_cast<const IMAGE_DOS_HEADER*>(data);
         const auto* nt=reinterpret_cast<const IMAGE_NT_HEADERS32*>(data+dos->e_lfanew);
         const auto* sections=IMAGE_FIRST_SECTION(nt);
-        const unsigned rvas[]={0x5E2FC0,0x5F8FD0,0x5F9050,0x5E3BA0,0x5E4450,0x5E4030};
+        const unsigned rvas[]={0x5E2FC0,0x5F8FD0,0x5F9050,0x5E3BA0,0x5E4450,0x5E4030,0x5E4490,0x5EFEF0,0x5F9200,0x1B9810};
         for(unsigned rva:rvas) {
+            unsigned bytes=rva==0x5E4490?0x400:rva==0x1B9810?0xC4:0x90;
             bool found=false;
             for(unsigned s=0;s<nt->FileHeader.NumberOfSections;++s) {
                 const auto& section=sections[s];
-                if(rva>=section.VirtualAddress && rva+0x90<=section.VirtualAddress+section.SizeOfRawData) {
-                    memcpy(memory+rva,data+section.PointerToRawData+rva-section.VirtualAddress,0x90);found=true;break;
+                if(rva>=section.VirtualAddress && rva+bytes<=section.VirtualAddress+section.SizeOfRawData) {
+                    memcpy(memory+rva,data+section.PointerToRawData+rva-section.VirtualAddress,bytes);found=true;break;
                 }
             }
             tgcx_Expect(found,"Bill fixture engine function exists in reference section");
@@ -193,6 +196,29 @@ static void tgcx_BillWindowTests(const wchar_t* reference) {
         unsigned char window[0x500]={},inner[0x180]={},parent[0x180]={};
         auto put=[](unsigned char* p,unsigned off,uintptr_t value){*reinterpret_cast<uintptr_t*>(p+off)=value;};
         auto get=[](unsigned char* p,unsigned off){return *reinterpret_cast<uintptr_t*>(p+off);};
+        // Independent polarity proof: execute the native naval edge policy,
+        // with diplomacy and the final unit predicate stubbed permissive.
+        // Its port relationships identify 1 as land and 0 as water, rather
+        // than a fixture simply repeating our recruitment implementation.
+        memory[0x1B9690]=0x33;memory[0x1B9691]=0xC0;memory[0x1B9692]=0xC3;
+        uintptr_t naval_table[34]={};naval_table[15]=reinterpret_cast<uintptr_t>(tgcx_LandFlagNavalKind);
+        naval_table[33]=reinterpret_cast<uintptr_t>(tgcx_LandFlagCanEnter);
+        uintptr_t naval=reinterpret_cast<uintptr_t>(naval_table);
+        unsigned char endpoints[2][0x60]={},maps[2][0xE0]={};unsigned edge[4]={};
+        for(unsigned i=0;i<2;++i) {put(endpoints[i],0x58,i+1);put(endpoints[i],0x5C,reinterpret_cast<uintptr_t>(maps[i]));}
+        typedef char(__stdcall* Edge)(uintptr_t,int,uintptr_t,uintptr_t,const unsigned*);
+        auto edge_ok=[&](){return reinterpret_cast<Edge>(memory+0x1B9810)(reinterpret_cast<uintptr_t>(&naval),0,
+            reinterpret_cast<uintptr_t>(endpoints[0]),reinterpret_cast<uintptr_t>(endpoints[1]),edge)!=0;};
+        FlushInstructionCache(GetCurrentProcess(),memory,tgcx_image_size);
+        tgcx_Expect(edge_ok(),"Native naval policy accepts two zero-flag water provinces");
+        maps[0][0x2A]=maps[1][0x2A]=1;
+        tgcx_Expect(!edge_ok(),"Native naval policy rejects two nonzero-flag land provinces");
+        maps[1][0x2A]=0;
+        tgcx_Expect(!edge_ok(),"Native naval policy refuses an unlinked land-to-water port edge");
+        put(maps[0],0xDC,2);
+        tgcx_Expect(edge_ok(),"Native naval policy permits departure through nonzero land province's linked water port");
+        maps[0][0x2A]=0;maps[1][0x2A]=1;put(maps[1],0xDC,1);
+        tgcx_Expect(edge_ok(),"Native naval policy permits arrival through nonzero land province's linked water port");
         tgcx_bill_window=reinterpret_cast<uintptr_t>(window);
         auto* table=reinterpret_cast<uintptr_t*>(memory+0xA3C0D8);
         table[6]=tgcx_base+0x5E3BA0;table[8]=tgcx_base+0x5E4450;table[9]=tgcx_base+0x5E4030;table[11]=tgcx_base+0x5E2FC0;
@@ -207,6 +233,63 @@ static void tgcx_BillWindowTests(const wchar_t* reference) {
         put(scene,0xDC,reinterpret_cast<uintptr_t>(parent));put(scene,0xE0,reinterpret_cast<uintptr_t>(parent));
         put(parent,0xE4,reinterpret_cast<uintptr_t>(scene));
         put(renderer,0x6B9BC,2560);put(renderer,0x6B9C0,1440);
+        // Root-only Show (0.10.2) is not subtree activation. Execute both
+        // actual native Show implementations with an initially hidden child.
+        unsigned char native_button[0xC0]={},button_inner[0x180]={};
+        uintptr_t button_vector[1]={reinterpret_cast<uintptr_t>(native_button)};
+        auto* secondary=reinterpret_cast<uintptr_t*>(memory+0xA3C1A8);
+        secondary[13]=tgcx_base+0x5E4490;put(window,0x18,reinterpret_cast<uintptr_t>(secondary));
+        auto* button_table=reinterpret_cast<uintptr_t*>(memory+0xA08BEC);
+        button_table[13]=tgcx_base+0x5EFEF0;put(native_button,0,reinterpret_cast<uintptr_t>(button_table));
+        auto* button_inner_table=reinterpret_cast<uintptr_t*>(memory+0x1800);
+        button_inner_table[13]=tgcx_base+0x5F9200;
+        put(button_inner,0,reinterpret_cast<uintptr_t>(button_inner_table));
+        put(native_button,0xA0,reinterpret_cast<uintptr_t>(button_inner));
+        put(window,0x26C,reinterpret_cast<uintptr_t>(button_vector));
+        put(window,0x270,reinterpret_cast<uintptr_t>(button_vector+1));put(window,0x4A8,0xFFFFFFFFu);
+        reinterpret_cast<tgcx_GuiZero>(table[8])(reinterpret_cast<uintptr_t>(window),nullptr);
+        tgcx_Expect(window[0x67] && !native_button[0x4F] && !button_inner[0x29],
+            "Universal 0.10.2 root-only Show leaves its hidden button inactive");
+        bool universal_was=tgcx_army_universal;tgcx_army_universal=true;window[0x67]=0;
+        tgcx_TplVisible(reinterpret_cast<uintptr_t>(window),true);
+        tgcx_Expect(window[0x67] && native_button[0x4F] && button_inner[0x29] && inner[0x124],
+            "Universal subtree Show executes native child activation and exposes root and button renderers");
+        native_button[0x4F]=0;button_inner[0x29]=0;
+        tgcx_TplVisible(reinterpret_cast<uintptr_t>(window),true);
+        tgcx_Expect(!native_button[0x4F] && !button_inner[0x29],
+            "Universal visible polling does not reset intentionally hidden child state");
+        window[0x67]=0;tgcx_TplVisible(reinterpret_cast<uintptr_t>(window),true);
+        tgcx_Expect(native_button[0x4F] && button_inner[0x29],"Universal reopen activates children again");
+        tgcx_army_universal=universal_was;put(window,0x26C,0);put(window,0x270,0);
+        window[0x67]=0;inner[0x124]=0;
+        // Universal entries are separate roots. Reproduce a hidden entry
+        // behind the native host: position/show alone never changes order.
+        put(parent,0xDC,0);put(parent,0xE0,0);put(parent,0xD4,reinterpret_cast<uintptr_t>(inner));
+        put(parent,0xD8,0);put(inner,0xE4,reinterpret_cast<uintptr_t>(scene));
+        put(inner,0xD4,0);put(inner,0xD8,reinterpret_cast<uintptr_t>(parent));
+        put(scene,0xDC,reinterpret_cast<uintptr_t>(inner));put(scene,0xE0,reinterpret_cast<uintptr_t>(parent));
+        tgcx_Expect(tgcx_UnivEntry(reinterpret_cast<uintptr_t>(parent),tgcx_bill_window,222,188),
+            "Universal hidden entry uses verified native position/foreground methods");
+        tgcx_Expect(get(scene,0xE0)==reinterpret_cast<uintptr_t>(inner) &&
+            get(parent,0xD8)==reinterpret_cast<uintptr_t>(inner),
+            "Universal first-show entry is appended after the opaque native host");
+        tgcx_TplVisible(tgcx_bill_window,true);
+        unsigned char entry_dialog[0x180]={};put(entry_dialog,0xE4,reinterpret_cast<uintptr_t>(scene));
+        put(entry_dialog,0xD4,reinterpret_cast<uintptr_t>(inner));put(inner,0xD8,reinterpret_cast<uintptr_t>(entry_dialog));
+        put(scene,0xE0,reinterpret_cast<uintptr_t>(entry_dialog));
+        tgcx_Expect(tgcx_UnivEntry(reinterpret_cast<uintptr_t>(parent),tgcx_bill_window,223,188) &&
+            get(scene,0xE0)==reinterpret_cast<uintptr_t>(entry_dialog),
+            "Universal visible entry updates position without repeatedly covering a later entry_dialog");
+        tgcx_TplVisible(tgcx_bill_window,false);
+        tgcx_Expect(tgcx_UnivEntry(reinterpret_cast<uintptr_t>(parent),tgcx_bill_window,224,188) &&
+            get(scene,0xE0)==reinterpret_cast<uintptr_t>(inner),
+            "Universal reopening a hidden entry restores its foreground order");
+        // Restore the original nested Bill fixture.
+        window[0x67]=0;inner[0x124]=0;
+        put(scene,0xDC,reinterpret_cast<uintptr_t>(parent));put(scene,0xE0,reinterpret_cast<uintptr_t>(parent));
+        put(parent,0xDC,reinterpret_cast<uintptr_t>(inner));put(parent,0xE0,reinterpret_cast<uintptr_t>(inner));
+        put(parent,0xD4,0);put(parent,0xD8,0);put(inner,0xD4,0);put(inner,0xD8,0);
+        put(inner,0xE4,reinterpret_cast<uintptr_t>(parent));
         tgcx_BillVisibility(true);
         tgcx_Expect(!get(parent,0xDC) && !get(parent,0xE0),"Bill detaches from Politics render subtree");
         tgcx_Expect(get(scene,0xE0)==reinterpret_cast<uintptr_t>(inner) && get(parent,0xD8)==reinterpret_cast<uintptr_t>(inner) &&

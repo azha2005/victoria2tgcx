@@ -802,3 +802,129 @@ frame. The likely cause (inferred) is TGCX's TGC-generated
 another base. MOD-2 installs each package for the base it was generated
 from, and the DLL acts only when one of our packages is in the `-mod=` list.
 `report-mod-0-1018.md` §2, §4.
+
+### P50 - The launcher orders `-mod=` by display name, not by dependencies
+
+**Cause:** every recorded command line (MOD-0 runs 1-2, the 0.8.0 game
+check, `E:\v2re\logs\tgcx-mod0-1018\cmdlines.txt`) lists the ticked mods
+sorted by their `.mod` `name`. "Army Templates and Conform (…)" came before
+"TGC v2.5.2 (stable)" although it depends on it.
+
+**Symptom:** none so far. This corrects MOD-0's reading (P49 and
+`report-mod-0-1018.md` Q1, "an unticked dependency goes first"). Run 2 of the
+0.8.0 check worked with Army listed first, more evidence against P19.
+
+**Fix:** never rely on `-mod=` order. The loader already searches every
+`-mod=`. The settings folder still joins the `user_dir`s in command-line
+order, so a package with a `user_dir` decides it by its name. With
+"TGCX Politics" after "TGC v2.5.2" the folder is `TGC252_TGCX`.
+
+### P51 - Do not leave a created detach destination empty until the next day
+
+**Evidence:** 0.8.1 queued Create, waited a day, then posted Transfers; seven
+attempts left extras behind and produced no verification. The tracker silently
+dropped destinations that vanished after appearing. Logged movement/location
+checks passed. Exact engine cleanup timing is inferred, not fully traced.
+
+**Fix:** queue Create and its Transfers together using the engine queue; the
+regiment reference exists already and destination identity is resolved at
+execution. Verify actual membership rather than interpreting queued as done.
+Report vanished destinations and do not retry into missing ones. Native split
+and load performs Create/Transfer in one execution, supporting this ordering.
+0.8.2 confirmed 3/3, 1/1 and 6/6 moved in game, including pending recruitment.
+See report-tpl-4-1019.md and report-tpl-4-runtime-1019.md.
+
+### P52 - TGC's hardcoded map path survives a descriptor folder change
+
+**Cause:** stable TGC map/default.map sets definitions to
+../mod/TGC/map/definition.csv. A descriptor pointing at mod/TGC_v2.5.2/TGC
+does not redirect that explicit relative path. An existing mod/TGC on E:
+masked it; the fresh nested-only copy had no such folder.
+
+**Symptom:** file exception in discfile.cpp line 83, could not open
+map/../mod/TGC/map/definition.csv, after V2DLL/Army initialized successfully.
+
+**Fix:** prepare the fresh base at canonical mod/TGC and point its generated
+descriptor there. Do not edit TGC's map data. Verify actual referenced paths,
+not only source hashes. This fresh-copy repair retained the old nested folder
+and descriptor backup; 16,411 canonical files are byte-identical. Game retry
+still required. report-fresh-map-path-1019.md.
+
+### P53 - TGC header coordinates hide Conform on vanilla
+
+**Cause:** the 20x20 opening button was fixed at (222,68), beside TGC's
+attrition icon. Vanilla, HPM and DoD use a header 26px higher. At y=68 the
+button falls under the statistics row, so the user cannot open Conform.
+
+**Evidence:** vanilla log finds Conform window/tab and valid land armies,
+but has no window-open record; screenshot shows no header button. Effective
+unitpanel.gui places unitattrition_icon at y=42, versus TGC y=68.
+
+**Fix:** generate our tab from that direct named native anchor, x minus23
+and the same y, leaving a 3px gap. Ambiguous/missing anchors fail preparation.
+Tests cover actual vanilla/TGC and a translated override. Do not hardcode
+one mod's header coordinates for other bases. Installed GUI-only correction
+awaits runtime retry: report-mod-3-button-1019.md.
+
+
+### P54 - A factory-created GUI root remains registered with the manager
+
+2026-10-19, MOD-6, static RE finding before runtime installation. Native
+factory FUN_009A38F0 (RVA 0x5A38F0) registers root+0x18 in CEU3Gui+0x5C.
+Calling the root's scalar destructor directly would leave a dangling
+registration. Native CUnitView teardown FUN_0079D490 (RVA 0x39D490) hides
+the root then calls primary slot 20, FUN_009E3D60 (RVA 0x5E3D60), which
+sets +0x52 and propagates release through children for manager collection.
+Universal uses that checked path, never direct deletion/array edits.
+Fixture coverage validates the wrapper/dispatch; real turnover and manager
+collection still require game testing. See symbols.md and report-mod-6-1019.md.
+
+
+### P55 - Free soldier pops cannot necessarily reach the army
+
+2026-10-19. User found this in vanilla/HPM/DoD 0.9.0. The planner chose
+the most free capacity country-wide, including disconnected colonies,
+and pending tracking counted those recruits even after a failed march.
+0.10.1 uses the same native land-route filter in preview and recruitment;
+unreachable pops contribute no capacity. Stranded origins/finished stacks
+are removed from pending tracking without cancelling/disbanding/relocating
+them. Native query direction is recruit province to actual target; clean
+its temporary result with the game's allocator. Never replace reachability
+with continent-name equality. Runtime verification remains pending.
+
+
+### P56 - Independent entry windows can sit behind their native host
+
+2026-10-19. Universal0.10.1 DoD loaded and constructed shared roots, but
+the user saw no controls. Entry positioning/showing omitted native
+foreground promotion; unlike old nested fragments, independent roots also
+need explicit host-hide handling. 0.10.2 promotes on first show/reopen,
+keeps regular visible polls below later dialogs, hides on host close and
+logs placement refusals/success pixels. Actual native scene-order fixture
+covers behind-host/reopen/later-dialog cases; live retry still pending.
+See report-universal-visibility-1019.md. Successful factory logs alone do
+not establish display or clickability.
+
+
+### P57 - Root visibility is not child-control activation
+
+2026-10-19. Universal0.10.2 DoD still failed with root construction and
+placement success logged. Native CFixedWindow primary Show (0x009E4450,
+RVA 0x5E4450) only toggles root flags. CGui secondary Show (0x009E4490,
+RVA 0x5E4490) takes window+0x18 and traverses its child controls/subwindows.
+Actual engine bytes on an initially hidden synthetic button reproduce the
+difference. 0.10.3 activates subtrees on hidden-to-visible transitions;
+regular polling must not reset intentionally hidden covers (P42). Runtime
+retry pending. See report-universal-subtree-1019.md.
+
+
+### P58 - A fixture can repeat an inverted field interpretation
+
+2026-10-19. DoD0.10.3 GUI works, but the route filter excluded all18 pops
+and built none of4 requested regiments. Map province+0x2A is IS LAND,
+nonzero; code and fixture both assumed sea. 0.10.4 reverses endpoint and
+path-node checks. Independent actual-native naval/coastal policy test
+accepts water0/water0, rejects land1/land1 for a navy, and permits mixed
+endpoints only through land's linked port. Use such independent semantic
+evidence; mock ABI/call tests cannot validate unknown field meaning.
+See report-universal-land-flag-1019.md; live correction retry pending.

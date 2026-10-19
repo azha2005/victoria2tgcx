@@ -25,6 +25,25 @@ TEXT_DELTA = 0xC00
 
 # (RVA, expected bytes, where it comes from)
 SIGNATURES = [
+    (0x5E4490, "55 8B EC 83 E4 F8 64 A1 00 00 00 00 6A FF 68 68 A7 B3 00 50 64 89 25 00", "Universal CGui subtree Show activates child controls"),
+    (0xA3C1DC, "90 44 9E 00 70 40 9E 00", "Universal CFixedWindow secondary Show/Hide slots 13/14"),
+    (0x5EFEF0, "56 8B F1 80 7E 6C 00 75 26 8B 8E A0 00 00 00 C6 46 4F 01 8B 01 8B 50 34", "Universal native CEU3Button Show activates render child"),
+    (0x1B8500, "55 8B EC 8B 55 0C 83 EC 30 53 56 57 8B F0 85 D2 0F 84 12 03 00 00 85 F6", "Conform land route query: EAX start, four stack arguments"),
+    (0x1B8830, "8B E5 5D C2 10 00", "Conform land route query RET 0x10"),
+    (0xA03794, "E0 98 5B 00 70 96 5B 00 D0 9B 5B 00 D0 98 5B 00 50 AE 9D 00", "Conform VerySafe native path predicate vtable"),
+    (0x449E90, "57 8B F9 8B 07 85 C0 74 1A 56 8D 9B 00 00 00 00 8B 70 08 50 E8", "Conform native route list cleanup"),
+    (0x1B984F, "8B 50 3C 8B CF FF D2 84 C0 74 55 8B 53 5C 8A 42 2A 84 C0 74 0D 8B 4E 5C 80", "Conform path policy reads map province IS LAND flag +0x2A"),
+    (0x5A38F0, "55 8B EC 83 E4 F8 8B 55 08 83 EC 08 56 57 8B F9", "MOD-6 CEU3Gui named window factory, RET 8"),
+    (0x5C4410, "55 8B EC 8B 89 94 00 00 00 8B 01 8B 40 60 5D FF E0", "MOD-6 CIcon frame setter forwards stack argument"),
+    (0x5E2F90, "55 8B EC 56 8B F1 E8 65 01 00 00 F6 45 08 01 74", "MOD-6 CFixedWindow scalar deleting destructor"),
+    (0x5E3D60, "55 8B EC 83 E4 F8 51 53 56 8B F1 57 8B BE 74 04 00 00 C6 46 52 01", "MOD-6 CFixedWindow deferred release flag and child propagation"),
+    (0x5EFE20, "55 8B EC 8B 89 98 00 00 00 8B 45 08 89 08 5D C2 04 00", "MOD-6 CEU3Button packed position getter, RET 4"),
+    (0x246620, "55 8B EC 8B 89 BC 00 00 00", "MOD-6 CIcon packed position getter"),
+    (0x5A6A6D, "89 7E 34 89 56 30 88 46 3A 89 46 40 89 46 44", "MOD-6 CGui subobject context/definition fields"),
+    (0xA08A70, "F0 38 9A 00", "MOD-6 CEU3Gui primary slot 11 factory"),
+    (0x8453FC, "BA E0 21 E2 00 8D B5 04 7A FF FF E8 C4 31 D4 FF 8B C6 B9 DB 04 00 00", "MOD-6 build_time parser token 0x4DB"),
+    (0x1BAB1C, "E8 3F 50 3D 00 8B 00 89 87 C0 00 00 00", "MOD-6 CSubUnitDefinition build time at +0xC0 in thousandths"),
+    (0x1BA89E, "E8 22 48 4F 00 89 47 28", "MOD-6 CSubUnitDefinition icon at +0x28"),
     # TPL-0 native panel, scoped read-only Ghidra on 2026-10-17.
     (0xA12A14, "E0407300004E7300D0CF580070737300F061730030C4A300", "TPL-0 CBuildUnitView vtable, destructor and update slots"),
     (0x334E24, "8BF98B47608A406733DB3AC30F847F050000", "TPL-0 build-view root +0x60 and visibility +0x67"),

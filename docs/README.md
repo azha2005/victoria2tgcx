@@ -1,5 +1,77 @@
 # Index of `docs/`
 
+- `report-universal-tgc-passed-1019.md`: TGC/V2DLL accepted, four-base short matrix complete, source checkpoint and user V2DLL provenance clarification.
+- `instructions-tpl-5.md`: selected culture buttons, shared eligibility and persistence steps.
+- `instructions-tpl-6.md`: proposed continent builder selector after culture filtering.
+- `archive/instructions-tpl-5-before-selection-1019.md`: previous deferred instructions, verbatim.
+
+- `report-universal-tgc-1019.md`: vanilla/HPM/DoD Universal acceptance; identical0.10.4 installed in isolated TGC2.5.2 + V2DLL5.82, player test pending.
+- `instructions-mod-6.md`: current TGC/V2DLL player test and extended-case steps.
+
+- `report-release-readiness-1019.md`: accepted DoD0.10.4 short correction, exact remaining runtime/provenance/public-beta gates.
+- `instructions-release-0.md`: future public-beta preparation workflow; no publication authorized.
+
+- `report-universal-land-flag-1019.md`: DoD0.10.3 UI accepted, reversed land flag caused zero builds, independent native polarity regression, installed0.10.4 retry pending.
+
+- `report-universal-subtree-1019.md`: full failed DoD0.10.2 log, native root-only versus subtree activation regression, installed 0.10.3 candidate, retry pending.
+
+- `report-universal-visibility-1019.md`: DoD universal controls absent despite loaded roots; 0.10.2 first-show foreground/host visibility repair, installed, retry pending.
+
+- `report-conform-land-reach-1019.md`: 0.9.0 overseas failure, approved land-only Conform recruitment, 0.10.1 checks/installation, runtime pending.
+
+- `report-mod-6-1019.md`: universal 0.10.0 prototype, native lifetime/GUI and live catalogue, automated proof and three installations; runtime pending.
+- `report-mod-4-5-passed-1019.md`: accepted HPM/DoD short 0.9.0 checks and remaining evidence gaps.
+
+- `report-mod-4-5-prepared-1019.md`: separate HPM/DoD own-loader test copies installed/verified; initial universal factory investigation.
+
+- `report-mod-3-passed-1019.md`: accepted vanilla recruit/Conform/detach/march/merge check; current universal-package limits.
+- `instructions-mod-6.md`: universal 0.10.4 DoD land-reach retry, rollback and subsequent TGC/V2DLL regression.
+
+- `report-mod-3-button-1019.md`: vanilla Templates passed; native-header Conform opening-button correction, installed with backup; retry pending.
+
+- `report-mod-5-1019.md`: Army 0.9.0 runtime catalogue, five prepared base packages, validation and remaining runtime gates.
+- `report-mod-3-fresh-1019.md`: separate clean vanilla + own-loader test copy; prior TGC/V2DLL copy retained.
+- `visual-references.md`: current supplied Conform screenshot supersedes old mockup.
+- `instructions-mod-4.md`: isolated HPM generation and game check.
+- `instructions-mod-5.md`: DoD custom units and TGC regression game checks.
+
+- `report-v2d-082-passed-1019.md`: accepted short Army 0.8.2 + V2DLL 5.82 fresh-user run.
+
+
+
+- `report-fresh-map-path-1019.md`: fresh-copy hardcoded TGC map path, canonical layout repair and confirmed V2DLL plugin startup.
+
+
+
+- `report-v2d-bundle-1019.md`: combined files-only V2DLL + Army 0.8.2 private test ZIP, pinned source and checks.
+
+
+
+- `report-tpl-4-runtime-1019.md`: accepted 0.8.2 detach log, three successful cases.
+- `report-v2d-fresh-1019.md`: clean game/TGC copy, isolated profile and mod-only 0.8.2 ZIP.
+- `instructions-v2d-082.md`: next fresh-user V2DLL + Army 0.8.2 game check.
+
+
+
+- `report-tpl-4-1019.md`: 0.8.1 detach failure, 0.8.2 immediate command batch, installation and test limits.
+- `instructions-tpl-4-082-check.md`: next game check of 0.8.2 detach.
+
+
+
+- `report-army-launcher-1018.md`: current mod-only ZIP and normal-launcher order evidence; no scripts.
+
+
+
+- `report-army-drop-in-1018.md`: current files-only Army 0.8.1 ZIP and placement instructions.
+
+
+
+- `report-army-portable-1018.md`: current Army-only 0.8.1 portable setup ZIP, automated install/restore, checks and limits.
+
+- `report-maxioten-test-1018.md`: private V2DLL test ZIP, contents, preparation checks and limitations.
+
+
+
 > What is in each document and whether it is current. **What happens next
 > is only in `../NEXT.md`**; the current status and numbers, in
 > `../ROADMAP.md` §1-§2. No document in this folder is used to learn "what
@@ -26,8 +98,8 @@
 |---|---|
 | `technical-plan.md` | how each mechanic is built: the shared DLL (§1), laws (§2), charts (§3), hemicycle (§4), rulers (§5), templates (§6), overall order (§7), feasibility of the mockups and the interface route, D9: hybrid case by case (§9) |
 | `law-design.md` | laws with political favours and ideological affinity (D7 revised): each bloc's stance, projected vote, favours, promises, Crown, cycle, what the DLL adds; v3 builds it on TGC's idioms (timed modifiers, step-chains) and maps the Bill mockup element by element |
-| `tgc-compatibility.md` | levels N0/N1/N2, the generator for fixed-name files, event range; the any-version matrix is on hold (D1 revised: TGC v2.5.2 only) |
-| `pitfalls.md` | full text of pitfalls P1-P41 (index in `AGENTS.md` §8) |
+| `tgc-compatibility.md` | levels N0/N1/N2, the generator for fixed-name files, event range; the any-version matrix is on hold (D1 revised: TGC v 2.5.2 only) |
+| `pitfalls.md` | full text of pitfalls P1-P58 (index in `AGENTS.md` §8) |
 | `symbols.md` | what this project has named or discovered in `v2game.exe`, with evidence (upper house, GUI/hover paths, templates, and the 2026-10-17 external cross-check) |
 | `rtti-classes.md` | **generated** by `ghidra/ExportRtti.java`: the 1 500 vtables with RVA and slots, and the detail of 22 mechanics classes. Not edited by hand |
 | `instructions-gh-1.md` | GH-1: review the Ghidra analysis, export the RTTI inventory, create `symbols.md` |
@@ -39,7 +111,13 @@
 | `instructions-law-3.md` | LAW-3: Reforms rows refresh, top-bar tooltip filter, load test removed, D14 offer rule with board 1, Bill text overflow (0.6.4) |
 | `instructions-u-11.md` | short game check of LAW-3 0.6.4 and rollback |
 | `instructions-v2d-1.md` | V2D-1 (MOD-1 step B, D16): one-off in-game run with the real V2DLL loading `tgcx.dll` as `v2dll_mod.dll`; [user] decides |
-| `instructions-mod-2.md` | MOD-2 (D15): installer with generic base profiles, per-base packages (Army on any base, Politics on TGC v2.5.2), sprite check, DLL found through the `-mod=` list; S1-S8 answered |
+| `report-tpl-4-1018.md` | 2026-10-18 | 0.8.1: Ctrl/Alt-click in the Templates editor (TPL-3); Conform's detach found broken, now verified and retried with the engine's refusal fields logged (TPL-4); LAW-4 first look |
+| `report-mod-2-1018.md` | 2026-10-18 | MOD-2 0.8.0: generic base profiles, Army/Politics packages per base, sprite check, loader finds tgcx.dll through `-mod=`; staged, not installed |
+| `instructions-mod-2.md` | MOD-2 (D15): installer with generic base profiles, per-base packages (Army on any base, Politics on TGC v 2.5.2), sprite check, DLL found through the `-mod=` list; S1-S8 answered |
+| `instructions-u-12.md` | U-12: game check of 0.8.1 (TPL-3 Ctrl/Alt, TPL-4 detach and its log lines, LAW-4 screenshot) |
+| `instructions-law-4.md` | LAW-4: Bill view buttons (Aye/Nay, Party, Both) do not stay ticked; what is known and the three cases |
+| `instructions-tpl-5.md` | TPL-5: culture filter for Templates and Conform (primary + accepted, primary only); RE, mockup, code |
+| `instructions-mod-3.md` | MOD-3 (D15): the Army package on vanilla 3.04 in game |
 | `instructions-mod-1.md` | MOD-1 (D15, D16): per-module signature gates, drawing hooks chain, `tgcx.dll` behind a `lua51.dll` loader |
 | `instructions-mod-0.md` | MOD-0 (D15): read-only launcher check with several mods: `-mod=` arguments, three mods, a dependency not ticked |
 | `instructions-u-7.md` | short 0.3.5 game check (Reforms tab, Bill buttons, Decisions tab, a month with no popup) and rollback |
@@ -72,7 +150,7 @@ statuses remain historical evidence. HEMI-2 0.2.5 works in game and is retained.
 
 | document | date | what |
 |---|---|---|
-| `report-modular-scope-1018.md` | 2026-10-18 | splitting TGCX into QoL/cosmetic/laws and more bases: generators measured on vanilla, HPM, TGC v2.3.4/v2.5.2, DoDFF; launcher facts; one DLL with modules; MOD-0..MOD-5 order; D15 |
+| `report-modular-scope-1018.md` | 2026-10-18 | splitting TGCX into QoL/cosmetic/laws and more bases: generators measured on vanilla, HPM, TGC v 2.3.4/v 2.5.2, DoDFF; launcher facts; one DLL with modules; MOD-0..MOD-5 order; D15 |
 | `report-u-7-1018.md` | 2026-10-18 | U-7 on 0.6.3 (0.3.5 law layer): partly passed; F1 rows not re-evaluated, F2 top-bar tooltip, F3 load test, F4 offer rule decided (D14), Bill text overflow; P46 |
 | `report-mod-0-1018.md` | 2026-10-18 | launcher with several mods: one `-mod=` per mod, unticked dependency goes first, dependencies not enforced (TGCX alone crashed on vanilla, P49) |
 | `report-v2d-1-1018.md` | 2026-10-18 | V2DLL `de66ee61` loaded tgcx.dll 0.7.0 as its mod plugin in game: passed; 7 FOREIGN sites, D3D chaining, all modules on |
@@ -101,7 +179,7 @@ statuses remain historical evidence. HEMI-2 0.2.5 works in game and is retained.
 | `report-law-1-native-1012.md` | 2026-10-12 | native trace/import, all base affinities, balanced conserved counts, 23 catalogue/7 installer tests; installed candidate and rollback, U-6 pending at that date; report UI superseded on 2026-10-13 |
 | `report-law-1-start-1012.md` | 2026-10-12 | HEMI-3 0.2.8 acceptance; catalogue preview/tests, ten affinity approvals, approved native vote model, bounded research and handoff |
 | `report-law-1-tgc-support-1012.md` | 2026-10-12 | installed TGC versus vanilla reform rules; recommendation before user model approval |
-| `report-initial-1012.md` | 2026-10-12 | feasibility, downloads, executable signatures, RTTI, TGC v2.3.4 versus v2.5.2, Ghidra analysis |
+| `report-initial-1012.md` | 2026-10-12 | feasibility, downloads, executable signatures, RTTI, TGC v 2.3.4 versus v 2.5.2, Ghidra analysis |
 | `report-sub-0-1012.md` | 2026-10-12 | SUB-0: submod layout, installer, gates, the U-2 checklist (U-2 passed: results in `ROADMAP.md` §1) |
 | `report-law-0-1012.md` | 2026-10-12 | LAW-0: what was generated, gates, the simulation, decisions taken while building, deviations from the Bill mockup, what U-3 must check |
 | `report-dll-0-1012.md` | 2026-10-12 | DLL-0 Release/Win32 build, provenance, relocated signatures, hook/Lua/installer tests; not tested in game |

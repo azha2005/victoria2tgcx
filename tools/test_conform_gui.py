@@ -26,6 +26,28 @@ def names_of(fragment):
 
 
 class ConformGuiTests(unittest.TestCase):
+    def test_open_button_follows_effective_native_header(self):
+        from tgcx_bases import Base
+        game = game_root(DEFAULT_TGC)
+        self.assertEqual(gui.opening_rect(game), (222, 42, 20, 20))
+        self.assertEqual(gui.opening_rect(DEFAULT_TGC), gui.OPEN)
+        # A shifted mod header and a same-name vanilla GUI both exist. The
+        # generated button must follow the effective override, not its base.
+        with tempfile.TemporaryDirectory(prefix='tgcx_cf_anchor_') as folder:
+            root = Path(folder); (root/'v2game.exe').touch()
+            (root/'interface').mkdir(); (root/'mod/custom/interface').mkdir(parents=True)
+            vanilla = read(game/'interface/unitpanel.gui')
+            (root/'interface/unitpanel.gui').write_text(vanilla, encoding='cp1252')
+            shifted = re.sub(r'(name\s*=\s*"unitattrition_icon".*?position\s*=\s*)\{[^}]+\}',
+                             r'\1{ x=300 y=83 }', vanilla, count=1, flags=re.S)
+            (root/'mod/custom/interface/unitpanel.gui').write_text(shifted, encoding='cp1252')
+            descriptor = root/'mod/custom.mod'
+            descriptor.write_text('name="Custom"\npath="mod/custom"\n')
+            base = Base(root, descriptor)
+            self.assertEqual(gui.opening_rect(base.folder, base), (277, 83, 20, 20))
+            fragment, _ = gui.layout(game)
+            self.assertIn('name="tgcx_cf_tab" position={x=222 y=42}', fragment)
+
     def test_effective_base_preserved(self):
         base = read(Path(DEFAULT_TGC)/'interface/unitpanel.gui')
         fragment, _ = gui.layout()

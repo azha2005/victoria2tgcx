@@ -10,7 +10,7 @@ struct tgcx_TplPanel {
     unsigned char glue[TGCX_TPL_BUTTONS][44];
     char text[TGCX_TPL_TEXTS][192],status[192];
     bool text_set[TGCX_TPL_TEXTS];
-    unsigned char shown[256];
+    unsigned char shown[tgcx_tpl_capacity*21+64];
 };
 static tgcx_TplPanel tgcx_tpl_panels[8]={};
 static uintptr_t tgcx_tpl_update_original=0,tgcx_tpl_destroy_original=0;
@@ -18,6 +18,17 @@ static bool tgcx_tpl_gui_enabled=false;
 
 static void tgcx_TplVisible(uintptr_t object,bool show) {
     if(!object)return;auto* vt=*reinterpret_cast<uintptr_t**>(object);
+    // Independent Universal roots never receive their host's recursive Show.
+    // Primary slot 8 only exposes the root renderer; the CGui subobject's
+    // Show activates buttons/icons/child windows too. Do this on transition
+    // only: repeating it every poll would reset intentionally hidden covers.
+    if(tgcx_army_universal && show && !*reinterpret_cast<unsigned char*>(object+0x67)) {
+        uintptr_t gui=object+0x18;auto* secondary=*reinterpret_cast<uintptr_t**>(gui);
+        if(!secondary || secondary[13]!=tgcx_base+0x5E4490) {
+            tgcx_Log("Universal Army: subtree Show refused object=%08X",object);return;
+        }
+        reinterpret_cast<tgcx_GuiZero>(secondary[13])(gui,nullptr);return;
+    }
     unsigned slot=show?8:9;
     if(vt[slot]==tgcx_base+(show?0x5E4450:0x5E4030))reinterpret_cast<tgcx_GuiZero>(vt[slot])(object,nullptr);
 }
@@ -52,6 +63,8 @@ static bool tgcx_TplRootScreen(uintptr_t inner,uintptr_t scene,float* x,float* y
     }
     return false;
 }
+#include "tgcx_army_universal.h"
+
 // Foreground promotion is the same confirmed native path as the Bill (P37).
 // Anchor to the build view's screen position, so the native right queue stays
 // where the engine placed it. Promotion happens only on opening.
@@ -102,13 +115,13 @@ static unsigned tgcx_TplMinis(const tgcx_TplComposition& c,unsigned* leading,uns
     return n;
 }
 enum {TGCX_TPL_SHOW_SEL=0,TGCX_TPL_SHOW_BLANK=4,TGCX_TPL_SHOW_PAGER=8,TGCX_TPL_SHOW_PAGES=9,
-    TGCX_TPL_SHOW_ICON=11,TGCX_TPL_SHOW_MINI=TGCX_TPL_SHOW_ICON+4*tgcx_tpl_kinds,
-    TGCX_TPL_SHOW_END=TGCX_TPL_SHOW_MINI+4*4*tgcx_tpl_kinds};
+    TGCX_TPL_SHOW_ICON=TGCX_TPL_SHOW_PAGES+(tgcx_tpl_capacity+7)/8,TGCX_TPL_SHOW_MINI=TGCX_TPL_SHOW_ICON+4*tgcx_tpl_capacity,
+    TGCX_TPL_SHOW_END=TGCX_TPL_SHOW_MINI+4*4*tgcx_tpl_capacity};
 static void tgcx_TplLabels(tgcx_TplPanel* p) {
     static_assert(TGCX_TPL_SHOW_END<=sizeof(p->shown),"Templates visibility cache");
     unsigned pages=(std::max)(1u,(tgcx_tpl_library.size+3)/4);
     p->list_page%=pages;
-    char key[80];
+    char key[128];
     for(unsigned row=0;row<4;++row) {
         unsigned s=p->list_page*4+row;bool used=s<tgcx_tpl_library.size;
         sprintf_s(key,"tgcx_tpl_slot_sel_%u",row);tgcx_TplShow(p,TGCX_TPL_SHOW_SEL+row,key,used && s==p->selected);
@@ -122,7 +135,14 @@ static void tgcx_TplLabels(tgcx_TplPanel* p) {
         unsigned leading=tgcx_tpl_kinds,mini[4]={},minis=0;
         if(used)minis=tgcx_TplMinis(c,&leading,mini);
         for(unsigned k=0;k<4;++k)tgcx_TplText(p,text+3+k,k<minis?"\xD7%d":"",k<minis?c.count[mini[k]]:0);
-        for(unsigned u=0;u<tgcx_tpl_kinds;++u) {
+        if(tgcx_army_universal) {
+            char sprite[96];sprintf_s(key,"tgcx_tpl_slot_icon_%u_unit",row);sprintf_s(sprite,"tgcx_tpl_slot_sprite_%u_unit",row);
+            tgcx_UnivIcon(p->window,key,sprite,leading,leading<tgcx_tpl_kinds);
+            for(unsigned k=0;k<4;++k) {
+                sprintf_s(key,"tgcx_tpl_mini_%u_%u_unit",row,k);sprintf_s(sprite,"tgcx_tpl_mini_sprite_%u_%u_unit",row,k);
+                tgcx_UnivIcon(p->window,key,sprite,mini[k],k<minis);
+            }
+        } else for(unsigned u=0;u<tgcx_tpl_kinds;++u) {
             sprintf_s(key,"tgcx_tpl_slot_icon_%u_%s",row,tgcx_tpl_catalog[u].key);
             tgcx_TplShow(p,TGCX_TPL_SHOW_ICON+row*tgcx_tpl_kinds+u,key,u==leading);
             for(unsigned k=0;k<4;++k) {
@@ -137,14 +157,18 @@ static void tgcx_TplLabels(tgcx_TplPanel* p) {
     const auto& c=tgcx_tpl_library.item[selected?p->selected:0];
     char name[160]={};if(selected)tgcx_TplName(c,name,sizeof(name));
     tgcx_TplText(p,TGCX_TPL_TEXT_EDITOR,selected?"%s: composition":"Create a new template",name);
-    tgcx_TplText(p,TGCX_TPL_TEXT_UNIT_PAGE,"%u/2",p->unit_page+1);
+    tgcx_TplText(p,TGCX_TPL_TEXT_UNIT_PAGE,"%u/%u",p->unit_page+1,(tgcx_tpl_kinds+7)/8);
     for(unsigned r=0;r<8;++r) {
         unsigned u=p->unit_page*8+r;bool shown=u<tgcx_tpl_kinds;
         tgcx_TplText(p,TGCX_TPL_TEXT_UNIT_0+r*3,"%s",shown?tgcx_tpl_catalog[u].label:"");
         tgcx_TplText(p,TGCX_TPL_TEXT_DAYS_0+r*3,shown?"%d Days":"",shown?tgcx_tpl_catalog[u].days:0);
         tgcx_TplText(p,TGCX_TPL_TEXT_COUNT_0+r*3,shown && selected?"%d":"",shown?c.count[u]:0);
+        if(tgcx_army_universal) {
+            char sprite[80];sprintf_s(key,"tgcx_tpl_edit_icon_%u",r);sprintf_s(sprite,"tgcx_tpl_edit_sprite_%u",r);
+            tgcx_UnivIcon(p->window,key,sprite,u,shown);
+        }
     }
-    for(unsigned page=0;page<2;++page) {
+    for(unsigned page=0;!tgcx_army_universal && page<(tgcx_tpl_kinds+7)/8;++page) {
         sprintf_s(key,"tgcx_tpl_icons_%u",page);tgcx_TplShow(p,TGCX_TPL_SHOW_PAGES+page,key,page==p->unit_page);
     }
     unsigned total=selected?tgcx_TplTotal(c):0;
@@ -162,11 +186,16 @@ static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
         // Board 5 has no close button: another native folder closes the panel.
         if(action>=TGCX_TPL_NATIVE_17) {p->open=false;tgcx_TplVisible(p->window,false);return;}
         if(action==TGCX_TPL_OPEN) {
+            static tgcx_TplCountry current;
+            if(!tgcx_TplScan(tgcx_TplLiveGlobals(),tgcx_tpl_native,&current) || !tgcx_TplCatalogueFits(current)) {
+                tgcx_Log("Templates: package catalogue does not match active land units; regenerate Army for this base");return;
+            }
             tgcx_TplLoadLibrary();
             // Showing a window re-shows its whole subtree (icons, covers,
             // ring), so the cached child states are stale from here (P42).
             if(tgcx_TplPlace(p,!p->open)) {
                 p->open=true;tgcx_TplVisible(p->window,true);memset(p->shown,0,sizeof(p->shown));p->tick=0;
+                if(tgcx_army_universal)tgcx_UnivTplTab(p->root,p->tab,true);
             }
             else tgcx_Log("Templates panel does not fit the native build-view position");
             return;
@@ -180,7 +209,7 @@ static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
             unsigned pages=(std::max)(1u,(tgcx_tpl_library.size+3)/4);
             p->list_page=(p->list_page+(action==TGCX_TPL_LIST_NEXT?1:pages-1))%pages;return;
         }
-        if(action==TGCX_TPL_UNIT_PREV || action==TGCX_TPL_UNIT_NEXT) {p->unit_page=1-p->unit_page;return;}
+        if(action==TGCX_TPL_UNIT_PREV || action==TGCX_TPL_UNIT_NEXT) {unsigned pages=(tgcx_tpl_kinds+7)/8;p->unit_page=(p->unit_page+(action==TGCX_TPL_UNIT_NEXT?1:pages-1))%pages;return;}
         if(action==TGCX_TPL_RECRUIT) {
             if(p->selected>=tgcx_tpl_library.size || !tgcx_TplTotal(tgcx_tpl_library.item[p->selected]))return;
             // Do not issue another plan against stale pop capacity while the
@@ -194,6 +223,7 @@ static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
             }
             static tgcx_TplCountry country;
             if(!tgcx_TplScan(g,tgcx_tpl_native,&country)) {strcpy_s(p->status,"Cannot read the player's recruitable units.");return;}
+            if(!tgcx_TplCatalogueFits(country)) {strcpy_s(p->status,"Unit catalogue changed; regenerate Army for this base.");return;}
             int counts[tgcx_tpl_units]={};unsigned unknown=0;
             for(unsigned k=0;k<tgcx_tpl_kinds;++k) {
                 int u=tgcx_TplUnitByName(country,tgcx_tpl_catalog[k].key),n=tgcx_tpl_library.item[p->selected].count[k];
@@ -218,7 +248,10 @@ static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
             unsigned u=p->unit_page*8+(action-TGCX_TPL_MINUS_0)/2;if(u>=tgcx_tpl_kinds)return;
             bool add=(action-TGCX_TPL_MINUS_0)%2!=0;
             if(add && tgcx_TplTotal(next.item[selected])>=128) {strcpy_s(p->status,"A template may contain at most 128 regiments.");return;}
-            int& value=next.item[selected].count[u];value=(std::max)(0,value+(add?1:-1));
+            // TPL-3: Ctrl-click changes 5 regiments, Alt-click 2 (Ctrl wins), within the 128 cap.
+            int step=GetKeyState(VK_CONTROL)<0?5:GetKeyState(VK_MENU)<0?2:1;
+            if(add)step=(std::min)(step,static_cast<int>(128-tgcx_TplTotal(next.item[selected])));
+            int& value=next.item[selected].count[u];value=(std::max)(0,value+(add?step:-step));
         } else return;
         if(tgcx_TplCommit(next)) {p->selected=selected;p->list_page=selected/4;strcpy_s(p->status,"Template saved locally.");}
         else strcpy_s(p->status,"Could not save the template; the previous composition was kept.");
@@ -243,7 +276,13 @@ static void tgcx_TplBind(tgcx_TplPanel* p,unsigned action) {
     if(p->bound[action])return;
     // Lookups are flat: the open button lives in the tab window.
     uintptr_t host=action==TGCX_TPL_OPEN?p->tab:action>=TGCX_TPL_NATIVE_17?p->root:p->window;if(!host)return;
-    uintptr_t button=tgcx_BillFind(host,13,0x5E4C80,tgcx_tpl_button_names[action]);if(!button)return;
+    uintptr_t button=tgcx_BillFind(host,13,0x5E4C80,tgcx_tpl_button_names[action]);
+    if(!button) {
+        // Native folders are static children of this root. Do not repeat up
+        // to 1024 absent-folder searches every 100ms on a small vanilla list.
+        if(action>=TGCX_TPL_NATIVE_17)p->bound[action]=true;
+        return;
+    }
     uintptr_t observable=button+0x54;auto* vt=*reinterpret_cast<uintptr_t**>(observable);
     if(vt[1]<tgcx_base || vt[1]>=tgcx_base+tgcx_image_size)return;
     unsigned char* glue=p->glue[action];memset(glue,0,44);
@@ -269,6 +308,7 @@ static void __cdecl tgcx_TplDestroy(uintptr_t view) {
     DWORD error=GetLastError();
     for(auto& p:tgcx_tpl_panels)if(p.view==view) {
         __try {tgcx_TplVisible(p.window,false);} __except(EXCEPTION_EXECUTE_HANDLER) {}
+        tgcx_UnivRelease(p.window);tgcx_UnivRelease(p.tab);
         p.view=p.root=p.window=p.tab=0;p.open=p.disabled=false;memset(p.bound,0,sizeof(p.bound));memset(p.text_set,0,sizeof(p.text_set));memset(p.shown,0,sizeof(p.shown));
         // Keep observer memory/vtables valid until native GUI destruction.
     }
@@ -289,15 +329,23 @@ static void tgcx_TplPanelTick(tgcx_TplPanel* p) {
     __try {
         // Build Navy shares the view and has more folders: no Templates tab.
         if(!tgcx_TplPanelLive(p)) {p->open=false;tgcx_TplVisible(p->window,false);tgcx_TplVisible(p->tab,false);return;}
+        if(tgcx_army_universal && *reinterpret_cast<uintptr_t*>(p->view+0x6C)) {
+            p->open=false;tgcx_TplVisible(p->window,false);tgcx_TplVisible(p->tab,false);return;
+        }
         DWORD now=GetTickCount();if(p->tick && now-p->tick<100)return;p->tick=now;
         if(!p->window) {
+            if(tgcx_army_universal) {
+                if(!tgcx_UnivPair(p->root,"tgcx_tpl_window","tgcx_tpl_tab",p->window,p->tab))return;
+            } else {
             // The province build view has no Templates tab. Lookup the
             // optional button first to avoid native missing-window warnings.
             if(!tgcx_BillFind(p->root,13,0x5E4C80,"tgcx_tpl_marker"))return;
             p->window=tgcx_BillFind(p->root,27,0x5E4A20,"tgcx_tpl_window");if(!p->window)return;
             p->tab=tgcx_BillFind(p->root,27,0x5E4A20,"tgcx_tpl_tab");
             tgcx_TplVisible(p->window,false);tgcx_Log("Templates native panel found view=%08X root=%08X tab=%d",p->view,p->root,p->tab!=0);
+            }
         }
+        if(tgcx_army_universal && !tgcx_UnivTplTab(p->root,p->tab)) {tgcx_TplVisible(p->tab,false);return;}
         // Re-shown each tick: showing the build root re-shows its subtree (P42).
         tgcx_TplVisible(p->tab,true);
         for(unsigned b=0;b<TGCX_TPL_BUTTONS;++b)tgcx_TplBind(p,b);
@@ -316,11 +364,13 @@ static void tgcx_TplTick() {
         __try {
             // P47: destroyed outside the hook; its GUI went with it, free the slot.
             if(*reinterpret_cast<uintptr_t*>(p.view)!=tgcx_base+0xA12A14) {
+                tgcx_UnivRelease(p.window);tgcx_UnivRelease(p.tab);
                 p.view=p.root=p.window=p.tab=0;p.open=false;memset(p.bound,0,sizeof(p.bound));memset(p.text_set,0,sizeof(p.text_set));memset(p.shown,0,sizeof(p.shown));
                 tgcx_Log("Templates: build view gone without its destructor; slot freed");continue;
             }
             uintptr_t root=*reinterpret_cast<uintptr_t*>(p.view+0x60);
             if(root!=p.root) {
+                tgcx_UnivRelease(p.window);tgcx_UnivRelease(p.tab);
                 tgcx_TplVisible(p.window,false);tgcx_TplVisible(p.tab,false);p.root=root;p.window=p.tab=0;p.open=false;
                 memset(p.bound,0,sizeof(p.bound));memset(p.text_set,0,sizeof(p.text_set));memset(p.shown,0,sizeof(p.shown));
             }

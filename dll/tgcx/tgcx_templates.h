@@ -6,7 +6,10 @@
 // and ABIs: docs/symbols.md "TPL-0: building a brigade".
 #pragma once
 
-constexpr unsigned tgcx_tpl_units=64;       // unit type index (+0x24) bound: one bit each
+#include <bitset>
+
+constexpr unsigned tgcx_tpl_units=1024;       // bounded engine unit type index (+0x24)
+static bool tgcx_army_universal=false;
 constexpr unsigned tgcx_tpl_pops=1024,tgcx_tpl_orders=128;
 constexpr uint32_t tgcx_tpl_command_size=0x68;
 constexpr uint32_t tgcx_tpl_country_manager_rva=0xE587E4,tgcx_tpl_unit_db_rva=0xE5FDD8,tgcx_tpl_pop_types_rva=0xF1BB34;
@@ -15,7 +18,7 @@ constexpr uint32_t tgcx_tpl_command_vtable_rva=0xA00CF4;
 // ---------------------------------------------------------------- planning (pure)
 
 // A soldier pop: free regiments it can still raise and the unit types it may build.
-struct tgcx_TplPop { uintptr_t pop,province;int province_id,free;uint64_t can_build; };
+struct tgcx_TplPop { uintptr_t pop,province;int province_id,free;std::bitset<tgcx_tpl_units> can_build; };
 struct tgcx_TplOrder { int unit,pop; };
 struct tgcx_TplPlan { unsigned count,missing;tgcx_TplOrder orders[tgcx_tpl_orders]; };
 
@@ -27,14 +30,14 @@ static void tgcx_TplMakePlan(const int* counts,tgcx_TplPop* pops,unsigned pop_co
     out->count=out->missing=0;
     int order[tgcx_tpl_units];unsigned units=0,eligible[tgcx_tpl_units]={};
     for(unsigned u=0;u<tgcx_tpl_units;++u) if(counts[u]>0) {
-        for(unsigned p=0;p<pop_count;++p) if(pops[p].free>0 && (pops[p].can_build>>u&1))eligible[u]+=pops[p].free;
+        for(unsigned p=0;p<pop_count;++p) if(pops[p].free>0 && pops[p].can_build.test(u))eligible[u]+=pops[p].free;
         order[units++]=static_cast<int>(u);
     }
     std::stable_sort(order,order+units,[&](int a,int b){ return eligible[a]<eligible[b]; });
     for(unsigned i=0;i<units;++i) for(int n=0;n<counts[order[i]];++n) {
         int u=order[i],best=-1;
         for(unsigned p=0;p<pop_count;++p)
-            if(pops[p].free>0 && (pops[p].can_build>>u&1) && (best<0 || pops[p].free>pops[best].free))best=static_cast<int>(p);
+            if(pops[p].free>0 && pops[p].can_build.test(u) && (best<0 || pops[p].free>pops[best].free))best=static_cast<int>(p);
         if(best<0 || out->count>=tgcx_tpl_orders) { ++out->missing;continue; }
         --pops[best].free;out->orders[out->count++]={u,best};
     }
@@ -92,7 +95,8 @@ static tgcx_TplNative tgcx_tpl_native={tgcx_TplCanBuildNative,tgcx_TplFreeNative
 struct tgcx_TplGlobals { uintptr_t world,country_manager,unit_db,pop_types,command_vtable; };
 struct tgcx_TplCountry {
     uintptr_t country;uint32_t tag;int index;
-    uintptr_t unit[tgcx_tpl_units];char name[tgcx_tpl_units][32];   // the country's unit types, by index
+    uintptr_t unit[tgcx_tpl_units];char name[tgcx_tpl_units][64];   // the country's unit types, by index
+    int icon[tgcx_tpl_units],days[tgcx_tpl_units];
     unsigned pop_count;tgcx_TplPop pops[tgcx_tpl_pops];
 };
 static tgcx_TplGlobals tgcx_TplLiveGlobals() {
@@ -116,15 +120,22 @@ static bool tgcx_TplScanImpl(const tgcx_TplGlobals& g,const tgcx_TplNative& n,tg
     uintptr_t stats=tgcx_TplRead<uintptr_t>(country+0xBCC);
     uintptr_t types=stats?tgcx_TplRead<uintptr_t>(stats+0x310):0;
     uintptr_t first=tgcx_TplRead<uintptr_t>(g.unit_db+0xC),last=tgcx_TplRead<uintptr_t>(g.unit_db+0x10);
-    if(!types || last<first || (last-first)/4>256)return false;
+    if(!types || last<first || (last-first)/4>tgcx_tpl_units)return false;
     for(uintptr_t at=first+3*4;at<last;at+=4) {   // positions 0-2 are never buildable (FUN_004B81D0)
         uintptr_t base_type=tgcx_TplRead<uintptr_t>(at);
         int i=base_type?tgcx_TplRead<int>(base_type+0x24):-1;
-        if(i<3 || i>=static_cast<int>(tgcx_tpl_units))continue;
+        if(i<3)continue;
+        if(i>=static_cast<int>(tgcx_tpl_units))return false;
         uintptr_t unit=tgcx_TplRead<uintptr_t>(types+i*4);
         if(!unit || !tgcx_TplRead<unsigned char>(unit+0x39))continue;   // land only
         out->unit[i]=unit;
-        if(!tgcx_ReadGameString(base_type+8,out->name[i],sizeof(out->name[i])))out->name[i][0]=0;
+        if(!tgcx_ReadGameString(base_type+8,out->name[i],sizeof(out->name[i])))return false;
+        if(tgcx_army_universal) {
+            out->icon[i]=tgcx_TplRead<int>(base_type+0x28);
+            int days=tgcx_TplRead<int>(unit+0xC0);
+            if(days<=0 || days>100000000)return false;
+            out->days[i]=(days+999)/1000;
+        }
     }
     if(tgcx_TplRead<unsigned char>(country+0xBB8))return true;   // the native list shows no rows then
     uintptr_t provinces=tgcx_TplRead<uintptr_t>(g.world+0xACC);
@@ -144,8 +155,8 @@ static bool tgcx_TplScanImpl(const tgcx_TplGlobals& g,const tgcx_TplNative& n,tg
                 tgcx_TplPop entry={pop,province,tgcx_TplRead<int>(province+0x58),n.free_regiments(pop),0};
                 if(entry.free<=0)continue;
                 for(unsigned u=0;u<tgcx_tpl_units;++u)
-                    if(out->unit[u] && n.can_build(out->unit[u],pop,country,province))entry.can_build|=1ull<<u;
-                if(entry.can_build)out->pops[out->pop_count++]=entry;
+                    if(out->unit[u] && n.can_build(out->unit[u],pop,country,province))entry.can_build.set(u);
+                if(entry.can_build.any())out->pops[out->pop_count++]=entry;
             }
         }
     }
@@ -165,6 +176,19 @@ struct tgcx_TplResult { bool scanned;unsigned queued,missing,failed; };
 // Told about each posted order with the command's ids, read before posting:
 // +0x48 construction (I), +0x50 the stack the regiment will appear in (TPL-1).
 typedef void(*tgcx_TplQueued)(void* context,int unit,int province_id,const uint32_t construction[2],const uint32_t stack[2]);
+typedef bool(*tgcx_TplEligible)(void* context,int province_id);
+// Scope one recruitment/preview without changing native pop capacity. Cache
+// the predicate per province within this snapshot, including negative results.
+static unsigned tgcx_TplFilterPops(tgcx_TplPop* pops,unsigned count,tgcx_TplEligible eligible,void* context) {
+    if(!eligible)return 0;
+    int province[tgcx_tpl_pops];bool allowed[tgcx_tpl_pops];unsigned seen=0,excluded=0;
+    for(unsigned i=0;i<count;++i) {
+        unsigned j=0;while(j<seen && province[j]!=pops[i].province_id)++j;
+        if(j==seen) {province[seen]=pops[i].province_id;allowed[seen++]=eligible(context,pops[i].province_id);}
+        if(!allowed[j]) {pops[i].free=0;++excluded;}
+    }
+    return excluded;
+}
 static bool tgcx_TplSendOrder(const tgcx_TplGlobals& g,const tgcx_TplNative& n,const tgcx_TplCountry& c,const tgcx_TplOrder& o,
                               tgcx_TplQueued queued=nullptr,void* context=nullptr) {
     const tgcx_TplPop& pop=c.pops[o.pop];
@@ -184,13 +208,16 @@ static bool tgcx_TplSendOrder(const tgcx_TplGlobals& g,const tgcx_TplNative& n,c
 }
 // counts[unit index] regiments; recruit what fits and report the rest (D12).
 static tgcx_TplResult tgcx_TplRecruitWith(const tgcx_TplGlobals& g,const tgcx_TplNative& n,const int* counts,
-                                          tgcx_TplQueued queued=nullptr,void* context=nullptr) {
+                                          tgcx_TplQueued queued=nullptr,void* context=nullptr,
+                                          tgcx_TplEligible eligible=nullptr,void* eligibility_context=nullptr) {
     static tgcx_TplCountry country;static tgcx_TplPlan plan;
     tgcx_TplResult r={};
     int wanted[tgcx_tpl_units];unsigned total=0;
     for(unsigned u=0;u<tgcx_tpl_units;++u) { wanted[u]=counts[u]>0?counts[u]:0;total+=wanted[u]; }
     if(!(r.scanned=tgcx_TplScan(g,n,&country))) { r.missing=total;tgcx_Log("Template recruit refused: game read failed");return r; }
     for(unsigned u=0;u<tgcx_tpl_units;++u)if(wanted[u] && !country.unit[u]) { r.missing+=wanted[u];wanted[u]=0; }
+    unsigned excluded=tgcx_TplFilterPops(country.pops,country.pop_count,eligible,eligibility_context);
+    if(excluded)tgcx_Log("Template recruitment scope: %u soldier pops excluded (no land route to target)",excluded);
     tgcx_TplMakePlan(wanted,country.pops,country.pop_count,&plan);
     r.missing+=plan.missing;
     for(unsigned i=0;i<plan.count;++i) {
@@ -211,7 +238,8 @@ static void tgcx_InstallTemplates() {
     tgcx_tpl_new_fn=tgcx_base+0x6AE9AF;tgcx_tpl_ctor_fn=tgcx_base+0x17D1B0;
     tgcx_templates_installed=true;tgcx_Log("Templates ready: CConstructUnitCommand via the engine queue");
 }
-static tgcx_TplResult tgcx_TplRecruit(const int* counts,tgcx_TplQueued queued=nullptr,void* context=nullptr) {
+static tgcx_TplResult tgcx_TplRecruit(const int* counts,tgcx_TplQueued queued=nullptr,void* context=nullptr,
+                                     tgcx_TplEligible eligible=nullptr,void* eligibility_context=nullptr) {
     if(!tgcx_templates_installed) { tgcx_TplResult r={};return r; }
-    return tgcx_TplRecruitWith(tgcx_TplLiveGlobals(),tgcx_tpl_native,counts,queued,context);
+    return tgcx_TplRecruitWith(tgcx_TplLiveGlobals(),tgcx_tpl_native,counts,queued,context,eligible,eligibility_context);
 }

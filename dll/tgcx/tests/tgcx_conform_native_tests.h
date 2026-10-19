@@ -45,9 +45,15 @@ static void* tgcx_CfStubTransfer(const tgcx_CfId& t,uintptr_t r) { ++tgcx_cf_s_t
 static void* tgcx_CfStubCreate(uintptr_t,const tgcx_CfId&) { ++tgcx_cf_s_creates;return tgcx_CfStubCommand(0x2004); }
 static bool tgcx_CfStubNewId(const tgcx_CfGlobals&,tgcx_CfId* out) { *out={0x1269,900};return true; }
 static bool tgcx_CfStubLand(uintptr_t) { return true; }
-static bool tgcx_CfStubPost(void*) { ++tgcx_cf_s_posts;return true; }
+static uintptr_t tgcx_cf_s_post_order[256];
+static bool tgcx_CfStubPost(void* command) {
+    if(tgcx_cf_s_posts<256)tgcx_cf_s_post_order[tgcx_cf_s_posts]=*reinterpret_cast<uintptr_t*>(command);
+    ++tgcx_cf_s_posts;return true;
+}
 static int tgcx_cf_s_recruited[tgcx_tpl_units];
-static tgcx_TplResult tgcx_CfStubRecruit(const int* counts,tgcx_TplQueued queued,void* context) {
+static uintptr_t tgcx_cf_s_recruit_target;
+static tgcx_TplResult tgcx_CfStubRecruit(uintptr_t target,const int* counts,tgcx_TplQueued queued,void* context) {
+    tgcx_cf_s_recruit_target=target;
     tgcx_TplResult r={true,0,0,0};
     for(unsigned u=0;u<tgcx_tpl_units;++u)for(int k=0;k<counts[u];++k) {
         uint32_t cons[2]={0x20,500+r.queued},stack[2]={0x1269,600+r.queued};
@@ -55,6 +61,8 @@ static tgcx_TplResult tgcx_CfStubRecruit(const int* counts,tgcx_TplQueued queued
     }
     return r;
 }
+static int tgcx_cf_s_unreachable=-1;
+static bool tgcx_CfStubReach(uintptr_t,int province) {return province!=tgcx_cf_s_unreachable;}
 
 // ---- synthetic registry: one bucket table per range, nodes {entry, next}
 struct tgcx_CfFakeTable { uint32_t unused,count;uintptr_t buckets; };
@@ -100,7 +108,7 @@ static void tgcx_ConformNativeTests() {
     static uint32_t counter=41;static uint16_t id_base=1;static unsigned char lock=0;
     tgcx_CfGlobals g={reinterpret_cast<uintptr_t>(world),reinterpret_cast<uintptr_t>(&tgcx_cf_f_low),reinterpret_cast<uintptr_t>(&tgcx_cf_f_high),
         reinterpret_cast<uintptr_t>(&counter),reinterpret_cast<uintptr_t>(&id_base),reinterpret_cast<uintptr_t>(&lock),0x2001,0x2002,0x2003,0x2004};
-    static unsigned char unit_types[6][0x40];
+    static unsigned char unit_types[6][0x44];
     for(unsigned u=0;u<6;++u)tgcx_cf_f_units[u]=reinterpret_cast<uintptr_t>(unit_types[u]);
 
     // ---- registry and stack read
@@ -145,7 +153,7 @@ static void tgcx_ConformNativeTests() {
 
     // ---- the daily driver: march, then merge
     tgcx_CfNative stub={tgcx_CfStubMove,tgcx_CfStubMerge,tgcx_CfStubTransfer,tgcx_CfStubCreate,tgcx_CfStubNewId,tgcx_CfStubLand,
-        tgcx_CfStubPost,tgcx_CfStubRecruit};
+        tgcx_CfStubPost,tgcx_CfStubRecruit,tgcx_CfStubReach};
     memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_world=g.world;tgcx_cf_date=99;tgcx_cf_stack_vtable=0x7AB0;
     uintptr_t built=tgcx_CfMakeStack(2,60,20,7);
     tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,{0x1269,50},{0x1269,60},{},3,99);
@@ -161,7 +169,7 @@ static void tgcx_ConformNativeTests() {
 
     // ---- one Conform: 2 infantry(3) + 1 cavalry(5) to 2 infantry + 2 artillery(4)
     memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_date=50;
-    tgcx_cf_s_posts=tgcx_cf_s_creates=0;
+    tgcx_cf_s_posts=tgcx_cf_s_creates=tgcx_cf_s_transfers=0;
     // A finished one-regiment artillery stack nearby is not taken: Conform builds (user, 2026-10-17).
     uintptr_t idle=tgcx_CfMakeStack(3,70,11,7);tgcx_CfAddRegiment(idle,3,3,7,4);
     int want[tgcx_tpl_units]={};want[3]=2;want[4]=2;
@@ -169,18 +177,42 @@ static void tgcx_ConformNativeTests() {
     tgcx_CfResult r=tgcx_CfConformWith(g,stub,target,tgcx_cf_f_units,want,&plan);
     tgcx_Expect(r.read && r.refusal==TGCX_CF_OK && r.detached==1 && !r.gathered && r.queued==2 && !r.failed,"conform plans detach and build, gathers nothing");
     tgcx_Expect(tgcx_cf_s_creates==1 && tgcx_cf_s_recruited[4]==2,"conform creates one stack and builds both artillery");
+    tgcx_Expect(tgcx_cf_s_recruit_target==target,"conform recruitment receives the actual target army for its land scope");
+    tgcx_Expect(tgcx_cf_s_transfers==1 && tgcx_cf_s_post_order[0]==g.vt_create && tgcx_cf_s_post_order[1]==g.vt_transfer,
+        "conform queues Create then Transfer together before the new empty stack can disappear");
+    tgcx_Expect(tgcx_cf_s_transfer_target.id==900 && tgcx_cf_s_transfer_regiment==reinterpret_cast<uintptr_t>(tgcx_cf_f_regiment[2]),
+        "conform initial batch names the new stack and the extra regiment");
     int pending[tgcx_tpl_units];tgcx_CfPending(tgcx_cf_tracker,{0x1269,50},pending);
     tgcx_Expect(pending[4]==2,"conform tracks both built artillery");
     r=tgcx_CfConformWith(g,stub,target,tgcx_cf_f_units,want,&plan);
     tgcx_Expect(r.refusal==TGCX_CF_OK && !r.queued && !r.gathered && !r.detached && !r.failed && tgcx_cf_s_creates==1,
         "conform again counts pending regiments and leaving extras, sends nothing more");
-    // the extras' stack appears: its Transfer names the new stack and the cavalry regiment
-    tgcx_CfMakeStack(4,900,10,7);
-    tgcx_CfPut<uint32_t>(world,0xB0C,51);tgcx_cf_s_transfers=0;
+    // No simulated execution: the still-present extra is detected, not claimed
+    // as detached. The retry remains pending only while its destination exists.
+    uintptr_t extras=tgcx_CfMakeStack(4,900,10,7);
+    tgcx_CfPut<uint32_t>(world,0xB0C,51);
     tgcx_CfDaily(g,stub);
-    tgcx_Expect(tgcx_cf_s_transfers==1 && tgcx_cf_s_transfer_target.id==900 &&
-        tgcx_cf_s_transfer_regiment==reinterpret_cast<uintptr_t>(tgcx_cf_f_regiment[2]),"conform transfers the extra into the new stack");
+    tgcx_Expect(tgcx_cf_s_transfers==1 && tgcx_cf_tracker.task[0].used && tgcx_cf_tracker.task[0].retries==1,
+        "conform verifies the initial batch and schedules a refused transfer for retry");
+    tgcx_CfPut<uintptr_t>(reinterpret_cast<void*>(extras),0,0);tgcx_CfPut<uint32_t>(world,0xB0C,52);
+    tgcx_CfDaily(g,stub);
+    tgcx_Expect(!tgcx_cf_tracker.task[0].used && tgcx_cf_s_transfers==1,
+        "conform verifies a vanished empty stack without reading null or retrying into it");
     tgcx_Expect(tgcx_CfConformWith(g,stub,enemy,tgcx_cf_f_units,want,&plan).read==false,"conform refuses another country's stack");
+    // Already queued overseas builds must not make a later preview claim a
+    // full army. Stop only our tracking; no cancel/disband/move is posted.
+    unsigned posts_before=tgcx_cf_s_posts;tgcx_cf_s_unreachable=33;
+    tgcx_CfPruneRoutes(g,stub,{0x1269,50},target);
+    tgcx_CfPending(tgcx_cf_tracker,{0x1269,50},pending);
+    tgcx_Expect(!pending[4] && tgcx_cf_s_posts==posts_before,
+        "Conform removes stranded origins from pending counts without changing their units/constructions");
+    tgcx_cf_s_unreachable=20;
+    tgcx_CfPut<int>(tgcx_cf_f_province[2],0x58,20);
+    auto* stranded=tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_JOIN,{0x1269,50},{0x1269,60},{},3,52);
+    tgcx_CfPut<uint32_t>(world,0xB0C,53);tgcx_CfDaily(g,stub);
+    tgcx_Expect(stranded && !stranded->used && tgcx_cf_s_posts==posts_before,
+        "Conform daily driver does not order an unreachable reinforcement to march");
+    tgcx_cf_s_unreachable=-1;
     tgcx_cf_stack_vtable=0;memset(&tgcx_cf_tracker,0,sizeof(tgcx_cf_tracker));tgcx_cf_world=0;tgcx_cf_date=0;
     printf("Conform native: registry walk, stack read, command ABIs, id lock, driver and one Conform checked\n");
 }

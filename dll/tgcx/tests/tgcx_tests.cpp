@@ -64,9 +64,14 @@ static void tgcx_FixtureTests() {
     memory[0x334E24]^=1;tgcx_InstallTemplatesGui();
     tgcx_Expect(!tgcx_tpl_gui_enabled && *reinterpret_cast<uintptr_t*>(memory+0xA12A14)==tgcx_base+0x3340E0,
         "Templates bad layout guard leaves native view hooks untouched");memory[0x334E24]^=1;
-    memory[tgcx_signatures[5].rva+11]^=1;
-    tgcx_Expect(!tgcx_CheckSignatures(), "wrong relocated pointer rejected");
-    memory[tgcx_signatures[5].rva+11]^=1;
+    const tgcx_Signature* relocated=nullptr;
+    for(const auto& sig:tgcx_signatures)if(sig.rva==0xA12A14 && sig.reloc_count)relocated=&sig;
+    tgcx_Expect(relocated!=nullptr,"fixture selects a relocated pointer signature by RVA");
+    if(relocated) {
+        memory[relocated->rva+relocated->reloc[0]]^=1;
+        tgcx_Expect(!tgcx_CheckSignatures(), "wrong relocated pointer rejected");
+        memory[relocated->rva+relocated->reloc[0]]^=1;
+    }
     // MOD-1: a drawing-only site (scalar hover CALL) gates drawing and laws.
     memory[0x2D52C6]^=1;
     tgcx_Expect(!tgcx_CheckSignatures() && !tgcx_DrawingSignatures(), "MOD-1: changed hover site gates drawing and laws");
@@ -272,6 +277,46 @@ static void tgcx_PluginProbe(const wchar_t* path) {
     FreeLibrary(module);
 }
 
+// MOD-2: the -mod= list and .mod lines, as the launcher writes them (MOD-0).
+static void tgcx_PackageTests() {
+    char files[4][MAX_PATH];
+    tgcx_Expect(tgcx_ParseModArgs("v2game.exe -mod=mod/TGCOrganizedStacks.mod -mod=mod/TGC_v2.5.2.mod -mod=mod/tgcx_army_tgc252.mod",files,4)==3 &&
+                strcmp(files[0],"mod/TGCOrganizedStacks.mod")==0 && strcmp(files[2],"mod/tgcx_army_tgc252.mod")==0,"three -mod= in order");
+    tgcx_Expect(tgcx_ParseModArgs("\"v2game.exe\" -mod=mod/Divergences of Darkness Fan Fork.mod \"-mod=mod/A b.MOD\"",files,4)==2 &&
+                strcmp(files[0],"mod/Divergences of Darkness Fan Fork.mod")==0 && strcmp(files[1],"mod/A b.MOD")==0,"spaces, quotes and case");
+    tgcx_Expect(tgcx_ParseModArgs("v2game.exe",files,4)==0 && tgcx_ParseModArgs("v2game.exe -mod=broken",files,4)==0,"no or unterminated -mod=");
+    tgcx_Expect(tgcx_ParseModArgs("x -mod=a.mod -mod=b.mod -mod=c.mod",files,2)==2,"list capped");
+    const char* mod="name = \"TGC v2.5.2 (stable)\"\r\nreplace_path = \"common\"\r\npath = \"mod/TGC_v2.5.2/TGC\"\r\n  user_dir=TGC252\r\n";
+    char value[MAX_PATH];
+    tgcx_Expect(tgcx_ModValue(mod,"path",value,sizeof(value)) && strcmp(value,"mod/TGC_v2.5.2/TGC")==0,"path skips replace_path");
+    tgcx_Expect(tgcx_ModValue(mod,"user_dir",value,sizeof(value)) && strcmp(value,"TGC252")==0,"unquoted value");
+    tgcx_Expect(!tgcx_ModValue(mod,"dependencies",value,sizeof(value)),"missing key");
+    tgcx_Expect(!tgcx_ModValue(mod,"path",value,4),"value too long refused");
+    tgcx_ModList list={};
+    list.count=3;
+    strcpy_s(list.item[0].user_dir,"TGC252");strcpy_s(list.item[1].package,"army");
+    strcpy_s(list.item[2].user_dir,"TGCX");strcpy_s(list.item[2].package,"politics");
+    char settings[MAX_PATH];
+    tgcx_SettingsFolder(list,settings,sizeof(settings));
+    tgcx_Expect(strcmp(settings,"TGC252_TGCX")==0 && tgcx_Ticked(list,"army") && tgcx_Ticked(list,"politics"),"settings folder joins user_dirs");
+    list.count=2;list.item[1].package[0]=0;
+    tgcx_SettingsFolder(list,settings,sizeof(settings));
+    tgcx_Expect(strcmp(settings,"TGC252")==0 && !tgcx_Ticked(list,"army"),"Army has no user_dir (S4)");
+    // Files on disk: a fake game folder with one package.
+    wchar_t game[MAX_PATH];GetTempPathW(MAX_PATH,game);wcscat_s(game,L"tgcx_pkg_test");
+    wchar_t path[MAX_PATH];
+    swprintf_s(path,L"%s\\mod\\tgcx_army_x",game);SHCreateDirectoryExW(nullptr,path,nullptr);
+    auto put=[&](const wchar_t* rel,const char* text){wchar_t p[MAX_PATH];swprintf_s(p,L"%s\\%s",game,rel);
+        HANDLE h=CreateFileW(p,GENERIC_WRITE,0,nullptr,CREATE_ALWAYS,0,nullptr);DWORD w;WriteFile(h,text,static_cast<DWORD>(strlen(text)),&w,nullptr);CloseHandle(h);};
+    put(L"mod\\tgcx_army_x.mod","name = \"Army\"\npath = \"mod/tgcx_army_x\"\n");
+    put(L"mod\\tgcx_army_x\\tgcx_package.txt","package = army\nbase = x\n");
+    put(L"mod\\base.mod","name = \"B\"\npath = \"mod/base\"\nuser_dir = \"BB\"\n");
+    tgcx_ReadMods(game,"v2game.exe -mod=mod/base.mod -mod=mod/tgcx_army_x.mod -mod=mod/missing.mod",&list);
+    tgcx_Expect(list.count==3 && strcmp(list.item[1].package,"army")==0 && !list.item[0].package[0] &&
+                strcmp(list.item[0].user_dir,"BB")==0 && !list.item[2].path[0],"package marker read from the mod's folder");
+    tgcx_Expect(tgcx_GamePath(game,"mod/tgcx_army_x","tgcx.dll",path,MAX_PATH) && wcsstr(path,L"\\mod\\tgcx_army_x\\tgcx.dll"),"package DLL path");
+}
+
 #include "tgcx_renderer_tests.h"
 #include "tgcx_bill_tests.h"
 #include "tgcx_reforms_tests.h"
@@ -279,15 +324,18 @@ static void tgcx_PluginProbe(const wchar_t* path) {
 #include "tgcx_templates_gui_tests.h"
 #include "tgcx_conform_tests.h"
 #include "tgcx_conform_native_tests.h"
+#include "tgcx_conform_routes_tests.h"
 #include "tgcx_conform_gui_tests.h"
+#include "tgcx_templates_metadata_tests.h"
+#include "tgcx_universal_tests.h"
 
 int wmain(int argc, wchar_t** argv) {
     setvbuf(stdout,nullptr,_IONBF,0);
-    if (argc==3 && wcscmp(argv[1],L"probe")==0) tgcx_LoaderProbe(argv[2]);
+    if (argc>=3 && wcscmp(argv[1],L"probe")==0) tgcx_LoaderProbe(argv[2]);
     else if (argc==3 && wcscmp(argv[1],L"plugin")==0) tgcx_PluginProbe(argv[2]);
     else if (argc==2) {
         tgcx_log=CreateFileW(L"tgcx_fixture.log",GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,0,nullptr);
-        tgcx_HashTests(argv[1]); tgcx_BillTests();tgcx_ReformTests();tgcx_TemplateTests();tgcx_TplGuiTests();tgcx_ConformTests();tgcx_ConformNativeTests();tgcx_ConformGuiTests();tgcx_BillWindowTests(argv[1]);tgcx_FixtureTests();
+        tgcx_HashTests(argv[1]); tgcx_PackageTests(); tgcx_BillTests();tgcx_ReformTests();tgcx_TemplateTests();tgcx_TplGuiTests();tgcx_ConformTests();tgcx_ConformNativeTests();tgcx_ConformRouteTests();tgcx_ConformGuiTests();tgcx_TplMetadataTests();tgcx_UniversalTests();tgcx_BillWindowTests(argv[1]);tgcx_FixtureTests();
         if (tgcx_log!=INVALID_HANDLE_VALUE) CloseHandle(tgcx_log);
     } else { printf("usage: tgcx_tests <reference exe> | probe <proxy> | plugin <tgcx.dll>\n"); return 2; }
     printf("tgcx_tests: %s\n", tgcx_failures ? "FAIL" : "ALL OK");

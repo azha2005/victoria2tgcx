@@ -20,7 +20,11 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "dll/tgcx/Release/lua51.dll"
 LOGIC = "tgcx.dll"
 LOADER_MARKER = b"TGCX loader MOD-1 0.7.0"
+# MOD-2: the loader finds tgcx.dll in a package folder through the -mod= list, so
+# nothing is installed beside it; a tgcx.dll left in the game folder is set aside.
+PACKAGE_LOADER_MARKER = b"TGCX loader MOD-2 0.8.0"
 LOGIC_MARKER = b"TGCX MOD-1 0.7.0"
+LOGIC_MARKERS = (LOGIC_MARKER, b"TGCX MOD-2 0.8.0", b"TGCX TPL-4 0.8.1", b"TGCX TPL-4 0.8.2", b"TGCX MOD-5 0.9.0", b"TGCX MOD-6 0.10.0", b"TGCX MOD-6 0.10.1", b"TGCX MOD-6 0.10.2", b"TGCX MOD-6 0.10.3", b"TGCX MOD-6 0.10.4")
 ORIGINAL_SIZE = 11264
 ORIGINAL_SHA256 = "b2ba19343691f22d1af1417f9a7cbaeae74ba820a2a412f5a6cdea271cc1a7b0"
 STATE = "tgcx_dll_install.json"
@@ -72,7 +76,7 @@ def proxy(path, reference):
     image = PE(path)
     if image.machine != 0x14C or not any(marker in image.data for marker in
                 (b"TGCX DLL-0 0.1.0", b"TGCX DLL-1+HEMI-1 0.2.0", b"TGCX DLL-1+HEMI-1 0.2.1", b"TGCX DLL-1+HEMI-1 0.2.2", b"TGCX DLL-1+HEMI-1 0.2.3", b"TGCX DLL-1+HEMI-1 0.2.4", b"TGCX DLL-1+HEMI-2 0.2.5", b"TGCX DLL-1+HEMI-3 0.2.6", b"TGCX DLL-1+HEMI-3 0.2.7", b"TGCX DLL-1+HEMI-3 0.2.8", b"TGCX LAW-2 0.3.0", b"TGCX LAW-2 0.3.1", b"TGCX LAW-2 0.3.2", b"TGCX LAW-2 0.3.3", b"TGCX LAW-2 0.3.4", b"TGCX LAW-2 0.3.5", b"TGCX TPL-0 0.4.0", b"TGCX TPL-0 0.4.1", b"TGCX TPL-0 0.4.2", b"TGCX TPL-0 0.4.3", b"TGCX TPL-0 0.4.4", b"TGCX TPL-1 0.5.0", b"TGCX TPL-1 0.5.1", b"TGCX TPL-1 0.6.0", b"TGCX TPL-1 0.6.1", b"TGCX TPL-1 0.6.2", b"TGCX TPL-1 0.6.3", b"TGCX LAW-3 0.6.4")):
-        if image.machine != 0x14C or not any(marker in image.data for marker in (b"TGCX TPL-1 0.6.5", LOADER_MARKER)):
+        if image.machine != 0x14C or not any(marker in image.data for marker in (b"TGCX TPL-1 0.6.5", LOADER_MARKER, PACKAGE_LOADER_MARKER)):
             raise ValueError(f"{path}: not a recognized TGCX Win32 build")
     expected = {name: (ordinal, f"lua51_real.{name}")
                 for name, (ordinal, _) in PE(reference).exports().items()}
@@ -87,7 +91,7 @@ def loader(path):
 
 def logic(path):
     image = PE(path)
-    if image.machine != 0x14C or LOGIC_MARKER not in image.data:
+    if image.machine != 0x14C or not any(m in image.data for m in LOGIC_MARKERS):
         raise ValueError(f"{path}: not a recognized TGCX logic DLL")
     if not {"tgcx_Init", "V2Mod_Init"} <= set(image.exports()):
         raise ValueError(f"{path}: tgcx_Init or V2Mod_Init export missing")
@@ -95,7 +99,7 @@ def logic(path):
 
 def card(path):
     data = PE(path).data
-    for marker, name in ((LOADER_MARKER, "MOD-1"), (b"TGCX TPL-1", "TPL-1"), (b"TGCX LAW-3", "LAW-3"),
+    for marker, name in ((PACKAGE_LOADER_MARKER, "MOD-2"), (LOADER_MARKER, "MOD-1"), (b"TGCX TPL-1", "TPL-1"), (b"TGCX LAW-3", "LAW-3"),
                          (b"TGCX TPL-0", "TPL-0"), (b"TGCX LAW-2", "LAW-2"), (b"TGCX DLL-1+HEMI-3", "DLL-1+HEMI-3"),
                          (b"TGCX DLL-1+HEMI-2", "DLL-1+HEMI-2"), (b"TGCX DLL-1+HEMI-1", "DLL-1+HEMI-1")):
         if marker in data:

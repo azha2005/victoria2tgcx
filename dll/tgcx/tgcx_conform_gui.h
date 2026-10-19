@@ -46,7 +46,7 @@ struct tgcx_CfPanel {
     bool planned;tgcx_CfRefusal refusal;tgcx_CfRows rows;int kind[tgcx_tpl_units];   // unit index -> catalogue kind
     unsigned char glue[TGCX_CF_BUTTONS][44];
     char text[TGCX_CF_TEXTS][192],summary[192],status[192];bool text_set[TGCX_CF_TEXTS];
-    unsigned char shown[352];
+    unsigned char shown[tgcx_tpl_capacity*28+64];
 };
 static tgcx_CfPanel tgcx_cf_panels[_countof(tgcx_cf_views)]={};
 
@@ -60,9 +60,9 @@ static uintptr_t tgcx_CfShownStack(const tgcx_CfGlobals& g,uintptr_t stack) {
 }
 
 enum {TGCX_CF_SHOW_SEL=0,TGCX_CF_SHOW_BLANK=4,TGCX_CF_SHOW_PAGER=8,TGCX_CF_SHOW_ROW=9,
-    TGCX_CF_SHOW_ICON=TGCX_CF_SHOW_ROW+tgcx_cf_changes,TGCX_CF_SHOW_MINI=TGCX_CF_SHOW_ICON+tgcx_cf_slots*tgcx_tpl_kinds,
-    TGCX_CF_SHOW_CHANGE=TGCX_CF_SHOW_MINI+tgcx_cf_slots*tgcx_cf_minis*tgcx_tpl_kinds,
-    TGCX_CF_SHOW_END=TGCX_CF_SHOW_CHANGE+tgcx_cf_changes*tgcx_tpl_kinds};
+    TGCX_CF_SHOW_ICON=TGCX_CF_SHOW_ROW+tgcx_cf_changes,TGCX_CF_SHOW_MINI=TGCX_CF_SHOW_ICON+tgcx_cf_slots*tgcx_tpl_capacity,
+    TGCX_CF_SHOW_CHANGE=TGCX_CF_SHOW_MINI+tgcx_cf_slots*tgcx_cf_minis*tgcx_tpl_capacity,
+    TGCX_CF_SHOW_END=TGCX_CF_SHOW_CHANGE+tgcx_cf_changes*tgcx_tpl_capacity};
 
 static void tgcx_CfText(tgcx_CfPanel* p,unsigned id,const char* format,...) {
     char text[192];va_list args;va_start(args,format);_vsnprintf_s(text,sizeof(text),_TRUNCATE,format,args);va_end(args);
@@ -133,6 +133,7 @@ static void tgcx_CfPreview(tgcx_CfPanel* p) {
         strcpy_s(p->summary,tgcx_tpl_library.size?"Select a template.":"No templates yet: create one in Build Army, Templates.");return;
     }
     if(!tgcx_TplScan(tgcx_TplLiveGlobals(),tgcx_tpl_native,&country)) { strcpy_s(p->summary,"Cannot read the player's unit types.");return; }
+    if(!tgcx_TplCatalogueFits(country)) { strcpy_s(p->summary,"Unit catalogue changed; regenerate Army for this base.");return; }
     int want[tgcx_tpl_units];tgcx_CfWant(p,country,want,p->kind);
     uintptr_t stack=tgcx_CfTarget(g,p);
     if(!stack || !tgcx_CfPrepare(g,tgcx_cf_native,stack,country.unit,want,&plan,&target)) {
@@ -144,19 +145,20 @@ static void tgcx_CfPreview(tgcx_CfPanel* p) {
     if(plan.refusal==TGCX_CF_TOO_LARGE) { strcpy_s(p->summary,"Armies and templates are limited to 128 regiments.");return; }
     int placed[tgcx_tpl_units]={};
     memcpy(pops,country.pops,sizeof(tgcx_TplPop)*country.pop_count);
+    tgcx_CfScopePops(tgcx_cf_native,stack,pops,country.pop_count);
     tgcx_TplMakePlan(plan.build,pops,country.pop_count,&builds);
     for(unsigned i=0;i<builds.count;++i)++placed[builds.orders[i].unit];
     tgcx_CfRowsOf(plan,placed,&p->rows);
     p->planned=true;
     bool leaving=plan.detach_count && tgcx_CfLeaving(target.id);
-    sprintf_s(p->summary,"%u to build from free soldier pops, %u to detach%s. Nothing is disbanded.",
+    sprintf_s(p->summary,"%u to build within land reach, %u to detach%s. Nothing is disbanded.",
         p->rows.build,p->rows.detach,leaving?" (already leaving)":"");
 }
 static void tgcx_CfLabels(tgcx_CfPanel* p) {
     static_assert(TGCX_CF_SHOW_END<=sizeof(p->shown),"Conform visibility cache");
     unsigned pages=(std::max)(1u,(tgcx_tpl_library.size+tgcx_cf_slots-1)/tgcx_cf_slots);
     p->list_page%=pages;
-    char key[80];
+    char key[128];
     for(unsigned row=0;row<tgcx_cf_slots;++row) {
         unsigned s=p->list_page*tgcx_cf_slots+row;bool used=s<tgcx_tpl_library.size;
         sprintf_s(key,"tgcx_cf_slot_sel_%u",row);tgcx_CfShow(p,TGCX_CF_SHOW_SEL+row,key,used && s==p->selected);
@@ -169,7 +171,14 @@ static void tgcx_CfLabels(tgcx_CfPanel* p) {
         unsigned leading=tgcx_tpl_kinds,mini[4]={},minis=0;
         if(used)minis=tgcx_TplMinis(c,&leading,mini);
         for(unsigned k=0;k<tgcx_cf_minis;++k)tgcx_CfText(p,text+2+k,k<minis?"\xD7%d":"",k<minis?c.count[mini[k]]:0);
-        for(unsigned u=0;u<tgcx_tpl_kinds;++u) {
+        if(tgcx_army_universal) {
+            char sprite[96];sprintf_s(key,"tgcx_cf_slot_icon_%u_unit",row);sprintf_s(sprite,"tgcx_cf_slot_sprite_%u_unit",row);
+            tgcx_UnivIcon(p->window,key,sprite,leading,leading<tgcx_tpl_kinds);
+            for(unsigned k=0;k<tgcx_cf_minis;++k) {
+                sprintf_s(key,"tgcx_cf_mini_%u_%u_unit",row,k);sprintf_s(sprite,"tgcx_cf_mini_sprite_%u_%u_unit",row,k);
+                tgcx_UnivIcon(p->window,key,sprite,mini[k],k<minis);
+            }
+        } else for(unsigned u=0;u<tgcx_tpl_kinds;++u) {
             sprintf_s(key,"tgcx_cf_slot_icon_%u_%s",row,tgcx_tpl_catalog[u].key);
             tgcx_CfShow(p,TGCX_CF_SHOW_ICON+row*tgcx_tpl_kinds+u,key,u==leading);
             for(unsigned k=0;k<tgcx_cf_minis;++k) {
@@ -185,7 +194,10 @@ static void tgcx_CfLabels(tgcx_CfPanel* p) {
         int k=used && row.unit>=0 && row.unit<static_cast<int>(tgcx_tpl_units)?p->kind[row.unit]:-1;
         const char* label=k>=0?tgcx_tpl_catalog[k].label:"Regiment";
         sprintf_s(key,"tgcx_cf_change_row_%u",r);tgcx_CfShow(p,TGCX_CF_SHOW_ROW+r,key,used);
-        for(unsigned u=0;u<tgcx_tpl_kinds;++u) {
+        if(tgcx_army_universal) {
+            char sprite[96];sprintf_s(key,"tgcx_cf_change_icon_%u_unit",r);sprintf_s(sprite,"tgcx_cf_change_sprite_%u_unit",r);
+            tgcx_UnivIcon(p->window,key,sprite,used?static_cast<unsigned>(k):tgcx_tpl_kinds,used && k>=0);
+        } else for(unsigned u=0;u<tgcx_tpl_kinds;++u) {
             sprintf_s(key,"tgcx_cf_change_icon_%u_%s",r,tgcx_tpl_catalog[u].key);
             tgcx_CfShow(p,TGCX_CF_SHOW_CHANGE+r*tgcx_tpl_kinds+u,key,used && k==static_cast<int>(u));
         }
@@ -197,7 +209,7 @@ static void tgcx_CfLabels(tgcx_CfPanel* p) {
             tgcx_CfText(p,text+1,"built; marches and joins (%d days)",k>=0?tgcx_tpl_catalog[k].days:0);break;
         case TGCX_CF_ROW_SHORT:
             tgcx_CfText(p,text,"\xA7Y+%u %s\xA7!",row.count,label);
-            tgcx_CfText(p,text+1,"no free soldier pop can build it now: not built");break;
+            tgcx_CfText(p,text+1,"no free soldier pop within land reach: not built");break;
         case TGCX_CF_ROW_GATHER:
             tgcx_CfText(p,text,"\xA7G+%u %s\xA7!",row.count,label);
             tgcx_CfText(p,text+1,"a finished regiment nearby marches and joins");break;
@@ -231,6 +243,7 @@ static void tgcx_CfConformClick(tgcx_CfPanel* p) {
     if(!p->planned) { strcpy_s(p->status,"Nothing to do: see above.");return; }
     auto g=tgcx_CfLiveGlobals();uintptr_t stack=tgcx_CfTarget(g,p);
     if(!stack || !tgcx_TplScan(tgcx_TplLiveGlobals(),tgcx_tpl_native,&country)) { strcpy_s(p->status,"Cannot read this army now.");return; }
+    if(!tgcx_TplCatalogueFits(country)) { strcpy_s(p->status,"Unit catalogue changed; regenerate Army for this base.");return; }
     int want[tgcx_tpl_units];tgcx_CfWant(p,country,want,p->kind);
     tgcx_CfResult r=tgcx_CfConformWith(g,tgcx_cf_native,stack,country.unit,want,&plan);
     if(!r.read)strcpy_s(p->status,"Cannot read this army now.");
@@ -295,6 +308,7 @@ static void tgcx_CfBind(tgcx_CfPanel* p,unsigned action) {
     reinterpret_cast<tgcx_GuiOne>(vt[1])(observable,nullptr,glue);p->bound[action]=true;
 }
 static void tgcx_CfReset(tgcx_CfPanel* p) {
+    tgcx_UnivRelease(p->window);tgcx_UnivRelease(p->tab);
     p->root=p->window=p->tab=p->seen=0;p->open=p->land=p->disabled=false;p->tick=0;
     memset(p->bound,0,sizeof(p->bound));memset(p->text_set,0,sizeof(p->text_set));memset(p->shown,0,sizeof(p->shown));
     // Observer memory stays valid until native GUI destruction.
@@ -325,9 +339,18 @@ static void tgcx_CfPanelTick(tgcx_CfPanel* p) {
             p->disabled=false;p->tick=0;p->land=false;
         }
         step="visibility";
-        if(!tgcx_CfPanelLive(p)) { if(p->open)tgcx_CfClose(p);return; }
+        if(!tgcx_CfPanelLive(p)) {
+            if(p->open)tgcx_CfClose(p);
+            // Universal's entry is a separate scene root: hiding its host
+            // does not hide it. Reset visibility so reopening promotes it.
+            if(tgcx_army_universal)tgcx_TplVisible(p->tab,false);
+            return;
+        }
         DWORD now=GetTickCount();if(p->tick && now-p->tick<100)return;p->tick=now;
         if(!p->window) {
+            if(tgcx_army_universal) {
+                if(!tgcx_UnivPair(p->root,"tgcx_cf_window","tgcx_cf_tab",p->window,p->tab))return;
+            } else {
             step="marker/window/tab lookup";
             // Without our GUI fragment there is nothing to bind: the button
             // lookup is silent, a window lookup is not. It searches only the
@@ -336,6 +359,7 @@ static void tgcx_CfPanelTick(tgcx_CfPanel* p) {
             p->window=tgcx_BillFind(p->root,27,0x5E4A20,"tgcx_cf_window");if(!p->window)return;
             p->tab=tgcx_BillFind(p->root,27,0x5E4A20,"tgcx_cf_tab");
             tgcx_TplVisible(p->window,false);tgcx_Log("Conform native window found view=%08X root=%08X tab=%d",p->view,p->root,p->tab!=0);
+            }
         }
         step="stack registry/owner/land";
         uintptr_t stack=tgcx_CfShownStack(tgcx_CfLiveGlobals(),shown);
@@ -346,7 +370,9 @@ static void tgcx_CfPanelTick(tgcx_CfPanel* p) {
         }
         // Fleets and foreign stacks have no Conform. Re-applied every tick:
         // showing the unit panel re-shows its subtree (P42).
-        step="tab visibility";tgcx_TplVisible(p->tab,p->land);
+        step="tab visibility";
+        bool placed=!tgcx_army_universal || tgcx_UnivCfTab(p->root,p->tab);
+        tgcx_TplVisible(p->tab,p->land && placed);
         step="bind";
         for(unsigned b=0;b<TGCX_CF_BUTTONS;++b)tgcx_CfBind(p,b);
         if(p->open) {

@@ -12,6 +12,7 @@
 #include <algorithm>
 #include "tgcx_signatures.h"
 #include "tgcx_sha256.h"
+#include "tgcx_packages.h"
 // MOD-1: the Lua forwards live in the loader (loader/tgcx_loader.cpp), not here.
 
 static_assert(sizeof(void*) == 4, "Victoria II requires Win32");
@@ -338,7 +339,7 @@ static bool tgcx_Initialize(const char* origin) {
     tgcx_log=CreateFileW(log_path, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, 0, nullptr);
     if (tgcx_log == INVALID_HANDLE_VALUE) return false;
     tgcx_base=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
-    tgcx_Log("TGCX MOD-1 0.7.0 tgcx.dll loaded_by=%s base=%08X preferred=%08X simulation_writes=engine_commands_only", origin, tgcx_base, tgcx_preferred_base);
+    tgcx_Log("TGCX MOD-6 0.10.4 tgcx.dll loaded_by=%s base=%08X preferred=%08X simulation_writes=engine_commands_only", origin, tgcx_base, tgcx_preferred_base);
     char digest[65]={};
     bool hash_ok=tgcx_HashFile(exe, digest) && strcmp(digest,tgcx_exe_sha256)==0;
     tgcx_Log("%s sha256 %s", hash_ok ? "OK" : "BAD", digest[0] ? digest : "unavailable");
@@ -358,17 +359,38 @@ static bool tgcx_Initialize(const char* origin) {
         tgcx_Log("Cannot pin tgcx.dll: no hooks installed");
         return false;
     }
+    // MOD-2: modules follow the packages ticked in the launcher (D15).
+    static tgcx_ModList mods;
+    tgcx_ReadMods(directory, GetCommandLineA(), &mods);
+    for (unsigned i=0; i<mods.count; ++i)
+        tgcx_Log("Mod %s: path=%s user_dir=%s package=%s", mods.item[i].file, mods.item[i].path[0] ? mods.item[i].path : "?",
+                 mods.item[i].user_dir[0] ? mods.item[i].user_dir : "-", mods.item[i].package[0] ? mods.item[i].package : "-");
+    bool army=tgcx_Ticked(mods,"army"), politics=tgcx_Ticked(mods,"politics");
+    tgcx_SettingsFolder(mods, tgcx_tpl_settings, sizeof(tgcx_tpl_settings));
+    tgcx_Log("Packages: army=%u politics=%u settings=%s", army, politics, tgcx_tpl_settings[0] ? tgcx_tpl_settings : "(root)");
+    if (!army && !politics) {
+        tgcx_Log("No TGCX package in the -mod= list: no hooks installed");
+        return false;
+    }
     if (!tgcx_InstallNativeStages()) {
         tgcx_Log("Module gate stages: BAD (ordered draw/final Present); no module installed");
         return false;
     }
-    bool drawing=tgcx_DrawingSignatures();
-    tgcx_Log("Module gate drawing+laws: signatures %s", drawing ? "OK" : "BAD");
-    if (drawing && tgcx_InstallRenderer()) {
-        tgcx_bill_enabled=true;tgcx_bill_decision_fn=tgcx_base+0x2DCE10;tgcx_InstallReforms();
-    } else tgcx_Log("Drawing and laws disabled: original pie, no Bill or Reforms tab");
-    tgcx_InstallTemplatesGui();
-    tgcx_InstallConform();
+    if (politics) {
+        bool drawing=tgcx_DrawingSignatures();
+        tgcx_Log("Module gate drawing+laws: signatures %s", drawing ? "OK" : "BAD");
+        if (drawing && tgcx_InstallRenderer()) {
+            tgcx_bill_enabled=true;tgcx_bill_decision_fn=tgcx_base+0x2DCE10;tgcx_InstallReforms();
+        } else tgcx_Log("Drawing and laws disabled: original pie, no Bill or Reforms tab");
+    } else tgcx_Log("Politics not ticked: drawing+laws off, original pie");
+    if (army && tgcx_TplPackageMetadata(directory,mods)) {
+        const uint32_t universal_rvas[]={0x5A38F0,0x5C4410,0x5E3D60,0x5EFE20,0x246620,0x5A6A6D,0xA08A70,0x8453FC,0x1BAB1C,0x1BA89E,
+            0x5E4490,0xA3C1DC};
+        if(!tgcx_army_universal || tgcx_RequireSignatures(universal_rvas,_countof(universal_rvas))) {
+            tgcx_InstallTemplatesGui();
+            tgcx_InstallConform();
+        } else tgcx_Log("Universal Army disabled: native GUI/metadata signature gate failed");
+    } else tgcx_Log("Army unavailable or not ticked: Templates and Conform off");
     tgcx_Log("Modules: drawing+laws=%u templates=%u conform=%u", tgcx_drawing_enabled, tgcx_tpl_gui_enabled, tgcx_cf_enabled);
     return true;
 }

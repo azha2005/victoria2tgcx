@@ -9,6 +9,25 @@
 > **R** confirmed at run time. Every address used by our own code also has
 > its signature in `tools/check_exe.py`.
 
+## MOD-6 preliminary GUI construction evidence (2026-10-19)
+
+Read-only investigation after reference check_exe passed. Derived pseudocode
+remains in ignored `work/mod6-panel-constructors-1019.txt` and
+`work/mod6-gui-factory-1019.txt`; these functions are **not newly invoked or
+hooked** by the DLL. Call wrappers, ownership and runtime signatures still
+need verification before implementation.
+
+| Function | VA | RVA = VA - 0x400000 | Confidence / observation |
+|---|---|---|---|
+| FUN_00798A50 | 0x00798A50 | 0x398A50 | C static: CUnitView constructor asks for `unitpanel` through the object returned by its owner's slot 13, slot 11 on that object, then stores the resulting root at view+0x20. Concrete factory type at this call remains I. |
+| FUN_009A38F0 | 0x009A38F0 | 0x5A38F0 | C static: CEU3Gui primary slot 11 (vtable RVA 0xA08A44); resolves the requested name through GUI+0x34 slot 1, calls FUN_009CDE70 with renderer at +0x30 and native screen dimensions, then Entity_RegisterSpatial. Candidate for named root construction; full ABI/ownership not runtime-confirmed. |
+| FUN_009A3880 | 0x009A3880 | 0x5A3880 | C static: CEU3Gui slot 9, resolves a name and calls FUN_009F0760, then spatial registration. Result type still unknown. |
+| FUN_009A34F0 | 0x009A34F0 | 0x5A34F0 | C static: CEU3Gui slot 13, resolves a name and calls FUN_00A584A0, then spatial registration. Result type still unknown. |
+
+FUN_009E4A20 (already documented, RVA 0x5E4A20) only searches the direct
+subwindow map at +0x424 and warns if absent. It does not construct a new
+window. A universal package needs a creation/attachment route beyond it.
+
 ## Functions
 
 | VA | name | conf | evidence | date |
@@ -716,3 +735,140 @@ Ghidra listings in `E:\v2re\logs\tgcx-law3-1018\` (outside git). RVA = VA - 0x40
 | `FUN_0053A6A0` decision ignored by the player: EAX = country, EDI = decision, AL = 1 ignored | `0x0053A6A0` | `0x13A6A0` | C | entry `push esi; mov esi,[eax+0x188]`; also called from `CPoliticsView` slot 10 |
 | `FUN_0053A6D0` top-bar alert "We can enact the following decisions" (key `COUNTRYALERT_CanDoDecisions`, VA `0xDFF5C4`); skips decisions `FUN_0053A6A0` calls ignored | `0x0053A6D0` | `0x13A6D0` | C | key at `0x53C100`, call at `0x53C2A1` |
 | `FUN_0040B360` gates the alert icon itself | `0x0040B360` | `0x00B360` | I | not studied (LAW-3 limit) |
+
+### TPL-4 command batch and verification (2026-10-19, static/live)
+
+`FUN_0072D4E0` (RVA `0x32D4E0`) builds the regiment reference from entry
++8/+C. `FUN_00908FD0` (RVA `0x508FD0`) resolves this reference at Transfer
++3C using its key +40/+44, without resolving the destination. The destination
+key is at +64/+68 and is resolved by execute `FUN_005E1F90` (RVA `0x1E1F90`).
+Thus Create followed by Transfer can be submitted before the new stack exists;
+regiments already exist. Existing calls/guards unchanged. Read-only exports:
+`work/tpl4-detach-extra.txt`, `work/tpl4-detach-disasm.txt` (not git).
+
+The live 0.8.1 log passes the logged source/destination field checks but
+loses empty destinations before next-day verification. 0.8.2 batches the
+commands immediately and reports vanished destinations. Empty cleanup timing
+is an inference; in-game success remains unconfirmed. See report-tpl-4-1019.md.
+
+
+## MOD-6 shared GUI / unit catalogue implementation (2026-10-19)
+
+Supersedes the preliminary construction section above. Confidence **C**
+for static evidence; wrappers/selected native bytes exercised in fixtures,
+**not yet R** for integrated shared-window construction or turnover.
+All RVAs use VA minus 0x400000; new signature gate totals 164.
+Read-only decompilations remain ignored work/mod6-*-1019.txt and logs.
+
+| Function / site | VA | RVA | Evidence and ABI |
+|---|---|---|---|
+| CEU3Gui named-root factory | 0x009A38F0 | 0x5A38F0 | Primary slot 11; thiscall, name pointer and parent stack args, RET 8; registry at +0x34, renderer +0x30; calls 0x009CDE70 then registers root+0x18 in GUI+0x5C |
+| Factory slot pointer | 0x00E08A70 | 0xA08A70 | Relocated pointer to 0x009A38F0; primary table begins RVA 0xA08A44 |
+| CGui subobject construction fields | 0x009A6A6D | 0x5A6A6D | CGui context +0x30, definition +0x34; subobject is root+0x1C, hence root context +0x4C |
+| CFixedWindow scalar deleting destructor | 0x009E2F90 | 0x5E2F90 | C static only; not called by Universal (P54) |
+| CUnitView owned-root teardown | 0x0079D490 | 0x39D490 | Hides root via secondary slot 14, then primary slot 20; evidence work/mod6-unregister-1019.txt |
+| CFixedWindow deferred release | 0x009E3D60 | 0x5E3D60 | Primary slot 20, no stack args, marks +0x52 and propagates to children; Universal release path |
+| CEU3Button position getter | 0x009EFE20 | 0x5EFE20 | Slot 15, caller output uint32 pointer, RET 4, copies packed position +0x98 |
+| CIcon position getter | 0x00646620 | 0x246620 | Slot 15, output uint32 pointer, copies packed position +0xBC |
+| CIcon frame forwarding | 0x009C4410 | 0x5C4410 | Slot 18, forwards stack frame argument to inner icon +0x94 slot 24; exercised native bytes in fixture |
+| build_time token registration | 0x00C453FC | 0x8453FC | Token 0x4DB, build_time string; work/mod6-token-1019.txt |
+| Build time parser store | 0x005BAB1C | 0x1BAB1C | Integer thousandths written at definition+0xC0; parser 0x0098FB60 multiplies by 1000; round up for catalogue days |
+| Icon parser store | 0x005BA89E | 0x1BA89E | Parsed integer written at base unit definition+0x28 |
+
+Runtime helpers validate context/table methods and creation definitions;
+they borrow engine strings without storing them and refuse mismatches.
+Lifetime evidence: work/mod6-native-owner-1019.txt,
+mod6-unregister-1019.txt and mod6-release-1019.txt. Dynamic field evidence:
+mod6-unit-fields-1019.txt and mod6-fixedpoint-cleanup-1019.txt. Engine-state
+changes remain in the previously verified command path.
+
+
+## Conform land-route scope (2026-10-19, 0.10.1)
+
+Confidence C static; ABI/logic exercised through mocks, integrated query
+not yet runtime-confirmed. Reference hash and 169 guards pass. Read-only
+exports in work/conform-reach-{move,path,policy,abi,cleanup,vtables}-1019.txt.
+
+| Site | VA | RVA = VA - 0x400000 | Contract |
+|---|---|---|---|
+| Native route query FUN_005B8500 | 0x005B8500 | 0x1B8500 | EAX explicit source CProvince*, stack (predicate*, army*, destination CProvince*, output list*), RET 0x10, AL success |
+| Query return ABI | 0x005B8830 | 0x1B8830 | MOV ESP,EBP; POP EBP; RET 0x10 |
+| CVerySafePathFind vtable | 0x00E03794 | 0xA03794 | Five slots; native Move's local predicate contains only this pointer; matches existing replace/safe/very-safe command flags |
+| Path cleanup FUN_00849E90 | 0x00849E90 | 0x449E90 | ECX output list, no stack args; native allocator frees nodes, clears head/tail/count; Move calls at 0x005DF093 |
+| Map-province sea flag read | 0x005B984F | 0x1B984F | FUN_005B9810 reads province+0x5C map pointer, map+0x2A sea flag |
+
+Native call at 0x005DEF0D (RVA 0x1DEF0D) loads EAX from army+0xDC,
+pushes army and predicate after destination/output. Our query instead
+supplies the candidate recruitment province explicitly, keeping the real
+army unchanged. World+0xACC supplies province pointers by id, as before.
+Output list has head/tail/count at +0/+4/+8, flag +0xC and extra word +0x10;
+nodes hold province id +0, next +8. Query builds path via FUN_005B8450
+(VA 0x005B8450, RVA 0x1B8450), removes the start node on success. We do not
+call that helper directly. Same-province land cases need no query.
+
+VerySafe checks native land adjacency, diplomatic access and safety. The
+additional result scan refuses sea nodes even if embarked movement were
+ever accepted. No route/order is stored and no Move is posted by a query.
+Cleanup runs on failed and successful queries. A read/query/cleanup fault
+refuses recruitment capacity rather than falling back to unrestricted pops.
+
+
+## Universal independent entry scene order (2026-10-19, 0.10.2)
+
+DoD0.10.1 live log confirms shared-root creation and live catalogue, not
+visible controls (user reports missing). Static native show 0x009E4450
+(RVA 0x5E4450) sets root+0x67 and inner+0x124; position 0x009E3BA0
+(RVA 0x5E3BA0) changes packed position/render translation. Neither reorders
+scene siblings. Foreground 0x009E2FC0 (RVA 0x5E2FC0) unlinks inner then
+appends to renderer+0x6B9E0. 0.10.2 calls it for hidden entry first show/
+reopen, preserving order when already visible. Existing guards suffice.
+Native reference fixture now exercises independent entry behind host,
+later-dialog preservation and reopen. Live visibility confirmation pending.
+Read-only exports work/universal-missing-controls-1019.txt and
+work/universal-scene-link-1019.txt. Host hide needs explicit independent
+entry hide; this was implicit for the old nested GUI fragments.
+
+
+## Universal subtree activation (2026-10-19, 0.10.3)
+
+Confidence C static and actual-native fixture execution, not live acceptance.
+172 signatures pass. Prior DoD0.10.2 live log confirms entry placement but
+user reports failure. Preserved full log in work/universal-dod-0102-failed-1019.
+
+| Site | VA | RVA = VA - 0x400000 | Contract |
+|---|---|---|---|
+| CGui subtree Show | 0x009E4490 | 0x5E4490 | ECX window+0x18, no stack args; activates control collections and subwindows; sets primary root+0x67 and inner+0x124 |
+| CFixedWindow secondary Show/Hide slots | 0x00E3C1DC | 0xA3C1DC | Slots13/14 of table at RVA0xA3C1A8, point to 0x009E4490 / 0x009E4070 |
+| CEU3Button Show | 0x009EFEF0 | 0x5EFEF0 | ECX control, sets +0x4F and calls renderer+0xA0 slot13 unless +0x6C suppresses it |
+
+Primary root-only Show (existing RVA0x5E4450) does not activate the above
+collections. Native button renderer Show 0x009F9200 (RVA0x5F9200) sets
+renderer+0x29; executed in fixture, not directly called in DLL. Reference
+fixture maps actual subtree/control/renderer functions and tests hidden
+button versus root flags, visible polling, and reopening. Read-only exports:
+work/universal-0103-show-tree.txt, show-abi.txt, secondary-vt.txt (the latter
+was exported as work/universal-0102-secondary-vt.txt) and button-show.txt.
+Runtime wrapper checks the secondary method before calling it. New Show
+logic applies only to Universal and on hidden-to-visible transitions.
+
+
+## Land-flag polarity correction (2026-10-19, 0.10.4)
+
+Supersedes earlier sections calling map+0x2A a sea flag. **It is IS LAND,
+nonzero**; zero denotes water. Native FUN_005B9810 (VA0x005B9810,
+RVA0x1B9810) handles naval edges: two nonzero endpoints reject, two zero
+endpoints proceed, mixed endpoints require the nonzero/land province's
+map+0xDC port to match water province id. Branch VA0x005B9864,
+RVA0x1B9864; existing guard0x1B984F description corrected, bytes unchanged.
+
+Native function is stack-only five args (army,route_destination,current,
+next,edge), RET0x14. Actual reference bytes exercised in isolated fixture,
+with blockade and final access virtual predicate mocked permissive:
+water-water pass, land-land reject for naval kind, unlinked port reject,
+linked ports pass both ways. This independently proves polarity; the old
+route wrapper test mirrored the wrong assumption. No new native call
+added to runtime. Endpoint and returned-node filters now require nonzero.
+Read-only work/conform-land-native-policy-abi-1019.txt and existing
+conform-reach-policy-1019.txt; full native suite/172 guards pass.
+DoD log proves old rejection18/18, user identifies sources as reachable.
+0.10.4 integrated query/recruitment still requires runtime acceptance.

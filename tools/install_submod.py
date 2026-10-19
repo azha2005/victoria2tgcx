@@ -100,16 +100,26 @@ def remove(mod_dir):
         print(f"removed   {modfile}")
 
 
-def generate(tgc, dest, source=SRC):
-    """TGC's file, byte for byte, then our block: the same bytes every time."""
+def generate(tgc, dest, source=SRC, only=None, profile=None):
+    """TGC's file, byte for byte, then our block: the same bytes every time.
+    MOD-2: `only` limits it to one package's files, and `profile` (a
+    tgcx_bases.Base) picks the file the game loads for that base."""
     for rel, (tgc_rel, block) in GENERATED.items():
+        if only is not None and rel not in only:
+            continue
         block = os.path.join(source, os.path.relpath(block, SRC))
         bill_gui = rel == os.path.join("interface", "country_politics.gui")
         templates_gui = rel == os.path.join("interface", "buildunit.gui")
         conform_gui = rel == os.path.join("interface", "unitpanel.gui")
         if (bill_gui or templates_gui or conform_gui) and not os.path.isfile(block):
             continue  # The script-only/default LAW-0 source has no GUI fragment.
-        base = os.path.join(tgc, tgc_rel)
+        if profile is not None:
+            found = profile.find(tgc_rel)
+            if found is None:
+                raise ValueError(f"{profile.name} has no {tgc_rel}")
+            base = str(found)
+        else:
+            base = os.path.join(tgc, tgc_rel)
         if (templates_gui or conform_gui) and not os.path.isfile(base):
             from tgcx_bill_gui import game_root
             base = str(game_root(tgc) / tgc_rel)
@@ -210,9 +220,35 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="prepare and validate without changing the live mod")
     ap.add_argument("--backup", help="new directory for a complete rollback source")
     ap.add_argument("--load-test", action="store_true", help="also install the SUB-0 load-order probe")
+    # MOD-2 packages (tools/tgcx_packages.py)
+    ap.add_argument("--base", help='MOD-2: "vanilla", a base .mod or its folder key (tgc252)')
+    ap.add_argument("--packages", default="army,politics", help="MOD-2: army, politics or both")
+    ap.add_argument("--dll", help="MOD-2: tgcx.dll copied into every package")
+    ap.add_argument("--fix-path", help="MOD-2: the real folder of a base whose .mod points wrong (P4)")
+    ap.add_argument("--remove-packages", action="store_true", help="MOD-2: remove our packages and descriptors")
+    ap.add_argument("--restore", help="MOD-2: put back what a package install replaced")
     a = ap.parse_args()
     if not os.path.isdir(a.mod_dir) or not any(f.lower().endswith(".mod") for f in os.listdir(a.mod_dir)):
         sys.exit(f"install_submod: {a.mod_dir} does not look like a mod\\ folder (no .mod files)")
+    if a.base or a.remove_packages or a.restore:
+        import tgcx_packages as pk
+        try:
+            if game_running():
+                raise ValueError("close v2game.exe first")
+            if a.restore:
+                pk.restore(a.mod_dir, a.restore)
+            elif a.remove_packages:
+                pk.remove(a.mod_dir)
+            else:
+                names = [n.strip() for n in a.packages.split(",") if n.strip()]
+                unknown = [n for n in names if n not in pk.PACKAGES]
+                if unknown or not names:
+                    raise ValueError(f"unknown packages {unknown}; use {', '.join(pk.PACKAGES)}")
+                base = pk.resolve_base(a.mod_dir, a.base, a.fix_path)
+                pk.install(a.mod_dir, base, names, a.source, a.dll, a.backup, a.load_test, a.dry_run)
+        except (OSError, ValueError) as error:
+            sys.exit(f"install_submod: {error}")
+        return
     if a.remove:
         if game_running():
             sys.exit("close v2game.exe before removing the submod")
