@@ -6,6 +6,8 @@
 
 ---
 
+2026-10-19 ATCU release preparation: user selected release work, named Army Template and Conform Universal (ATCU), requested no em dashes and kept license undecided. Local0.0.1 candidate packages accepted0.10.4 DLL/loader with launcher-name-only mod change. ZIP49files/1,054,050bytes, five tests and clean/plugin probes pass, reproducible hash. Docs/provenance ready for review; derived-art publication status, recipient check and publication authorization pending. No commit/push/tag/upload/game changes. report-release-0-candidate-1019.md.
+
 2026-10-19 Universal checkpoint: user accepts TGC2.5.2 + V2DLL5.82, completing vanilla/HPM/DoD/TGC short matrix on0.10.4. Preserved logs show11types,2builds,3/3detach; extended cases remain. Native/GPU and installer checks pass. User authorizes source commit/push and selects culture buttons next (TPL-5), continent-builder selection a prospective follow-up (TPL-6). User clarifies V2DLL code use is no problem; retain attribution. report-universal-tgc-passed-1019.md.
 
 2026-10-19 TGC Universal installation: user confirms vanilla/HPM/DoD Universal0.10.4 work. Identical37-file payload installed after fresh normal-exit confirmation in isolated TGC2.5.2 + V2DLL5.82 copy; executable172 guards pass, protected hashes unchanged. Old Army/loader retained. TGC player check next; no game launched. report-universal-tgc-1019.md; instructions-mod-6.md.
@@ -180,6 +182,7 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 | LAW-4 | Bill view buttons do not stay ticked (user, 2026-10-18) | deferred while Army compatibility has priority | `docs/instructions-law-4.md`, `docs/report-tpl-4-1018.md` §3 |
 | TPL-3 | Alt-click 2, Ctrl-click 5 in the Templates editor | **user-confirmed passed 2026-10-19** | `docs/report-tpl-4-1018.md` |
 | TPL-5 | Culture filter (primary + accepted / primary only) for Templates and Conform | selected next after four-base Universal acceptance | `docs/instructions-tpl-5.md` |
+| RELEASE-0 | ATCU0.0.1 files-only release candidate | prepared locally; review/publication pending | `docs/instructions-release-0.md` |
 | TPL-6 | Continent selection in template builder | prospective design after TPL-5 | `docs/instructions-tpl-6.md` |
 | U-12 | Game check of 0.8.1 (TPL-3, TPL-4, LAW-4 screenshot) | Ctrl/Alt + detach passed; Bill deferred | `docs/instructions-u-12.md` |
 | MOD-3 | Army package on vanilla 3.04 in game (D15) | **short vanilla and Universal0.10.4 accepted**, extended pending | `docs/instructions-mod-3.md` |

@@ -1,5 +1,9 @@
 # Index of `docs/`
 
+- `report-release-0-candidate-1019.md`: ATCU0.0.1 local candidate, unchanged binary, packaging checks and remaining review.
+- `release-0.0.1/`: recipient README/install/known issues/changelog/credits/provenance status/bug reports and draft release text.
+- `archive/instructions-release-0-before-candidate-1019.md`: earlier release preparation instructions, verbatim.
+
 - `report-universal-tgc-passed-1019.md`: TGC/V2DLL accepted, four-base short matrix complete, source checkpoint and user V2DLL provenance clarification.
 - `instructions-tpl-5.md`: selected culture buttons, shared eligibility and persistence steps.
 - `instructions-tpl-6.md`: proposed continent builder selector after culture filtering.

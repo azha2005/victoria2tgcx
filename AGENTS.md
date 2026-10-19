@@ -472,7 +472,7 @@ number (**the next one is P59**).
 |---|---|---|---|
 | **D1** | Compatibility | **TGC v2.5.2 only**; other versions deferred (maybe never). Nothing from TGC enters git; what is overridden is generated from the installed v2.5.2. Revised: the first answer was "any version" | **closed** (user, 2026-10-12, revised the same day after U-2) |
 | **D2** | Base | **TGC** instead of HPM (TGC already absorbed HPM/HFM); test with stable v2.5.2 | **closed** (user, 2026-10-12) |
-| D3 | Submod name and prefix | Army package named **"Army Templates and Conform"** (user, 2026-10-18); Politics name still provisional ("TGCX Politics"); internal prefix `tgcx_` kept | partly closed [user] |
+| D3 | Submod name and prefix | Army package named **"ATCU - Army Template and Conform Universal"** (user, 2026-10-19; formerly Army Templates and Conform); Politics name still provisional ("TGCX Politics"); internal prefix/folder `tgcx_` kept | partly closed [user] |
 | **D4** | "Leaders" | **both: rulers and generals/admirals, starting with those who existed in 1836** | **closed** (user, 2026-10-12); `docs/technical-plan.md` §5 |
 | **D5** | Multiplayer | **later**: single player first. R5 still holds (it is cheap and avoids rework), but MP is not tested until the user asks | **closed** (user, 2026-10-12) |
 | **D6** | DLL base | **our own DLL, allowed to use V2DLL code** (personal use; R8 says how to mark it) | **closed** (user, 2026-10-12) |
