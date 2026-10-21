@@ -1,0 +1,31 @@
+[package]
+name = "tgcx_loader"
+version = "0.8.0"
+edition = "2024"
+publish = false
+build = "build.rs"
+
+[lib]
+# The output must be lua51.dll: the game loads it by name.
+name = "lua51"
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = "s"
+
+[profile.dev]
+panic = "abort"
+
+[dependencies]
+windows-sys = { version = "0.61.2", features = [
+    "Win32_Foundation",
+    "Win32_Globalization",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Environment",
+    "Win32_System_IO",
+    "Win32_System_LibraryLoader",
+    "Win32_System_SystemServices",
+] }

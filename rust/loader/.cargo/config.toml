@@ -1,0 +1,7 @@
+# Victoria II is 32-bit. Unit tests run on the host: cargo test --target x86_64-pc-windows-msvc
+[build]
+target = "i686-pc-windows-msvc"
+
+[target.i686-pc-windows-msvc]
+# Static CRT, like the C++ loader's /MT: nothing extra next to the game.
+rustflags = ["-C", "target-feature=+crt-static"]
