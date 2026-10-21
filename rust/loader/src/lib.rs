@@ -12,7 +12,7 @@ use std::ptr::{null, null_mut};
 
 use windows_sys::Win32::Foundation::{
     CloseHandle, ERROR_FILE_NOT_FOUND, FreeLibrary, GENERIC_READ, GENERIC_WRITE, GetLastError,
-    HANDLE, HINSTANCE, INVALID_HANDLE_VALUE,
+    HANDLE, HINSTANCE, HMODULE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Globalization::{CP_ACP, MultiByteToWideChar};
 use windows_sys::Win32::Storage::FileSystem::{
@@ -44,49 +44,27 @@ std::arch::global_asm!(
 );
 
 extern "system" fn dll_main(_module: HINSTANCE, reason: u32, _reserved: *mut c_void) -> i32 {
-    if reason == DLL_PROCESS_ATTACH {
-        attach();
+    if reason == DLL_PROCESS_ATTACH
+        && let Some(directory) = exe_directory()
+        && let Err((text, error)) = attach(&directory)
+    {
+        log(&directory, text, error);
     }
     1
 }
 
-fn attach() {
-    let Some(directory) = exe_directory() else {
-        return;
-    };
-    // SAFETY: the process command line is a NUL-terminated string that lives forever.
-    let command_line = unsafe { CStr::from_ptr(GetCommandLineA().cast()) };
+/// Why tgcx.dll was not started, and the Win32 error code behind it.
+type Failure = (&'static str, u32);
 
-    let mut error = ERROR_FILE_NOT_FOUND;
-    let logic = parse_mod_args(command_line.to_bytes())
-        .into_iter()
-        .rev()
-        .find_map(|file| {
-            let folder = package_folder(&directory, file)?;
-            let path = game_path(&directory, &folder, Some("tgcx.dll"))?;
-            // A full path: never picks up a tgcx.dll from the search path.
-            let module =
-                unsafe { LoadLibraryExW(path.as_ptr(), null_mut(), LOAD_WITH_ALTERED_SEARCH_PATH) };
-            if module.is_null() {
-                error = unsafe { GetLastError() };
-                return None;
-            }
-            Some(module)
-        });
-    let Some(logic) = logic else {
-        log(
-            &directory,
-            "no ticked TGCX package with tgcx.dll in the -mod= list; tgcx.dll not loaded",
-            error,
-        );
-        return;
-    };
-
+fn attach(directory: &[u16]) -> Result<(), Failure> {
+    let logic = load_logic(directory).map_err(|error| {
+        let text = "no ticked TGCX package with tgcx.dll in the -mod= list; tgcx.dll not loaded";
+        (text, error)
+    })?;
     let Some(init) = (unsafe { GetProcAddress(logic, c"tgcx_Init".as_ptr().cast()) }) else {
         let error = unsafe { GetLastError() };
         unsafe { FreeLibrary(logic) };
-        log(&directory, "tgcx.dll has no tgcx_Init", error);
-        return;
+        return Err(("tgcx.dll has no tgcx_Init", error));
     };
     // SAFETY: tgcx.dll exports `int __cdecl tgcx_Init(const char*)`. It logs its own
     // result and stays loaded either way.
@@ -94,6 +72,29 @@ fn attach() {
         let init: unsafe extern "C" fn(*const c_char) -> i32 = std::mem::transmute(init);
         init(MARKER.as_ptr());
     }
+    Ok(())
+}
+
+/// The tgcx.dll of the last ticked package that loads, or the last load error.
+fn load_logic(directory: &[u16]) -> Result<HMODULE, u32> {
+    // SAFETY: the process command line is a NUL-terminated string that lives forever.
+    let command_line = unsafe { CStr::from_ptr(GetCommandLineA().cast()) };
+    let mut error = ERROR_FILE_NOT_FOUND;
+    for file in parse_mod_args(command_line.to_bytes()).into_iter().rev() {
+        let Some(path) = package_folder(directory, file)
+            .and_then(|folder| game_path(directory, &folder, Some("tgcx.dll")))
+        else {
+            continue;
+        };
+        // A full path: never picks up a tgcx.dll from the search path.
+        let module =
+            unsafe { LoadLibraryExW(path.as_ptr(), null_mut(), LOAD_WITH_ALTERED_SEARCH_PATH) };
+        if !module.is_null() {
+            return Ok(module);
+        }
+        error = unsafe { GetLastError() };
+    }
+    Err(error)
 }
 
 /// The folder of v2game.exe.
