@@ -3,6 +3,8 @@
 import argparse
 import hashlib
 import json
+import os
+import re
 from pathlib import Path
 
 import check_exe
@@ -11,7 +13,7 @@ from tgcx_pe import PE
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "dll/tgcx/tgcx_signatures.h"
-TGC = Path(r"E:\Victoria.II.v3.04.Inclu.ALL.DLC\mod\TGC_v2.5.2\TGC")
+TGC = Path(os.environ.get("TGCX_TGC", r"E:\Victoria.II.v3.04.Inclu.ALL.DLC\mod\TGC_v2.5.2\TGC"))
 
 
 def generate(exe, tgc):
@@ -40,8 +42,13 @@ def generate(exe, tgc):
         positions = ", ".join(map(str, offsets)) or "0"
         lines.append(f"    {{0x{rva:X}, {{{values}}}, {len(data)}, {{{positions}}}, {len(offsets)}, {json.dumps(name)}}},")
     lines += ["};", "// TGC names only: DLL-1 resolves every index/colour from the engine, never file order."]
-    names = [name for _, group in parse(read(tgc / "common/ideologies.txt"))
-             if isinstance(group, list) for name, body in group if isinstance(body, list)]
+    if (tgc / "common/ideologies.txt").exists():
+        names = [name for _, group in parse(read(tgc / "common/ideologies.txt"))
+                 if isinstance(group, list) for name, body in group if isinstance(body, list)]
+    else:
+        # No TGC install: keep the ideology names already in the committed header.
+        block = OUTPUT.read_text(encoding="utf-8").split("tgcx_ideology_candidates[] = {", 1)[1]
+        names = re.findall(r'"([^"]+)"', block.split("};", 1)[0])
     if len(names) != 9 or len(set(names)) != 9:
         raise ValueError("expected the nine TGC v2.5.2 ideologies")
     lines += ["constexpr const char* tgcx_ideology_candidates[] = {",

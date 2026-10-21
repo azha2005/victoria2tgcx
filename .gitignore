@@ -28,3 +28,6 @@ submod/TGCX/interface/buildunit.gui
 
 # Third-party research material from the modding Discord (R8)
 /v2moddingsv/
+
+# Rust build output
+rust/**/target/
