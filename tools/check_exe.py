@@ -12,10 +12,11 @@ Exits with 0 if everything matches and with 1 if not.
 """
 
 import hashlib
+import os
 import sys
 from tgcx_pe import PE
 
-DEFAULT_EXE = r"E:\Victoria.II.v3.04.Inclu.ALL.DLC\v2game.exe"
+DEFAULT_EXE = os.environ.get("TGCX_EXE", r"E:\Victoria.II.v3.04.Inclu.ALL.DLC\v2game.exe")
 
 # The reference executable (3.04). Measured 2026-10-12 on the D:\ and E:\n# installs, which are identical.
 SHA256 = "62d48c204364dd706584777c2e2b3c7ab3c5f1dd0170872554943575d53d6648"

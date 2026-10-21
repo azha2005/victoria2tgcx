@@ -483,7 +483,7 @@ static tgcx_CfResult tgcx_CfConformWith(const tgcx_CfGlobals& g,const tgcx_CfNat
             tgcx_CfId id={};
             tgcx_CfTask* t=nullptr;
             if(!n.new_id(g,&id)) { ++r.failed;tgcx_Log("Conform: no new id; nothing detached"); }
-            else if(!(t=tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_FILL,target.id,id,{},-1,date))) {
+            else if((t=tgcx_CfAdd(&tgcx_cf_tracker,TGCX_CF_FILL,target.id,id,{},-1,date))==nullptr) {
                 ++r.failed;tgcx_Log("Conform: tracker full; no Create queued");
             } else if(!tgcx_CfSend(n.create(stack,id),g.vt_create,n)) {
                 t->used=false;++r.failed;tgcx_Log("Conform: Create not queued; nothing detached");

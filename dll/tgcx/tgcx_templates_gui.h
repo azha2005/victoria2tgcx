@@ -189,9 +189,9 @@ static void tgcx_TplLabels(tgcx_TplPanel* p) {
     tgcx_TplText(p,TGCX_TPL_TEXT_RECRUIT,"Recruit Template");
     tgcx_TplText(p,TGCX_TPL_TEXT_TITLE,"Build Army: Templates");
 }
-static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
-    if(!tgcx_tpl_gui_enabled || !p || GetCurrentThreadId()!=p->thread || action>=TGCX_TPL_BUTTONS)return;
-    __try {
+// The body is its own function: MSVC 14.38 rejects __try around it (C2712).
+static void tgcx_TplClickBody(tgcx_TplPanel* p,unsigned action) {
+    {
         if(!tgcx_TplPanelLive(p))return;
         // Board 5 has no close button: another native folder closes the panel.
         if(action>=TGCX_TPL_NATIVE_17) {p->open=false;tgcx_TplVisible(p->window,false);return;}
@@ -293,7 +293,11 @@ static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
         } else return;
         if(tgcx_TplCommit(next)) {p->selected=selected;p->list_page=selected/4;strcpy_s(p->status,"Template saved locally.");}
         else strcpy_s(p->status,"Could not save the template; the previous composition was kept.");
-    } __except(EXCEPTION_EXECUTE_HANDLER) {tgcx_Log("Templates click rejected: guarded native read fault");}
+    }
+}
+static void tgcx_TplClickImpl(tgcx_TplPanel* p,unsigned action) {
+    if(!tgcx_tpl_gui_enabled || !p || GetCurrentThreadId()!=p->thread || action>=TGCX_TPL_BUTTONS)return;
+    __try {tgcx_TplClickBody(p,action);} __except(EXCEPTION_EXECUTE_HANDLER) {tgcx_Log("Templates click rejected: guarded native read fault");}
 }
 static void __cdecl tgcx_TplClick(tgcx_TplPanel* p,unsigned action) {tgcx_CpuScope cpu;tgcx_TplClickImpl(p,action);}
 // from V2DLL: V2TechButton.cpp, native observer thunk pattern; extended CPU

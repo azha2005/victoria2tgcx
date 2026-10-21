@@ -220,7 +220,7 @@ static tgcx_TplResult tgcx_TplRecruitWith(const tgcx_TplGlobals& g,const tgcx_Tp
     tgcx_TplResult r={};
     int wanted[tgcx_tpl_units];unsigned total=0;
     for(unsigned u=0;u<tgcx_tpl_units;++u) { wanted[u]=counts[u]>0?counts[u]:0;total+=wanted[u]; }
-    if(!(r.scanned=tgcx_TplScan(g,n,&country))) { r.missing=total;tgcx_Log("Template recruit refused: game read failed");return r; }
+    if((r.scanned=tgcx_TplScan(g,n,&country))==false) { r.missing=total;tgcx_Log("Template recruit refused: game read failed");return r; }
     if(filter && !tgcx_ArmyApply(country.country,country.pops,country.pop_count,*filter)) {
         r.scanned=false;r.missing=total;tgcx_Log("Template recruit refused: culture/continent eligibility unavailable");return r;
     }
