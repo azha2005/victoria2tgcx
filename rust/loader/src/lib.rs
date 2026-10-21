@@ -5,9 +5,6 @@
 //! -mod= list (last first). With no package ticked it is a plain Lua proxy and says
 //! so in Logs\tgcx.log.
 
-// Only the Win32 build has an entry point; host builds run the parsing tests.
-#![cfg_attr(any(test, not(target_arch = "x86")), allow(dead_code))]
-
 mod mods;
 
 use std::ffi::{CStr, c_char, c_void};
@@ -30,7 +27,6 @@ use windows_sys::Win32::System::SystemServices::DLL_PROCESS_ATTACH;
 
 use mods::{MAX_PATH, PACKAGE_SIZE, mod_value, parse_mod_args};
 
-#[cfg(not(test))]
 include!(concat!(env!("OUT_DIR"), "/forwards.rs"));
 
 // tools/install_dll.py recognises the loader by this marker; tgcx.dll logs it.
@@ -40,7 +36,6 @@ const BACKSLASH: u16 = b'\\' as u16;
 
 // A #[no_mangle] DllMain would also be exported, and install_dll.py accepts only the
 // original's 128 exports, so the symbol the CRT calls is defined here instead.
-#[cfg(all(not(test), target_arch = "x86"))]
 std::arch::global_asm!(
     ".globl \"_DllMain@12\"",
     "\"_DllMain@12\":",
