@@ -3,12 +3,11 @@ name = "tgcx_loader"
 version = "0.8.0"
 edition = "2024"
 publish = false
-build = "build.rs"
 
 [lib]
-# The output must be lua51.dll: the game loads it by name.
+# The game loads lua51.dll by name.
 name = "lua51"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [profile.release]
 panic = "abort"
