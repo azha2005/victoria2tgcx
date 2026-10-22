@@ -1,0 +1,38 @@
+[package]
+name = "tgcx"
+version = "0.11.2"
+edition = "2024"
+publish = false
+
+[lib]
+# Loaded by the lua51.dll loader (tgcx_Init) or V2DLL's plugin API (V2Mod_Init).
+name = "tgcx"
+crate-type = ["cdylib"]
+
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = 2
+debug = 1
+
+[profile.dev]
+panic = "abort"
+
+[dependencies]
+windows-sys = { version = "0.61.2", features = [
+    "Win32_Foundation",
+    "Win32_Globalization",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Environment",
+    "Win32_System_IO",
+    "Win32_System_Kernel",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_SystemInformation",
+    "Win32_System_SystemServices",
+    "Win32_System_Threading",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+] }
