@@ -234,6 +234,13 @@ SIGNATURES = [
     (0x94550, "558BEC51568B750833C06AFF83C1405051C746140F000000", "TPL-6 continent key +0x40 accessor"),
     (0x9D040, "558BEC83E4F864A1000000006AFF6808C1BB00508B450864", "TPL-6 native lookup traverses provinceSource +0x2A78/+0x2A7C"),
     (0x9FC1DC, "90444900F0299A00606AA400902A9A0080454900C0104000", "TPL-6 CContinent native vtable first six slots"),
+    # MOBO-1 read-only mobilization guards (docs/symbols.md "MOBO-1").
+    (0x1804BE, "8A4944888820010000" "8B47048B52048B", "MOBO CToggleMobilizationCommand execute writes country +0x120 from command +0x44"),
+    (0x50003E, "8A9020010000" "33C03A511C0F94C0", "MOBO CIsMobilisedTrigger reads country +0x120"),
+    (0x108FB0, "8BB3E0150000" "2BB3DC150000" "C1FE0285F6", "MOBO mobilization schedule vector country +0x15DC/+0x15E0 size"),
+    (0x113CA8, "8B9FB80700006A10", "MOBO CCountry::AddUnit reads unit list tail +0x7B8"),
+    (0x113CCF, "C08B8FBC070000" "8D5101" "8987B8070000" "8997BC070000" "85C9", "MOBO CCountry::AddUnit appends: count +0x7BC, tail +0x7B8"),
+    (0x10834B, "8B80B4070000" "83EC14535657" "85C00F84B2010000" "EB038B45EC8B188B4808", "MOBO CCountry::RefreshSubUnits walks +0x7B4 head, node +0 unit, +8 next"),
 ]
 
 

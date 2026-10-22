@@ -27,6 +27,9 @@ CHANGE_X, CHANGE_Y = 7, 264
 # templates and Changes.
 BAND_Y = 198
 CHECKS = {"accepted": (60, 203), "primary": (200, 203)}
+# MOBO-1: the "Mobo stack" box, in the title's green band between the title and
+# the close button; its label follows.
+MOBO = (172, 6)
 # The fixed 400x80 stack panel has no room for the board's wide bottom
 # button: the free cell between the location and the attrition icon. OPEN
 # retains the accepted TGC reference; other bases use opening_rect().
@@ -63,11 +66,12 @@ def buttons():
     result += [("list_prev", "left", 228, 172, 24, 24), ("list_next", "right", 300, 172, 24, 24),
                ("conform", "button", 12, 558, 148, 28), ("cancel", "button", 172, 558, 148, 28)]
     result += [(f"culture_{k}", "check", x, y, 20, 20) for k, (x, y) in CHECKS.items()]
+    result += [("mobo", "check", *MOBO, 20, 20)]
     return result
 
 
 def texts():
-    result = [("title", "Conform to template", 12, 9, 285, 22, "Arial14", "left")]
+    result = [("title", "Conform to template", 12, 9, 156, 22, "Arial14", "left")]
     for i in range(SLOTS):
         x, y = SLOT_X, SLOT_Y+i*32
         result += [(f"slot_{i}", "", x+40, y+2, 132, 14, "Arial12_bold_black", "left"),
@@ -86,6 +90,7 @@ def texts():
     result += [("culture", "Culture", 14, 206, 44, 18, "Arial12_bold_black", "left"),
                ("culture_accepted", "Primary + accepted", CHECKS["accepted"][0]+24, 206, 114, 18, "Arial12_black", "left"),
                ("culture_primary", "Primary only", CHECKS["primary"][0]+24, 206, 98, 18, "Arial12_black", "left")]
+    result += [("mobo", "Mobo stack", MOBO[0]+24, 9, 104, 22, "Arial14", "left")]
     return result
 
 
@@ -124,6 +129,8 @@ def layout(tgc=DEFAULT_TGC, profile=None, universal=False):
     for k, (bx, by) in CHECKS.items():
         parts += _window(f"tgcx_cf_check_on_{k}", bx, by, 20, 20,
                          [f'iconType={{name="tgcx_cf_check_on_icon_{k}" spriteType="tgcx_cf_check_on" position={{x=0 y=0}}}}'])
+    parts += _window("tgcx_cf_check_on_mobo", *MOBO, 20, 20,
+                     ['iconType={name="tgcx_cf_check_on_icon_mobo" spriteType="tgcx_cf_check_on" position={x=0 y=0}}'])
     for name, art, bx, by, _, _ in buttons()[1:]:
         sprite_name = art if art.startswith("GFX_") else f"tgcx_cf_{art}"
         parts.append(f'guiButtonType={{name="tgcx_cf_{name}" quadTextureSprite="{sprite_name}" position={{x={bx} y={by}}} clicksound=click}}')
@@ -233,7 +240,7 @@ def generate(output, tgc=DEFAULT_TGC, profile=None):
     band.paste(entry.crop((40, 0, 150, ROW_H)).resize((ROW_W-6, ROW_H)), (3, 0))
     bg.alpha_composite(band, (SLOT_X, BAND_Y))
     off, on, shared = filter_checkbox(tgc, profile)
-    for x, y in CHECKS.values():
+    for x, y in (*CHECKS.values(), MOBO):
         bg.alpha_composite(off, (x, y))
     images['check'], images['check_on'] = shared, on
     for row in range(SLOTS):

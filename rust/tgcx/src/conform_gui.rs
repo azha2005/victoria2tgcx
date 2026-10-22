@@ -118,7 +118,7 @@ const SHOW_ICON: usize = SHOW_ROW + CHANGES;
 const SHOW_MINI: usize = SHOW_ICON + SLOTS * templates::CAPACITY;
 const SHOW_CHANGE: usize = SHOW_MINI + SLOTS * MINIS * templates::CAPACITY;
 const SHOW_CHECK: usize = SHOW_CHANGE + CHANGES * templates::CAPACITY;
-const SHOW_END: usize = SHOW_CHECK + 2;
+const SHOW_END: usize = SHOW_CHECK + 3;
 const SHOWN: usize = templates::CAPACITY * 28 + 64;
 const _: () = assert!(SHOW_END <= SHOWN, "Conform visibility cache");
 const _: () = assert!(
@@ -326,7 +326,11 @@ fn preview(p: &mut CfPanel) {
         summary(p, "Unit catalogue changed; regenerate Army for this base.");
         return;
     }
-    let want = want(p, country);
+    let mut want = want(p, country);
+    let marked = native::mobo_quota(p.stack).is_some();
+    if marked && let Some(u) = templates::unit_by_name(country, b"infantry") {
+        want[u] = 0;
+    }
     let stack = target(&g, p);
     let plan = PREVIEW_PLAN.get();
     let target = PREVIEW_TARGET.get();
@@ -339,14 +343,22 @@ fn preview(p: &mut CfPanel) {
         Refusal::Matches => {
             summary(
                 p,
-                "This army already matches the template (counting regiments on their way).",
+                if marked {
+                    "This mobo stack already matches the template without its infantry."
+                } else {
+                    "This army already matches the template (counting regiments on their way)."
+                },
             );
             return;
         }
         Refusal::NothingKept => {
             summary(
                 p,
-                "No regiment of this army is in the template: nothing would stay. Nothing is changed.",
+                if marked {
+                    "A mobo stack keeps no infantry and this army has nothing else. Nothing is changed."
+                } else {
+                    "No regiment of this army is in the template: nothing would stay. Nothing is changed."
+                },
             );
             return;
         }
@@ -585,6 +597,14 @@ fn labels(p: &mut CfPanel) {
         b"tgcx_cf_check_on_primary\0",
         mode == CULTURE_PRIMARY,
     );
+    let quota = native::mobo_quota(p.stack);
+    show(
+        p,
+        SHOW_CHECK + 2,
+        b"tgcx_cf_check_on_mobo\0",
+        quota.is_some(),
+    );
+    text(p, CF_T_MOBO, format_args!("Mobo stack"));
     text(p, CF_T_CHANGES, format_args!("Changes"));
     let s = p.summary;
     if p.planned && p.rows.more != 0 {
@@ -596,6 +616,12 @@ fn labels(p: &mut CfPanel) {
     if !p.status.is_empty() {
         let s = p.status;
         text(p, CF_T_STATUS, format_args!("{s}"));
+    } else if let Some(n) = quota {
+        text(
+            p,
+            CF_T_STATUS,
+            format_args!("Mobo stack: {n} infantry join when you mobilize."),
+        );
     } else if p.planned && p.rows.shortfall != 0 {
         let shortfall = p.rows.shortfall;
         text(
@@ -662,7 +688,12 @@ fn conform_click(p: &mut CfPanel) {
         status(p, "Unit catalogue changed; regenerate Army for this base.");
         return;
     }
-    let want = want(p, country);
+    let mut want = want(p, country);
+    if native::mobo_quota(p.stack).is_some()
+        && let Some(u) = templates::unit_by_name(country, b"infantry")
+    {
+        want[u] = 0;
+    }
     let filter = ArmyFilter {
         culture: library.item[p.selected].culture,
         continent: 0,
@@ -697,6 +728,56 @@ fn conform_click(p: &mut CfPanel) {
             r.queued,
             r.missing
         );
+    }
+    preview(p);
+}
+
+/// The Mobo stack box: marks the open stack with the infantry the selected template asks
+/// for, or removes the mark. Conform then leaves infantry out of that stack.
+fn mobo_click(p: &mut CfPanel) {
+    let g = native::live_globals();
+    let stack = target(&g, p);
+    if stack == 0 {
+        status(p, "Cannot read this army now.");
+        return;
+    }
+    if !native::mobo_enabled() {
+        status(
+            p,
+            "Mobo stacks are unavailable: the executable was not recognised.",
+        );
+        return;
+    }
+    if native::mobo_quota(p.stack).is_some() {
+        native::mobo_unmark(&g, p.stack);
+        status(p, "Mobo mark removed.");
+        preview(p);
+        return;
+    }
+    if p.selected >= templates::library().size {
+        status(p, "Select a template first.");
+        return;
+    }
+    let country = CLICK_COUNTRY.get();
+    if !templates::scan(&templates::live_globals(), country) {
+        status(p, "Cannot read the player's unit types.");
+        return;
+    }
+    let want = want(p, country);
+    let Some(u) = templates::unit_by_name(country, b"infantry") else {
+        status(p, "This country has no infantry unit type.");
+        return;
+    };
+    if want[u] <= 0 {
+        status(p, "This template has no infantry to bring in.");
+    } else if native::mobo_mark(&g, stack, want[u]) {
+        p.status = text!(
+            192,
+            "Marked: {} infantry join when you mobilize. Conform builds the rest.",
+            want[u]
+        );
+    } else {
+        status(p, "Could not keep the mark: see the log.");
     }
     preview(p);
 }
@@ -766,6 +847,10 @@ fn click_inner(p: &mut CfPanel, action: usize) {
                 pages - 1
             })
             % pages;
+        return;
+    }
+    if action == CF_B_MOBO {
+        mobo_click(p);
         return;
     }
     if action == CF_B_CONFORM {

@@ -924,3 +924,36 @@ reaches the engine command. Canonical continent keys are session preferences,
 not pointers on disk. Culture mode alone is persisted in a separate v2 library.
 Catalogue pointers/strings are cached only for a world/manager/vector identity.
 Implementation, test limits and installation: report-army-filters-implementation-1019.md.
+
+
+## MOBO-1: mobo stacks and the mobilization schedule (2026-10-22, static)
+
+Read-only disassembly of `game/v2game.exe` (llvm-objdump, VAs). Nothing here is
+confirmed in a running game yet: **I (static)** until a mobilization is watched
+in `tgcx.log`.
+
+| what | where | evidence |
+|---|---|---|
+| mobilized flag | `CCountry+0x120` (byte). Written by `CToggleMobilizationCommand` execute (RVA `0x1804C1`, `mov [country+0x120], command+0x44`); read by `CIsMobilisedTrigger` (VA `0x900020`, `cmp [country+0x120], trigger+0x1C`) | both disassembled |
+| `CToggleMobilizationCommand` | vtable VA `0x00E00F5C`; ctor stores tag `+0x3C`, country index `+0x40`, on/off byte `+0x44`; execute slot 6 (VA `0x580480`): sets the flag, calls `FUN_00515490(country)` (clears the schedule state), then if on `FUN_00514F20(country, 1)` (builds the schedule) | disassembly |
+| the schedule | `CCountry+0x15DC/+0x15E0`: vector of 96-byte entries, one per pop and province, built by `FUN_00514F20` (via `FUN_00446120`, appended by `FUN_0053F7B0`). Entry `+0x3C` progress (to 1000), `+0x10` regiments, `+0x44` done, `+0x5C` rally point index | `FUN_00514F20`, daily loop VA `0x508FB0` |
+| daily loop | VA `0x508FB0`: walks the vector in order; an entry that is not valid today counts as finished; a valid one is run with `FUN_00446A30` and the walk stops at the first unfinished entry; when every entry is finished the vector is freed and zeroed. So mobilization takes many days and the vector is non-empty throughout | disassembly |
+| raising one entry | `FUN_00446A30`: if the province already holds a land stack of the country (checked through its vfuncs) the regiments go into it; otherwise a new army (`0x1B8`, ctor `FUN_004460D0`) is made and `CCountry::AddUnit`'d; each regiment is a 140-byte object; with a rally point (`entry+0x5C` valid in `country+0x1570`) it ends with the same `CMoveCommand` ctor (`FUN_005DE7D0`) Conform uses | disassembly |
+| unit list | `CCountry+0x7B4/+0x7B8/+0x7BC` head / tail / count, 16-byte node `+0` unit, `+4` prev, `+8` next. `AddUnit` (`FUN_00513C80`) appends at the tail, `RefreshSubUnits` (`FUN_00508330`) walks head to `+8` | disassembly, matches the table above |
+
+Consequences for the feature (`rust/tgcx/src/conform_native.rs`, "mobo stacks"):
+
+- The infantry that can be brought to a mobo stack are the *new all-infantry stacks*
+  that appear while the schedule is non-empty (plus the day after it empties).
+  Regiments raised into a province that already holds a land stack join that stack
+  and are not seen as new stacks; they are left where they are.
+- A stack is new when its id was not in the player's land stack list the day before.
+  The list is re-read daily, and re-seeded after a load or when a stack is marked.
+- There is no per-regiment "raised by mobilization" flag in what was read, so a
+  new all-infantry stack made by the player (a split, say) during that window is
+  indistinguishable and is treated the same.
+- Marks live in `tgcx_mobo_marks.txt` (same settings folder, same date-window rule
+  as `tgcx_conform_orders.txt`); the marching infantry reuse the saved orders.
+
+Signatures added to `tools/check_exe.py` (185 now): RVAs `0x1804BE`, `0x50003E`,
+`0x108FB0`, `0x113CA8`, `0x113CCF`, `0x10834B`.
