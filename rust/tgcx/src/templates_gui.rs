@@ -14,9 +14,9 @@ use crate::sys::{
     thread_id,
 };
 use crate::templates::{
-    self, ArmyFilter, CONTINENTS, CONTINENTS_MAX, CULTURE_ACCEPTED, CULTURE_ALL, CULTURE_PRIMARY,
-    Composition, SLOTS, TplCountry, UNITS, catalogue, catalogue_fits, kinds, live_globals, scan,
-    unit_by_name,
+    self, ArmyFilter, CONTINENTS, CONTINENTS_MAX, CULTURE_ACCEPTED, CULTURE_ALL, CULTURE_NONCORE,
+    CULTURE_PRIMARY, Composition, SLOTS, TplCountry, UNITS, catalogue, catalogue_fits, kinds,
+    live_globals, scan, unit_by_name,
 };
 use crate::templates_catalog::*;
 use crate::{log, text};
@@ -356,7 +356,7 @@ const SHOW_PAGES: usize = 9;
 const SHOW_ICON: usize = SHOW_PAGES + templates::CAPACITY.div_ceil(8);
 const SHOW_MINI: usize = SHOW_ICON + 4 * templates::CAPACITY;
 const SHOW_CHECK: usize = SHOW_MINI + 4 * 4 * templates::CAPACITY;
-const SHOW_END: usize = SHOW_CHECK + 2;
+const SHOW_END: usize = SHOW_CHECK + 3;
 const SHOWN: usize = templates::CAPACITY * 21 + 64;
 const _: () = assert!(SHOW_END <= SHOWN, "Templates visibility cache");
 const _: () = assert!(
@@ -537,6 +537,12 @@ fn labels(p: &mut TplPanel) {
         SHOW_CHECK + 1,
         b"tgcx_tpl_check_on_primary\0",
         mode == CULTURE_PRIMARY,
+    );
+    show(
+        p,
+        SHOW_CHECK + 2,
+        b"tgcx_tpl_check_on_noncore\0",
+        mode == CULTURE_NONCORE,
     );
     let continent = if p.continent.is_empty() {
         Text::<128>::from_latin1("Any continent")
@@ -960,14 +966,14 @@ fn click_body(p: &mut TplPanel, action: usize) {
         } else {
             0
         };
-    } else if action == TPL_CULTURE_ACCEPTED || action == TPL_CULTURE_PRIMARY {
+    } else if (TPL_CULTURE_ACCEPTED..=TPL_CULTURE_NONCORE).contains(&action) {
         if selected >= next.size {
             return;
         }
-        let mode = if action == TPL_CULTURE_ACCEPTED {
-            CULTURE_ACCEPTED
-        } else {
-            CULTURE_PRIMARY
+        let mode = match action {
+            TPL_CULTURE_ACCEPTED => CULTURE_ACCEPTED,
+            TPL_CULTURE_PRIMARY => CULTURE_PRIMARY,
+            _ => CULTURE_NONCORE,
         };
         let culture = &mut next.item[selected].culture;
         *culture = if *culture == mode { CULTURE_ALL } else { mode };

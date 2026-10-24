@@ -451,6 +451,8 @@ pub fn unit_by_name(c: &TplCountry, name: &[u8]) -> Option<usize> {
 pub const CULTURE_ALL: u32 = 0;
 pub const CULTURE_ACCEPTED: u32 = 1;
 pub const CULTURE_PRIMARY: u32 = 2;
+/// TPL-8: neither the primary nor an accepted culture (not territorial cores).
+pub const CULTURE_NONCORE: u32 = 3;
 
 #[derive(Clone, Copy, Default)]
 pub struct ArmyFilter {
@@ -507,7 +509,7 @@ fn read_cultures_inner(country: usize) -> Option<Cultures> {
 }
 
 pub fn army_apply(country: usize, pops: &mut [TplPop], filter: &ArmyFilter) -> bool {
-    if filter.culture > CULTURE_PRIMARY || pops.len() > POPS {
+    if filter.culture > CULTURE_NONCORE || pops.len() > POPS {
         return false;
     }
     if filter.culture == 0 && filter.continent == 0 {
@@ -531,9 +533,13 @@ pub fn army_apply(country: usize, pops: &mut [TplPop], filter: &ArmyFilter) -> b
         let matches = match &cultures {
             None => true,
             Some(c) => {
-                pop.culture == c.primary
-                    || (filter.culture == CULTURE_ACCEPTED
-                        && c.accepted.binary_search(&pop.culture).is_ok())
+                let primary = pop.culture == c.primary;
+                let accepted = c.accepted.binary_search(&pop.culture).is_ok();
+                match filter.culture {
+                    CULTURE_ACCEPTED => primary || accepted,
+                    CULTURE_PRIMARY => primary,
+                    _ => !primary && !accepted,
+                }
             }
         };
         if !matches || (filter.continent != 0 && pop.continent != filter.continent) {
@@ -1038,8 +1044,9 @@ pub fn load_file(path: &[u16]) -> Option<Library> {
     let data = std::fs::read(wide(path)).ok()?;
     let units = &catalogue().units;
     let mut candidate = Library::EMPTY;
-    let (mut valid, mut inside, mut header, mut version2, mut culture_seen) =
-        (true, false, false, false, false);
+    // Version 2 adds @culture=0..2; version 3 (TPL-8) also allows 3, Non-core only.
+    let (mut valid, mut inside, mut header, mut version, mut culture_seen) =
+        (true, false, false, 0u8, false);
     for raw in fgets_lines(&data, 128) {
         let line = c_line(raw);
         if line.len() == 127 && line[126] != b'\n' {
@@ -1048,8 +1055,13 @@ pub fn load_file(path: &[u16]) -> Option<Library> {
         }
         let line = trim_newlines(line);
         if !header {
-            version2 = line == b"tgcx_templates 2";
-            header = version2 || line == b"tgcx_templates 1";
+            version = match line {
+                b"tgcx_templates 1" => 1,
+                b"tgcx_templates 2" => 2,
+                b"tgcx_templates 3" => 3,
+                _ => 0,
+            };
+            header = version != 0;
             if !header {
                 valid = false;
                 break;
@@ -1067,7 +1079,7 @@ pub fn load_file(path: &[u16]) -> Option<Library> {
             continue;
         }
         if line == b"end" {
-            if !inside || (version2 && !culture_seen) {
+            if !inside || (version >= 2 && !culture_seen) {
                 valid = false;
                 break;
             }
@@ -1075,11 +1087,12 @@ pub fn load_file(path: &[u16]) -> Option<Library> {
             continue;
         }
         if line.starts_with(b"@culture=") {
-            if !version2
+            let last = if version >= 3 { b'3' } else { b'2' };
+            if version < 2
                 || !inside
                 || culture_seen
                 || line.len() != 10
-                || !(b'0'..=b'2').contains(&line[9])
+                || !(b'0'..=last).contains(&line[9])
             {
                 valid = false;
                 break;
@@ -1155,10 +1168,10 @@ fn save_file(path: &[u16], library: &Library) -> bool {
         return false;
     }
     let units = &catalogue().units;
-    let mut bytes: Vec<u8> = b"tgcx_templates 2\r\n".to_vec();
+    let mut bytes: Vec<u8> = b"tgcx_templates 3\r\n".to_vec();
     let mut valid = true;
     for item in &library.item[..library.size] {
-        valid = total(item) <= 128 && item.culture <= CULTURE_PRIMARY;
+        valid = total(item) <= 128 && item.culture <= CULTURE_NONCORE;
         if !valid {
             break;
         }
@@ -1221,15 +1234,23 @@ fn file_exists(path: &[u16]) -> Option<bool> {
     }
 }
 
-/// Prefer v2, import v1 only when v2 is absent. Invalid v2 never falls back.
-fn load_preferred(preferred: &[u16], legacy: &[u16], imported: &mut bool) -> Option<Library> {
-    *imported = false;
+/// Prefer the newest file; import an older one only when every newer one is absent.
+/// An invalid file never falls back to an older one. `imported` names the index in
+/// `older` of the file read, if any.
+fn load_preferred(
+    preferred: &[u16],
+    older: &[&[u16]],
+    imported: &mut Option<usize>,
+) -> Option<Library> {
+    *imported = None;
     if file_exists(preferred)? {
         return load_file(preferred);
     }
-    if file_exists(legacy)? {
-        *imported = true;
-        return load_file(legacy);
+    for (i, path) in older.iter().enumerate() {
+        if file_exists(path)? {
+            *imported = Some(i);
+            return load_file(path);
+        }
     }
     Some(Library::EMPTY)
 }
@@ -1320,28 +1341,38 @@ pub fn load_library() {
     {
         return;
     }
-    // New settings live separately: the accepted v1 file is never rewritten.
-    let preferred = format!(
-        "{}\\tgcx_templates_v2.txt",
-        &legacy[..legacy.rfind('\\').unwrap()]
-    );
+    // New settings live separately: the accepted v1 and v2 files are never
+    // rewritten, so an older build still reads its own file after a rollback.
+    let folder = &legacy[..legacy.rfind('\\').unwrap()];
+    let preferred = format!("{folder}\\tgcx_templates_v3.txt");
+    let version2 = format!("{folder}\\tgcx_templates_v2.txt");
     if preferred.encode_utf16().count() >= MAX_PATH {
         return;
     }
-    let (legacy, preferred, root) = (to_wide(&legacy), to_wide(&preferred), to_wide(&root));
+    let (legacy, version2, preferred, root) = (
+        to_wide(&legacy),
+        to_wide(&version2),
+        to_wide(&preferred),
+        to_wide(&root),
+    );
     s.path = preferred.clone();
-    if file_exists(&preferred) == Some(false) {
+    if file_exists(&preferred) == Some(false) && file_exists(&version2) == Some(false) {
         carry_over(&root, &legacy);
     }
-    let mut imported = false;
-    let loaded = load_preferred(&preferred, &legacy, &mut imported);
+    let mut imported = None;
+    let older: [&[u16]; 2] = [&version2, &legacy];
+    let loaded = load_preferred(&preferred, &older, &mut imported);
     let s = STORE.get();
     s.storage_ok = loaded.is_some();
     if let Some(library) = loaded {
         s.library = library;
     }
-    if imported {
-        log!("Templates v1 import: {}; original retained", Wide(&legacy));
+    if let Some(i) = imported {
+        log!(
+            "Templates v{} import: {}; original retained",
+            2 - i,
+            Wide(older[i])
+        );
     }
     log!(
         "Templates local file: {} loaded={} editable={}",
@@ -1609,4 +1640,216 @@ pub fn universal_catalogue(country: &TplCountry) -> bool {
     c.universal_ready = true;
     log!("Universal Army: {count} live land types; names/icons/build times read from engine");
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const PRIMARY: usize = 0x1000;
+    const ACCEPTED: [usize; 2] = [0x2000, 0x3000];
+    const OTHER: usize = 0x4000;
+
+    /// The filter switch and the unit catalogue are single-threaded globals, as in
+    /// the game: the tests run one at a time.
+    static GLOBALS: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    /// A country with the primary culture and the accepted list laid out as the
+    /// engine does (+0xE54 head, +0xE58 tail, +0xE5C count, +0xE64 primary; nodes
+    /// +0 culture, +4 previous, +8 next). Cultures are compared as pointers.
+    struct FakeCountry {
+        country: Vec<u8>,
+        _nodes: Vec<[usize; 3]>,
+    }
+
+    impl FakeCountry {
+        fn new() -> FakeCountry {
+            let mut nodes: Vec<[usize; 3]> = ACCEPTED.iter().map(|&c| [c, 0, 0]).collect();
+            let at = |nodes: &Vec<[usize; 3]>, i: usize| nodes.as_ptr() as usize + i * 12;
+            for i in 0..nodes.len() {
+                nodes[i][1] = if i == 0 { 0 } else { at(&nodes, i - 1) };
+                nodes[i][2] = if i + 1 < ACCEPTED.len() {
+                    at(&nodes, i + 1)
+                } else {
+                    0
+                };
+            }
+            let mut country = vec![0u8; 0xE70];
+            let mut put = |offset: usize, value: usize| {
+                country[offset..offset + 4].copy_from_slice(&(value as u32).to_le_bytes())
+            };
+            put(0xE54, at(&nodes, 0));
+            put(0xE58, at(&nodes, nodes.len() - 1));
+            put(0xE5C, nodes.len());
+            put(0xE64, PRIMARY);
+            FakeCountry {
+                country,
+                _nodes: nodes,
+            }
+        }
+
+        fn address(&self) -> usize {
+            self.country.as_ptr() as usize
+        }
+    }
+
+    fn pop(culture: usize) -> TplPop {
+        TplPop {
+            pop: culture,
+            province_id: 1,
+            free: 3,
+            can_build: [0; UNITS / 32],
+            culture,
+            continent: 0,
+        }
+    }
+
+    /// The pops each mode leaves able to recruit, from a mixed province.
+    fn kept(country: usize, culture: u32) -> Option<Vec<usize>> {
+        set_filters_enabled(true);
+        let mut pops: Vec<TplPop> = [PRIMARY, ACCEPTED[0], OTHER, ACCEPTED[1], OTHER + 1]
+            .into_iter()
+            .map(pop)
+            .collect();
+        let filter = ArmyFilter {
+            culture,
+            continent: 0,
+        };
+        army_apply(country, &mut pops, &filter).then(|| {
+            pops.iter()
+                .filter(|p| p.free > 0)
+                .map(|p| p.culture)
+                .collect()
+        })
+    }
+
+    #[test]
+    fn culture_modes_split_a_mixed_province() {
+        let _globals = GLOBALS.lock().unwrap();
+        let fake = FakeCountry::new();
+        let c = fake.address();
+        let all = vec![PRIMARY, ACCEPTED[0], OTHER, ACCEPTED[1], OTHER + 1];
+        assert_eq!(kept(c, CULTURE_ALL), Some(all));
+        assert_eq!(
+            kept(c, CULTURE_ACCEPTED),
+            Some(vec![PRIMARY, ACCEPTED[0], ACCEPTED[1]])
+        );
+        assert_eq!(kept(c, CULTURE_PRIMARY), Some(vec![PRIMARY]));
+        assert_eq!(kept(c, CULTURE_NONCORE), Some(vec![OTHER, OTHER + 1]));
+    }
+
+    #[test]
+    fn noncore_refuses_rather_than_widening() {
+        let _globals = GLOBALS.lock().unwrap();
+        let fake = FakeCountry::new();
+        // An unknown mode, an unreadable country and a pop without a culture all
+        // refuse; none becomes unrestricted.
+        assert_eq!(kept(fake.address(), CULTURE_NONCORE + 1), None);
+        assert_eq!(kept(0, CULTURE_NONCORE), None);
+        let mut pops = vec![pop(OTHER), pop(0)];
+        let filter = ArmyFilter {
+            culture: CULTURE_NONCORE,
+            continent: 0,
+        };
+        assert!(!army_apply(fake.address(), &mut pops, &filter));
+        set_filters_enabled(false);
+        assert!(!army_apply(fake.address(), &mut [pop(OTHER)], &filter));
+        set_filters_enabled(true);
+    }
+
+    fn temp(name: &str) -> (String, Vec<u16>) {
+        let path = std::env::temp_dir().join(format!("tgcx_test_{}_{name}", std::process::id()));
+        let path = path.to_string_lossy().into_owned();
+        let _ = std::fs::remove_file(&path);
+        let wide = to_wide(&path);
+        (path, wide)
+    }
+
+    fn library_file(name: &str, text: &str) -> Vec<u16> {
+        let (path, wide) = temp(name);
+        std::fs::write(
+            &path,
+            text.replace(
+                "UNIT",
+                &String::from_utf8_lossy(catalogue().units[0].key.bytes()),
+            ),
+        )
+        .unwrap();
+        wide
+    }
+
+    #[test]
+    fn version3_reads_noncore_and_older_versions_refuse_it() {
+        let _globals = GLOBALS.lock().unwrap();
+        let body = "template\r\n@culture=3\r\nUNIT=4\r\nend\r\n";
+        let v3 = library_file("v3.txt", &format!("tgcx_templates 3\r\n{body}"));
+        let library = load_file(&v3).expect("v3 with Non-core");
+        assert_eq!(
+            (library.size, library.item[0].culture),
+            (1, CULTURE_NONCORE)
+        );
+        assert_eq!(library.item[0].count[0], 4);
+        let v2 = library_file("v2bad.txt", &format!("tgcx_templates 2\r\n{body}"));
+        assert!(load_file(&v2).is_none(), "v2 must not take mode 3");
+        let v1 = library_file("v1bad.txt", &format!("tgcx_templates 1\r\n{body}"));
+        assert!(load_file(&v1).is_none(), "v1 has no culture line");
+        let five = library_file(
+            "v3bad.txt",
+            "tgcx_templates 3\r\ntemplate\r\n@culture=4\r\nend\r\n",
+        );
+        assert!(load_file(&five).is_none());
+        let none = library_file(
+            "v3none.txt",
+            "tgcx_templates 3\r\ntemplate\r\nUNIT=1\r\nend\r\n",
+        );
+        assert!(load_file(&none).is_none(), "v3 requires its culture line");
+    }
+
+    #[test]
+    fn save_round_trips_noncore_as_version3() {
+        let _globals = GLOBALS.lock().unwrap();
+        let (path, wide) = temp("save.txt");
+        let mut library = Library::EMPTY;
+        library.size = 2;
+        library.item[0].count[0] = 2;
+        library.item[0].culture = CULTURE_NONCORE;
+        library.item[1].culture = CULTURE_PRIMARY;
+        assert!(save_file(&wide, &library));
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(text.starts_with("tgcx_templates 3\r\n"));
+        let back = load_file(&wide).unwrap();
+        assert_eq!(back.size, 2);
+        assert_eq!(back.item[0].culture, CULTURE_NONCORE);
+        assert_eq!(back.item[1].culture, CULTURE_PRIMARY);
+        library.item[1].culture = CULTURE_NONCORE + 1;
+        assert!(
+            !save_file(&wide, &library),
+            "an unknown mode is never written"
+        );
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), text, "file kept");
+    }
+
+    #[test]
+    fn preferred_file_imports_v2_then_v1_and_never_falls_back() {
+        let _globals = GLOBALS.lock().unwrap();
+        let (_, v3) = temp("pref_v3.txt");
+        let v2 = library_file(
+            "pref_v2.txt",
+            "tgcx_templates 2\r\ntemplate\r\n@culture=2\r\nend\r\n",
+        );
+        let v1 = library_file(
+            "pref_v1.txt",
+            "tgcx_templates 1\r\ntemplate\r\nUNIT=1\r\nend\r\n",
+        );
+        let mut imported = None;
+        let older: [&[u16]; 2] = [&v2, &v1];
+        let got = load_preferred(&v3, &older, &mut imported).unwrap();
+        assert_eq!((imported, got.item[0].culture), (Some(0), CULTURE_PRIMARY));
+        let (_, missing) = temp("pref_missing.txt");
+        let got = load_preferred(&v3, &[&missing, &v1], &mut imported).unwrap();
+        assert_eq!((imported, got.item[0].count[0]), (Some(1), 1));
+        let bad = library_file("pref_bad_v3.txt", "tgcx_templates 3\r\ntemplate\r\nend\r\n");
+        assert!(load_preferred(&bad, &older, &mut imported).is_none());
+        assert_eq!(imported, None);
+    }
 }

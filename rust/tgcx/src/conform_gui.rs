@@ -11,8 +11,8 @@ use crate::conform_native::{
 };
 use crate::sys::{CpuScope, Global, Text, base, guard, rd8, rd32, rdi, rdp, slot, thread_id};
 use crate::templates::{
-    self, ArmyFilter, CULTURE_ACCEPTED, CULTURE_ALL, CULTURE_PRIMARY, POPS, TplCountry, TplPlan,
-    TplPop, UNITS, catalogue,
+    self, ArmyFilter, CULTURE_ACCEPTED, CULTURE_ALL, CULTURE_NONCORE, CULTURE_PRIMARY, POPS,
+    TplCountry, TplPlan, TplPop, UNITS, catalogue,
 };
 use crate::templates_gui::{
     minis, place_window, root_screen, univ_cf_tab, univ_icon, univ_pair, univ_release, visible,
@@ -118,7 +118,7 @@ const SHOW_ICON: usize = SHOW_ROW + CHANGES;
 const SHOW_MINI: usize = SHOW_ICON + SLOTS * templates::CAPACITY;
 const SHOW_CHANGE: usize = SHOW_MINI + SLOTS * MINIS * templates::CAPACITY;
 const SHOW_CHECK: usize = SHOW_CHANGE + CHANGES * templates::CAPACITY;
-const SHOW_END: usize = SHOW_CHECK + 3;
+const SHOW_END: usize = SHOW_CHECK + 4;
 const SHOWN: usize = templates::CAPACITY * 28 + 64;
 const _: () = assert!(SHOW_END <= SHOWN, "Conform visibility cache");
 const _: () = assert!(
@@ -597,6 +597,12 @@ fn labels(p: &mut CfPanel) {
         b"tgcx_cf_check_on_primary\0",
         mode == CULTURE_PRIMARY,
     );
+    show(
+        p,
+        SHOW_CHECK + 3,
+        b"tgcx_cf_check_on_noncore\0",
+        mode == CULTURE_NONCORE,
+    );
     let quota = native::mobo_quota(p.stack);
     show(
         p,
@@ -802,15 +808,15 @@ fn click_inner(p: &mut CfPanel, action: usize) {
     }
     p.tick = 0;
     let library = *templates::library();
-    if action == CF_B_CULTURE_ACCEPTED || action == CF_B_CULTURE_PRIMARY {
+    if (CF_B_CULTURE_ACCEPTED..=CF_B_CULTURE_NONCORE).contains(&action) {
         if p.selected >= library.size {
             return;
         }
         let mut next = library;
-        let mode = if action == CF_B_CULTURE_ACCEPTED {
-            CULTURE_ACCEPTED
-        } else {
-            CULTURE_PRIMARY
+        let mode = match action {
+            CF_B_CULTURE_ACCEPTED => CULTURE_ACCEPTED,
+            CF_B_CULTURE_PRIMARY => CULTURE_PRIMARY,
+            _ => CULTURE_NONCORE,
         };
         let choice = &mut next.item[p.selected].culture;
         *choice = if *choice == mode { CULTURE_ALL } else { mode };

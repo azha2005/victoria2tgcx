@@ -19,14 +19,17 @@ from tgcx_army_art import sprites, texture, sprite, unit_frames, filter_checkbox
 LAYOUT = "tgcx_conform_layout.txt"
 WIDTH, HEIGHT = 332, 594
 ROW_W, ROW_H = 317, 30
-SLOTS, CHANGES, MINIS = 4, 7, 4
+SLOTS, CHANGES, MINIS = 4, 6, 4
 # Native 332px army-panel width and 317x30 regiment rows.
 SLOT_X, SLOT_Y = 7, 42
-CHANGE_X, CHANGE_Y = 7, 264
+CHANGE_X, CHANGE_Y = 7, 288
 # TPL-5: the template's culture row, a regiment-row band between the
-# templates and Changes.
-BAND_Y = 198
-CHECKS = {"accepted": (60, 203), "primary": (200, 203)}
+# templates and Changes. TPL-8: the narrow panel takes Non-core only on a
+# second line (user, 2026-10-21); Changes keeps its section divider and
+# loses one visible row, the rest counted in the summary.
+BAND_Y, BAND_H = 198, 54
+CHANGES_Y = 254
+CHECKS = {"accepted": (60, 203), "primary": (200, 203), "noncore": (60, 227)}
 # MOBO-1: the "Mobo stack" box, in the title's green band between the title and
 # the close button; its label follows.
 MOBO = (172, 6)
@@ -78,7 +81,7 @@ def texts():
                    (f"detail_{i}", "", x+40, y+16, 132, 14, "Arial12_black", "left")]
         result += [(f"mini_{i}_{k}", "", x+195+k*35, y+9, 18, 14, "Arial12_bold", "left") for k in range(MINIS)]
     result += [("list_page", "", 252, 176, 48, 16, "Arial12_black", "centre"),
-               ("changes", "Changes", 14, 235, 210, 20, "Arial12_bold_black", "left")]
+               ("changes", "Changes", 14, CHANGES_Y+5, 210, 20, "Arial12_bold_black", "left")]
     for i in range(CHANGES):
         x, y = CHANGE_X, CHANGE_Y+i*32
         result += [(f"change_{i}", "", x+40, y+1, 272, 14, "Arial12_bold_black", "left"),
@@ -89,7 +92,8 @@ def texts():
                ("cancel", "Cancel", 172, 565, 148, 18, "Arial12_bold_black", "centre")]
     result += [("culture", "Culture", 14, 206, 44, 18, "Arial12_bold_black", "left"),
                ("culture_accepted", "Primary + accepted", CHECKS["accepted"][0]+24, 206, 114, 18, "Arial12_black", "left"),
-               ("culture_primary", "Primary only", CHECKS["primary"][0]+24, 206, 98, 18, "Arial12_black", "left")]
+               ("culture_primary", "Primary only", CHECKS["primary"][0]+24, 206, 98, 18, "Arial12_black", "left"),
+               ("culture_noncore", "Non-core only", CHECKS["noncore"][0]+24, 230, 114, 18, "Arial12_black", "left")]
     result += [("mobo", "Mobo stack", MOBO[0]+24, 9, 104, 22, "Arial14", "left")]
     return result
 
@@ -226,7 +230,7 @@ def generate(output, tgc=DEFAULT_TGC, profile=None):
     bg.alpha_composite(top.crop((51, 5, 324, 27)).resize((317, 22)), (7, 5))
     bg.alpha_composite(top.crop((0, 58, WIDTH, 64)), (0, 27))
     band = native('GFX_unit_bg_28').crop((7, 0, 314, 28)).resize((ROW_W, 28))
-    bg.alpha_composite(band, (SLOT_X, 230))
+    bg.alpha_composite(band, (SLOT_X, CHANGES_Y))
     images['bg'] = bg
     # Native 317x30 regiment row with the two right-hand POP/bar columns
     # replaced by the clean dual-tone middle band.
@@ -234,10 +238,16 @@ def generate(output, tgc=DEFAULT_TGC, profile=None):
     slot = entry.copy()
     slot.paste(entry.crop((38, 0, 248, ROW_H)).resize((278, ROW_H)), (38, 0))
     images['slot'] = slot
-    # The culture row: the regiment row's light band across the whole row,
+    # The culture rows: the regiment row's light band across the whole row,
     # with the native unticked boxes painted in (their buttons sit on top).
-    band = entry.copy()
-    band.paste(entry.crop((40, 0, 150, ROW_H)).resize((ROW_W-6, ROW_H)), (3, 0))
+    # Two lines: the row's top and bottom edges kept, its plain middle
+    # stretched between them.
+    row = entry.copy()
+    row.paste(entry.crop((40, 0, 150, ROW_H)).resize((ROW_W-6, ROW_H)), (3, 0))
+    band = Image.new('RGBA', (ROW_W, BAND_H))
+    band.paste(row.crop((0, 0, ROW_W, 10)), (0, 0))
+    band.paste(row.crop((0, 10, ROW_W, 20)).resize((ROW_W, BAND_H-20)), (0, 10))
+    band.paste(row.crop((0, 20, ROW_W, ROW_H)), (0, BAND_H-10))
     bg.alpha_composite(band, (SLOT_X, BAND_Y))
     off, on, shared = filter_checkbox(tgc, profile)
     for x, y in (*CHECKS.values(), MOBO):

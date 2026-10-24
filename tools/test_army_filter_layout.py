@@ -22,7 +22,7 @@ class FilterLayoutTests(unittest.TestCase):
             folder = Path(temp)
             dll = folder / 'old.dll'
             dll.write_bytes(b'TGCX MOD-6 0.10.4 tgcx.dll')
-            with self.assertRaisesRegex(ValueError, 'matching 0.11.2'):
+            with self.assertRaisesRegex(ValueError, 'matching 0.11.3'):
                 package.build(folder / 'output', folder / 'art', dll, folder / 'loader')
             self.assertFalse((folder / 'output').exists())
 
@@ -31,11 +31,18 @@ class FilterLayoutTests(unittest.TestCase):
         self.assertEqual(root_size(fragment, 'tgcx_tpl_window'), (652, 528))
         controls = {name: (x, y, w, h) for name, _, x, y, w, h in tpl.buttons()}
         row_bottom = 186 + (tpl.ROWS - 1) * 31 + 30
-        for name in ('culture_accepted', 'culture_primary'):
+        for name in ('culture_accepted', 'culture_primary', 'culture_noncore'):
             x, y, w, h = controls[name]
             self.assertGreaterEqual(y, row_bottom)
             self.assertLessEqual(y + h, 466)
             self.assertLessEqual(x + w, 405)
+        # TPL-8: the three labels stay on one row, clear of the next box and
+        # of the left column's edge.
+        labels = {name: (x, w) for name, _, x, _, w, *_ in tpl.texts()}
+        boxes = [controls[f'culture_{k}'][0] for k in ('accepted', 'primary', 'noncore')]
+        for k, nxt in (('accepted', boxes[1]), ('primary', boxes[2]), ('noncore', 405)):
+            x, w = labels[f'culture_{k}']
+            self.assertLessEqual(x + w, nxt, k)
         for name in ('continent_prev', 'continent_next'):
             x, y, w, h = controls[name]
             self.assertGreaterEqual(x, 231)
@@ -46,13 +53,19 @@ class FilterLayoutTests(unittest.TestCase):
     def test_conform_culture_band_keeps_changes_and_footer_clear(self):
         fragment, _ = cf.layout(universal=True)
         self.assertEqual(root_size(fragment, 'tgcx_cf_window'), (332, 594))
-        self.assertEqual(cf.CHANGES, 7)
-        self.assertLessEqual(cf.SLOT_Y + (cf.SLOTS - 1) * 32 + cf.ROW_H, 202)
+        # TPL-8: two culture lines; Changes keeps its divider and six rows.
+        self.assertEqual(cf.CHANGES, 6)
+        self.assertLessEqual(cf.SLOT_Y + (cf.SLOTS - 1) * 32 + cf.ROW_H, cf.BAND_Y)
+        lines = set()
         for name, _, x, y, w, h in cf.buttons():
             if name.startswith('culture_'):
-                self.assertGreaterEqual(y, 198)
-                self.assertLessEqual(y + h, 230)
+                self.assertGreaterEqual(y, cf.BAND_Y)
+                self.assertLessEqual(y + h, cf.BAND_Y + cf.BAND_H)
                 self.assertLessEqual(x + w, 332)
+                lines.add(y)
+        self.assertEqual(len(lines), 2)
+        self.assertLessEqual(cf.BAND_Y + cf.BAND_H, cf.CHANGES_Y)
+        self.assertLessEqual(cf.CHANGES_Y + 28, cf.CHANGE_Y)
         self.assertLessEqual(cf.CHANGE_Y + (cf.CHANGES - 1) * 32 + cf.ROW_H, 492)
 
     def test_generated_names_and_text_bounds(self):

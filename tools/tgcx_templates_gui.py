@@ -18,8 +18,9 @@ FOLDERS = [17, 1, 2, 3, 16, 18, 14, 13, 15, 20, 19]
 FOLDERS += [n for n in range(1024) if n not in FOLDERS]
 ROWS, SLOTS = 8, 12
 # TPL-5: the template's culture row sits under the eight unit rows; TPL-6: the continent selector belongs to the action,
-# next to Recruit in the footer.
-CHECKS = {"accepted": (60, 439), "primary": (204, 439)}
+# next to Recruit in the footer. TPL-8: Non-core only is the third exclusive choice on the same row,
+# inside the 405px left column (native Arial12 advances: 93, 59 and 68px).
+CHECKS = {"accepted": (60, 439), "primary": (196, 439), "noncore": (296, 439)}
 CONTINENT_X, CONTINENT_Y = 304, 468
 
 
@@ -73,8 +74,9 @@ def texts():
                ("status", "One build order per regiment, from provinces with free soldier pops.", 231, 510, 420, 16, "Arial12_black", "left"),
                ("recruit", "Recruit Template", 7, 490, 177, 20, "vic_18_black", "centre")]
     result += [("culture", "Culture", 10, 442, 46, 18, "Arial12_bold_black", "left"),
-               ("culture_accepted", "Primary + accepted", CHECKS["accepted"][0]+24, 442, 114, 18, "Arial12_black", "left"),
-               ("culture_primary", "Primary only", CHECKS["primary"][0]+24, 442, 120, 18, "Arial12_black", "left"),
+               ("culture_accepted", "Primary + accepted", CHECKS["accepted"][0]+24, 442, 104, 18, "Arial12_black", "left"),
+               ("culture_primary", "Primary only", CHECKS["primary"][0]+24, 442, 64, 18, "Arial12_black", "left"),
+               ("culture_noncore", "Non-core only", CHECKS["noncore"][0]+24, 442, 84, 18, "Arial12_black", "left"),
                ("continent_caption", "Recruit from", 231, 472, 72, 18, "Arial12_black", "left"),
                ("continent", "Any continent", CONTINENT_X+24, 472, 102, 18, "Arial12_bold_black", "centre")]
     return result

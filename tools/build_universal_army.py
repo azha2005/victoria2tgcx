@@ -10,8 +10,9 @@ from PIL import Image
 import tgcx_templates_gui as tpl
 import tgcx_conform_gui as cf
 
-VERSION = '0.11.2'
-MARKER = b'TGCX TPL-7 0.11.2 tgcx.dll'
+VERSION = '0.11.3'
+# TPL-8: the Non-core only GUI needs the Rust DLL that handles it.
+MARKER = b'TGCX TPL-8 0.11.3 tgcx.dll'
 
 
 def build(output, art, dll, loader):
@@ -19,7 +20,7 @@ def build(output, art, dll, loader):
     if output.exists() or Path(str(output)+'.zip').exists():
         raise ValueError('output folder/ZIP must be new')
     if MARKER not in dll.read_bytes():
-        raise ValueError('filter package requires the matching 0.11.2 DLL and GUI')
+        raise ValueError('filter package requires the matching 0.11.3 DLL and GUI')
     package = output/'mod/tgcx_army_universal'
     (package/'interface').mkdir(parents=True)
     (package/'gfx/interface').mkdir(parents=True)
@@ -48,7 +49,7 @@ def build(output, art, dll, loader):
     shutil.copy2(loader, output/'lua51.dll')
     (output/'README.txt').write_text(
         'ATCU - Army Template and Conform Universal\n'
-        'Saved Conform orders test candidate, internal version 0.11.2\n\n'
+        'Non-core culture test candidate, internal version 0.11.3\n\n'
         'The SAME mod folder/descriptor and DLL work with the active supported 3.04 base.\n'
         'No installer, scripts, per-base preparation or original GUI overrides.\n'
         'Close the game normally before copying. Keep backups of existing files.\n'
@@ -60,8 +61,10 @@ def build(output, art, dll, loader):
         'included lua51.dll loader. Do not replace a V2DLL installation with it.\n'
         'V2DLL users: the identical logic is included as v2dll_mod.dll in the Army folder,\n'
         'with LOAD_DLL_FROM_MOD_FOLDER=1 and Army first in the mod list.\n\n'
-        'CULTURE: each template saves either Primary + accepted, Primary only,\n'
-        'or unrestricted (neither box ticked). Clicking the selected box clears it.\n'
+        'CULTURE: each template saves Primary + accepted, Primary only,\n'
+        'Non-core only, or unrestricted (no box ticked). Clicking the selected box\n'
+        'clears it. Non-core means a soldier pop whose culture is neither the\n'
+        'country\'s primary nor an accepted culture (not the province\'s cores).\n'
         'Both Build Army and Conform missing builds use this preference.\n'
         'Existing regiments are counted by type and are not removed for culture.\n'
         'CONTINENT: builder arrows select Any or a continent where you own provinces.\n'
@@ -83,13 +86,14 @@ def build(output, art, dll, loader):
         'in tgcx_mobo_marks.txt in the same settings folder, resumed after a load\n'
         'like the conform orders. Regiments raised into a province that already\n'
         'holds an army join that army and are not moved.\n\n'
-        'SETTINGS: imports the old tgcx_templates.txt without rewriting it.\n'
-        'Edits save atomically to tgcx_templates_v2.txt in the same Victoria II\n'
+        'SETTINGS: imports tgcx_templates_v2.txt (or the older tgcx_templates.txt)\n'
+        'without rewriting it. Edits save atomically to tgcx_templates_v3.txt in the\n'
+        'same Victoria II\n'
         'user settings folder. Continent membership is cached from engine data;\n'
         'the mod TXT files are not parsed on each click.\n'
         'ROLLBACK: restore the previous complete ATCU folder and descriptor.\n'
-        'The old build reads the retained v1 file; edits made in this candidate\n'
-        'remain in v2 and will not appear in the old build. Keep both files.\n\n'
+        'The old build reads its retained v2 or v1 file; edits made in this\n'
+        'candidate remain in v3 and will not appear in the old build. Keep all files.\n\n'
         'TEST CANDIDATE: automated checks pass; filter gameplay and visuals\n'
         'still need player verification. Check allowed cultures, continents,\n'
         'Conform shortages, paused switching, save/reload and native Navy tabs.\n'
