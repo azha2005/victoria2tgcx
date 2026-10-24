@@ -891,6 +891,41 @@ pub fn recruit(
     r
 }
 
+/// TPL-11: the source province of each regiment `recruit` would queue now, planned
+/// the same way with nothing sent; None when the game read or a filter fails.
+pub fn plan_sources(counts: &[i32; UNITS], filter: Option<&ArmyFilter>) -> Option<Vec<i32>> {
+    if !installed() {
+        return None;
+    }
+    let country = RECRUIT_COUNTRY.get();
+    let plan = RECRUIT_PLAN.get();
+    if !scan(&live_globals(), country) {
+        return None;
+    }
+    if let Some(filter) = filter
+        && !army_apply(
+            country.country,
+            &mut country.pops[..country.pop_count],
+            filter,
+        )
+    {
+        return None;
+    }
+    let mut wanted = [0i32; UNITS];
+    for u in 0..UNITS {
+        if country.unit[u] != 0 {
+            wanted[u] = counts[u].max(0);
+        }
+    }
+    make_plan(&wanted, &mut country.pops[..country.pop_count], plan);
+    Some(
+        plan.orders[..plan.count]
+            .iter()
+            .map(|o| country.pops[o.pop].province_id)
+            .collect(),
+    )
+}
+
 /// Every RVA the recruit reads or calls (check_exe.SIGNATURES, TPL-0).
 pub const TPL_RVAS: [u32; 25] = [
     0x17D1B0, 0x17D1EF, 0x17D20E, 0x17D2C6, 0xA00CF4, 0xA00D14, 0x17DA45, 0x3325D0, 0x6AE9AF,

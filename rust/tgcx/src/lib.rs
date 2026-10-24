@@ -1,5 +1,5 @@
 //! Rust port of dll/tgcx (tgcx.dll, TPL-7 0.11.2): the same hooks, gates and log as
-//! the C++ build, module by module. TPL-8 0.11.3 (Non-core only) exists only here. Nothing is installed from DllMain: a loader calls
+//! the C++ build, module by module. TPL-8 0.11.3 (Non-core only) and TPL-11 0.11.6 (Build Army gathering) exist only here. Nothing is installed from DllMain: a loader calls
 //! tgcx_Init (our lua51.dll) or V2Mod_Init (V2DLL's plugin API).
 
 // The loops index several parallel arrays as the C++ does.
@@ -10,6 +10,7 @@ mod conform;
 mod conform_gui;
 mod conform_native;
 mod d3d;
+mod gather;
 mod packages;
 mod reforms;
 mod renderer;
@@ -197,7 +198,7 @@ fn initialize(origin: &[u8]) -> bool {
     sys::set_log(log);
     sys::set_base(unsafe { GetModuleHandleW(null()) } as usize);
     log!(
-        "TGCX TPL-8 0.11.3 tgcx.dll loaded_by={} base={:08X} preferred={PREFERRED_BASE:08X} simulation_writes=engine_commands_only",
+        "TGCX TPL-11 0.11.6 tgcx.dll loaded_by={} base={:08X} preferred={PREFERRED_BASE:08X} simulation_writes=engine_commands_only",
         Bytes(origin),
         base()
     );

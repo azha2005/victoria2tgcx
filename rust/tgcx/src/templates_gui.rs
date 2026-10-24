@@ -8,6 +8,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL, VK_MENU};
 
 use crate::bill::{bind_observer, find, find_named, set_text_native};
+use crate::conform_native;
+use crate::gather;
 use crate::sys::{
     CpuScope, GameString, Global, Text, at, base, call_one, call_u32, call_zero, guard, in_image,
     keep_last_error, rd8, rd32, rdf, rdi, rdp, replace_pointer, require_signatures, slot,
@@ -385,6 +387,8 @@ pub struct TplPanel {
     /// Current action only; never saved with a template.
     continent_world: usize,
     continent: Text<64>,
+    /// TPL-11: where the army gathers (gather::MODE_*); current session only.
+    gather: u32,
 }
 
 impl TplPanel {
@@ -512,6 +516,7 @@ fn labels(p: &mut TplPanel) {
     if p.continent_world != world {
         p.continent_world = world;
         p.continent.clear();
+        p.gather = gather::MODE_BEST;
     }
     let continents = templates::continents_live(world);
     let region = if continents {
@@ -550,6 +555,12 @@ fn labels(p: &mut TplPanel) {
         region.map_or(Text::from_latin1("Unavailable"), |r| r.label)
     };
     text(p, TPL_TEXT_CONTINENT, format_args!("{continent}"));
+    let place = if conform_native::gather_enabled() {
+        conform_native::gather_label(p.gather)
+    } else {
+        Text::from_latin1("Unavailable")
+    };
+    text(p, TPL_TEXT_GATHER, format_args!("{place}"));
     let pages = 1.max(library.size.div_ceil(4));
     p.list_page %= pages;
     let units = catalogue().units.clone();
@@ -830,6 +841,20 @@ fn click_body(p: &mut TplPanel, action: usize) {
         p.tick = 0;
         return;
     }
+    if action == TPL_GATHER_PREV || action == TPL_GATHER_NEXT {
+        if !conform_native::gather_enabled() {
+            status(
+                p,
+                "Gathering unavailable (guards); regiments go to the rally point.",
+            );
+        } else {
+            let rallies = conform_native::gather_rallies();
+            p.gather = gather::mode_step(p.gather, action == TPL_GATHER_NEXT, rallies);
+            status(p, "Gather choice applies to this recruitment action only.");
+        }
+        p.tick = 0;
+        return;
+    }
     p.tick = 0;
     let library = *templates::library();
     if (TPL_SLOT_0..=TPL_SLOT_3).contains(&action) {
@@ -920,7 +945,33 @@ fn click_body(p: &mut TplPanel, action: usize) {
             };
             filter.continent = region.object;
         }
-        let result = templates::recruit(&counts, None, None, Some(&filter));
+        if !conform_native::gather_enabled() {
+            let result = templates::recruit(&counts, None, None, Some(&filter));
+            if !result.scanned {
+                status(p, "Recruitment eligibility unavailable; nothing queued.");
+                return;
+            }
+            if result.queued != 0 {
+                let r = RECRUITING.get();
+                r.pending = true;
+                r.sent_world = g.world;
+                r.sent_date = date;
+            }
+            p.status = text!(
+                192,
+                "{} orders queued; {} left out. Unpause to process them.",
+                result.queued,
+                result.missing + unknown
+            );
+            return;
+        }
+        // TPL-11 (D20): one army per click, gathered in one province.
+        let gathered = conform_native::gather_recruit(&counts, &filter, p.gather);
+        if let Some(why) = gathered.refusal {
+            status(p, why);
+            return;
+        }
+        let result = gathered.result;
         if !result.scanned {
             status(p, "Recruitment eligibility unavailable; nothing queued.");
             return;
@@ -931,12 +982,24 @@ fn click_body(p: &mut TplPanel, action: usize) {
             r.sent_world = g.world;
             r.sent_date = date;
         }
-        p.status = text!(
-            192,
-            "{} orders queued; {} left out. Unpause to process them.",
-            result.queued,
-            result.missing + unknown
-        );
+        let (queued, left) = (result.queued, result.missing + unknown);
+        p.status = match (result.queued, gathered.moved_from) {
+            (0, _) => text!(
+                192,
+                "Nothing queued; {left} left out (no pops or no land route)."
+            ),
+            (_, Some(from)) => text!(
+                192,
+                "{queued} queued, {left} left out; the army gathers at {}, beside {from}.",
+                gathered.name
+            ),
+            _ => text!(
+                192,
+                "{queued} queued, {left} left out; the army gathers at {} (supply {}).",
+                gathered.name,
+                gathered.supply
+            ),
+        };
         return;
     }
     let mut next = library;

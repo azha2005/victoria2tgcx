@@ -22,7 +22,7 @@ class FilterLayoutTests(unittest.TestCase):
             folder = Path(temp)
             dll = folder / 'old.dll'
             dll.write_bytes(b'TGCX MOD-6 0.10.4 tgcx.dll')
-            with self.assertRaisesRegex(ValueError, 'matching 0.11.3'):
+            with self.assertRaisesRegex(ValueError, 'matching 0.11.6'):
                 package.build(folder / 'output', folder / 'art', dll, folder / 'loader')
             self.assertFalse((folder / 'output').exists())
 
@@ -43,12 +43,19 @@ class FilterLayoutTests(unittest.TestCase):
         for k, nxt in (('accepted', boxes[1]), ('primary', boxes[2]), ('noncore', 405)):
             x, w = labels[f'culture_{k}']
             self.assertLessEqual(x + w, nxt, k)
-        for name in ('continent_prev', 'continent_next'):
+        for name in ('continent_prev', 'continent_next', 'gather_prev', 'gather_next'):
             x, y, w, h = controls[name]
             self.assertGreaterEqual(x, 231)
             self.assertGreaterEqual(y, 466)
             self.assertLessEqual(x + w, 652)
             self.assertLessEqual(y + h, 494)
+        # TPL-11: Gather at sits right of Recruit from, clear of its next arrow.
+        x, w = labels['gather_caption']
+        self.assertGreaterEqual(x, controls['continent_next'][0] + 24)
+        self.assertLessEqual(x + w, controls['gather_prev'][0])
+        x, w = labels['gather']
+        self.assertEqual(x, controls['gather_prev'][0] + 24)
+        self.assertLessEqual(x + w, controls['gather_next'][0])
 
     def test_conform_culture_band_keeps_changes_and_footer_clear(self):
         fragment, _ = cf.layout(universal=True)

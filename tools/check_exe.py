@@ -242,12 +242,27 @@ SIGNATURES = [
     (0x113CA8, "8B9FB80700006A10", "MOBO CCountry::AddUnit reads unit list tail +0x7B8"),
     (0x113CCF, "C08B8FBC070000" "8D5101" "8987B8070000" "8997BC070000" "85C9", "MOBO CCountry::AddUnit appends: count +0x7BC, tail +0x7B8"),
     (0x10834B, "8B80B4070000" "83EC14535657" "85C00F84B2010000" "EB038B45EC8B188B4808", "MOBO CCountry::RefreshSubUnits walks +0x7B4 head, node +0 unit, +8 next"),
+    # TPL-11 Build Army gathering (docs/symbols.md "TPL-11"): reads only.
+    (0xB3C40, "558BEC83E4F883EC10538B5D088B839C0000008B4B5C578B", "TPL-11 supply limit FUN_004B3C40(province, owner ref +4 country), ESI out"),
+    (0xB3DF3, "C20800", "TPL-11 supply limit RET 8"),
+    (0x42DB08, "8B485C8B91CC0000002B91C800000081C1C8000000", "TPL-11 map province +0x5C adjacency vector +0xC8/+0xCC"),
+    (0x42DB40, "8B098B45FC833C08040F84AE0000008B440804", "TPL-11 adjacency entry 0x24 bytes: +0 type 4 skipped, +4 province id"),
+    (0x13F3B0, "558BEC8B82741500002B827015000053C1F802", "TPL-11 rally point lookup FUN_0053F3B0: country +0x1570/+0x1574 pointer vector"),
+    (0x13F3D3, "8B3E8B5F083B5D0875088A5D0C385F20", "TPL-11 rally point +8 province id, +0x20 kind byte"),
+    (0x33F03C, "6A01E8EDD8FFFF", "TPL-11 naval rally checkbox passes kind 1 (land passes EBX = 0) to FUN_0073C930"),
+    (0x4CF4A9, "8B88E40B00008B82CC0A0000", "TPL-11 capital province id country +0xBE4 into world +0xACC (continent trigger)"),
+    (0xAAF90, "558BEC518B415C568B750850C745FC00000000E898950100", "TPL-11 province name getter FUN_004AAF90: map province +0x5C"),
+    (0xC4558, "8B450805E4000000", "TPL-11 map province name string +0xE4 (FUN_004C4540)"),
 ]
 
 
 # Research-only gates, separate from the guards generated into the DLL.
 # Promote a function to SIGNATURES before calling or hooking it at runtime.
 RESEARCH_SIGNATURES = [
+    # TPL-11 0.11.4 map selection, replaced by the rally point in 0.11.5.
+    (0x1E0DA6, "8B15E88825018BB2240B0000", "TPL-11 in-game idler at g_world+0xB24"),
+    (0x25419E, "8B86081D00003BC3740E8B4820385967740650", "TPL-11 idler +0x1D08 CProvinceView, root +0x20 shown +0x67"),
+    (0x33CF96, "C7066837E100", "TPL-11 CProvinceView primary vtable 0xE13768"),
     (0x337D00, "8B410885C074058B4904FFE0C3CCCCCC558BEC8B55088948", "Politics observer click slot (LAW-2 research)"),
     (0x2DFFA0, "558BEC8B412085C074068B49045DFFE05DC20400CCCCCCCC", "Politics observer slot 1 (LAW-2 research)"),
     (0x2D26D0, "100800837DEC10720C8B45D850E839C23D0083C404C745EC", "Politics observer construction region (LAW-2 research)"),
@@ -294,6 +309,8 @@ RESEARCH_SIGNATURES = [
     (0x94320, "558BEC6AFF688B6AB70064A1000000005064892500000000", "TPL-6 CContinent construction"),
     (0x9C710, "558BEC83E4F86AFF680B28B80064A1000000005064892500", "TPL-6 loaded continent catalogue parser"),
     (0x332720, "558BEC6AFF68F1BCB40064A1000000005064892500000000", "TPL-6 native queue entry has continent label"),
+    # TPL-11 research (2026-10-24): the map tooltip's supply-limit call (evidence only).
+    (0x1D6A5F, "8B8D78FFFFFF8B45B88B80DC00000051508D75B4E8C8D1EDFF", "TPL-11 map tooltip supply limit call, army province +0xDC"),
 ]
 
 

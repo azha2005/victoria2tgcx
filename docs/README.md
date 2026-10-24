@@ -1,5 +1,9 @@
 # Index of `docs/`
 
+- `report-tpl-11-gather-1024.md`: TPL-11 Build Army gathering built in Rust 0.11.4; Gather at row, Best supply/Capital/Selected, ring placement, gather orders file, tests, local candidate; not tested in game.
+- `report-tpl-11-rally-1024.md`: TPL-11 0.11.5/0.11.6, Gather at uses the land rally points (0.11.6 cycles each) instead of the map selection; rally point layout; 0.11.6 passed in game.
+- `instructions-tpl-11-check.md`: in-game check of the 0.11.4 candidate.
+- `instructions-tpl-11.md`: TPL-11 gathering design (D20) and steps (done 2026-10-24; check in instructions-tpl-11-check.md).
 - `report-tpl-8-noncore-1024.md`: TPL-8 Non-core only built in Rust 0.11.3; v3 settings, two-line Conform band, tests, local candidate; not tested in game.
 - `instructions-tpl-8-check.md`: in-game check of the 0.11.3 candidate (also the Templates/Conform half of RUST-CHECK).
 - `report-tpl-8-rust-coordination-1021.md`: approved non-core checkbox scope, user hold, verified merged Rust-loader PR/C++ build changes and no ATCU implementation yet.

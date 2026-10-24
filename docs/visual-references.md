@@ -88,3 +88,11 @@ culture row (Primary only moved 204 to 196). Conform: the culture band has two
 lines with Non-core only on line 2, and Changes drops from 7 to 6 visible rows.
 Rendered by work/noncore-0113/render_previews.py from staged art (Arial); these
 are not game captures.
+
+## TPL-11 Gather at mockup (2026-10-24)
+
+mockups/5-templates-gather-1024.png and 5-templates-gather-selected-1024.png:
+the 0.11.3 Templates panel with `Gather at < Best supply >` on the
+`Recruit from` line. Accepted by the user 2026-10-24; Arial, not a capture.
+The "selected" board is out of date: 0.11.5/0.11.6 replaced the map selection
+with the land rally points (report-tpl-11-rally-1024.md §4).

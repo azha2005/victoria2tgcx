@@ -1173,3 +1173,47 @@ Current total:78 Rename runtime/301 executable guards, unchanged Army179
 and research44.66 native/4 package/4 loader checks pass. Native caret
 behavior with the complete game's keyboard, mouse and scrolling remains a
 player check; P63 and report-province-rename-readability-1021.md.
+
+## TPL-11: supply limit, adjacency, map-selected province (2026-10-24)
+
+Reference hash 62d48c20...6648; read-only/noanalysis Ghidra (FindRefs,
+Disasm, DecompileAt). Gated in `check_exe.py` RESEARCH_SIGNATURES.
+**C static**; nothing executed in game or fixture yet.
+
+| Native symbol / role | Ghidra VA | RVA | Evidence |
+|---|---|---|---|
+| FUN_004B3C40, province supply limit | 0x004B3C40 | 0x0B3C40 | `(province, ref)` on the stack, **RET 8**, result (thousandths) written to `[ESI]`; reads only. Base = `[province+0x9C]+8` + 1000; land only (`[province+0x5C]+0x2A`); owner and controller = `ref+4` country: x define (FUN_00B31C00); foreign controller: x2 or x1 by relations `country+0xBE8`; then x (`[country+0xBCC]+0x2C` + 1000)/1000. 11 callers incl. map tooltip and province view |
+| Map tooltip "SUPPLY_LIMIT" | 0x005D6A3D/0x005D6A73 | 0x1D6A3D | push `SUPPLY_LIMIT` (0xDF89BC), then `FUN_004B3C40(army+0xDC province, ref)`, value /1000 printed |
+| Attrition caller FUN_005D9310 | 0x005D97CB | 0x1D97CB | passes `stack+0xC0` as `ref`: the stack's owner block, `+4` = country index (stack country at +0xC4) |
+| Province adjacency | 0x0082DB08 | 0x42DB08 | `[province+0x5C]` map province, vector `+0xC8/+0xCC`, entries 0x24 bytes; `+0` type (4 skipped: impassable), `+4` neighbour province id into `g_world+0xACC` |
+| In-game idler | 0x005E0DA6 | 0x1E0DA6 | `[g_world+0xB24]` = CInGameIdler (vtable 0xE0A34C), passed as ESI to FUN_00654120 |
+| Idler +0x1D08 CProvinceView | 0x0065419E | 0x25419E | read with null check; `view+0x20` root, root `+0x67` shown byte. Stored by Game_FinalizeLoadAndEnterGameplay (0x663FAD) after `new 0x24C` + ctor FUN_0073CF00 |
+| CProvinceView province | (RENAME-0) | | `view+0x24` province, as Province Rename reads it after FUN_00740050 |
+
+| Capital province id | 0x008CF4A9 | 0x4CF4A9 | `mov ecx,[eax+0xBE4]` then world `+0xACC`: `CCountry+0xBE4` capital province id (structs.csv `capitalProvinceId`, C) |
+| FUN_004AAF90 / FUN_004C4540, province name | 0x004AAF90 / 0x004C4558 | 0x0AAF90 / 0x0C4558 | getter passes `[province+0x5C]`; copies the MSVC string at map province `+0xE4` (RENAME-0). Read directly by ATCU; that it is the displayed name is I |
+
+Supply call ABI re-read 2026-10-24 (session 74, read-only Disasm of
+0x004B3C40-0x004B3DF8 and both callers): EBX/EDI pushed and restored, ESI
+only the output pointer, `MOV EAX,ESI` before `RET 8`.
+
+ATCU use (0.11.4, TPL-11, `conform_native.rs` "Build Army gathering"; not
+yet run in game): supply limit called only for provinces we own
+and control, with an 8-byte `{0, country index}` ref (the function reads
+only `+4` on that path). Map-selected province = `[[g_world+0xB24]+0x1D08]+0x24`
+when the view's root is shown and the vtable is 0xE13768; no detour, so
+no clash with Province Rename's FUN_00740050 hook. **Replaced in 0.11.5**
+by the land rally point (below); the map selection gates moved to
+RESEARCH_SIGNATURES.
+
+Rally points (2026-10-24, session 74, read-only Disasm; C static):
+
+| Native symbol / role | Ghidra VA | RVA | Evidence |
+|---|---|---|---|
+| FUN_0053F3B0, find rally point | 0x0053F3B0 | 0x13F3B0 | EDX = country; stack (province id, kind byte), RET 8; walks `CCountry+0x1570/+0x1574` (vector of pointers), returns the one with `+8` == province and `+0x20` == kind, else 0 |
+| Rally point object | vtable 0x00DFB030 | 0x9FB030 | 0x24 bytes: `+8` province id, `+0xC` merge byte, `+0x20` kind byte. Added by FUN_0053F2E0, removed by FUN_0053F400 |
+| Kind 0 land / 1 naval | 0x0073EFCA / 0x0073F03C | 0x33EFCA / 0x33F03C | province view: `rallypoint_checkbox` calls FUN_0073C930 with `push EBX` (0), `rallypoint_checkbox_naval` with `push 1`; FUN_0073C930 passes it to FUN_0053F3B0 as the kind |
+| Construction to rally point | 0x004922E2 | 0x0922E2 | construction `+0x98` is an index into `+0x1570`; when valid, Move(stack, rally `+8`) is posted |
+
+ATCU use (0.11.5): Gather at "Rally point" takes the first land (`+0x20`
+== 0) rally point in the vector; read only.

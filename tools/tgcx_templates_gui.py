@@ -22,6 +22,8 @@ ROWS, SLOTS = 8, 12
 # inside the 405px left column (native Arial12 advances: 93, 59 and 68px).
 CHECKS = {"accepted": (60, 439), "primary": (196, 439), "noncore": (296, 439)}
 CONTINENT_X, CONTINENT_Y = 304, 468
+# TPL-11: where the army gathers, beside Recruit from on the same footer line.
+GATHER_X, GATHER_Y = 520, 468
 
 
 from tgcx_army_catalog import units as catalog_units, metadata
@@ -51,6 +53,8 @@ def buttons():
     result += [(f"culture_{k}", "check", x, y, 20, 20) for k, (x, y) in CHECKS.items()]
     result += [("continent_prev", "left", CONTINENT_X, CONTINENT_Y, 24, 24),
                ("continent_next", "right", CONTINENT_X+126, CONTINENT_Y, 24, 24)]
+    result += [("gather_prev", "left", GATHER_X, GATHER_Y, 24, 24),
+               ("gather_next", "right", GATHER_X+106, GATHER_Y, 24, 24)]
     result += [(f"native_{n}", "", 0, 0, 0, 0) for n in FOLDERS]
     return result
 
@@ -78,7 +82,9 @@ def texts():
                ("culture_primary", "Primary only", CHECKS["primary"][0]+24, 442, 64, 18, "Arial12_black", "left"),
                ("culture_noncore", "Non-core only", CHECKS["noncore"][0]+24, 442, 84, 18, "Arial12_black", "left"),
                ("continent_caption", "Recruit from", 231, 472, 72, 18, "Arial12_black", "left"),
-               ("continent", "Any continent", CONTINENT_X+24, 472, 102, 18, "Arial12_bold_black", "centre")]
+               ("continent", "Any continent", CONTINENT_X+24, 472, 102, 18, "Arial12_bold_black", "centre"),
+               ("gather_caption", "Gather at", 462, 472, 56, 18, "Arial12_black", "left"),
+               ("gather", "Best supply", GATHER_X+24, 472, 82, 18, "Arial12_bold_black", "centre")]
     return result
 
 

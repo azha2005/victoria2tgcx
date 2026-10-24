@@ -1,6 +1,19 @@
 # NEXT - what comes next
 
-2026-10-24 (74). **TPL-8 Non-core only built in Rust; 0.11.3 candidate ready.**
+2026-10-24 (74). **TPL-11 0.11.6 passed in game** (user: "done. wonderful"):
+Gather at cycles every land rally point
+(candidate `work/tpl11-0116/`, installed in the test copy, backup
+`work/tpl11-0116/before-0116/`; `docs/report-tpl-11-rally-1024.md` §8).
+Before it: **TPL-11 0.11.5: Gather at's third option is the land
+rally point** (`docs/report-tpl-11-rally-1024.md`), candidate
+`work/tpl11-0115/`, installed in `work/Victoria-II-TGC252-own-loader`
+(backup `work/tpl11-0115/before-0115/`), not tested in game. 0.11.4 worked in game for Best
+supply, Capital and armies beside a taken target.
+Before it: **TPL-11 Build Army gathering built in Rust; 0.11.4
+candidate installed in `work/Victoria-II-TGC252-own-loader` (backup
+`work/tpl11-0114/before-0114/`), not tested in game**
+(`docs/report-tpl-11-gather-1024.md`, check `docs/instructions-tpl-11-check.md`).
+Before it: **TPL-8 Non-core only built in Rust; 0.11.3 candidate ready.**
 Installed in `work/Victoria-II-TGC252-own-loader` (backup
 `work/noncore-0113/before-0113/`). **Passed in game** (user): Non-core
 recruit, Conform detach/build, resume after load and merge; v2 untouched.
@@ -31,10 +44,9 @@ archived verbatim in docs/archive/sessions.md.
 1. **Small look fixes seen during TPL-8 (pre-existing):** long template names
    wrap over their "N regiments" line in Conform's list; the left-out
    Changes title is pale yellow on parchment.
-2. **TPL-11 Build Army gathers into one army.** Reuses Conform march/merge,
-   TPL-7 saved orders and the mobo assign-and-march path. Open [user]: the
-   gathering province (player pick, capital, largest source province or the
-   native rally point); regiments without a land route (D17: leave them).
+2. **TPL-11** passed in game on 0.11.6. Open: save/reload of a rally
+   gather; commit when the user asks. `docs/instructions-tpl-11-check.md`.
+   Built 2026-10-24 (D20). Install only after a normal-exit confirmation.
 3. **TPL-9 Autodivide.** Base: Conform's detach (Create + Transfers together,
    P51). Open [user]: the rule (single regiments, N equal stacks, template
    copies), the button's place, who keeps the leader.

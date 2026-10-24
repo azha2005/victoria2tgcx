@@ -8,7 +8,7 @@
 use crate::templates::UNITS;
 
 /// A registry id: type < 0x1269 lives in the low table, otherwise the high one.
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub struct CfId {
     pub kind: u32,
     pub id: u32,
@@ -192,8 +192,11 @@ pub struct CfTask {
     pub transfer_sent: bool,
     pub transfer_date: u32,
     pub retries: u32,
-    /// 1-based saved order (TPL-7), 0 for none.
+    /// 1-based saved order (TPL-7), 0 for none; a gather order when `group` is set.
     pub record: usize,
+    /// TPL-11: the Build Army click this regiment gathers for, 0 for none. Its target
+    /// is that click's army, none until a regiment appears.
+    pub group: u32,
 }
 
 impl CfTask {
@@ -218,6 +221,7 @@ impl CfTask {
         transfer_date: 0,
         retries: 0,
         record: 0,
+        group: 0,
     };
 }
 
@@ -447,7 +451,7 @@ pub fn orders_write(k: &[CfOrder], size: usize) -> Option<String> {
     (out.len() < size).then_some(out)
 }
 
-fn id_pair(s: &str) -> Option<CfId> {
+pub(crate) fn id_pair(s: &str) -> Option<CfId> {
     let (kind, id) = s.split_once('/')?;
     Some(CfId {
         kind: kind.parse().ok()?,

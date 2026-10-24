@@ -10,9 +10,9 @@ from PIL import Image
 import tgcx_templates_gui as tpl
 import tgcx_conform_gui as cf
 
-VERSION = '0.11.3'
-# TPL-8: the Non-core only GUI needs the Rust DLL that handles it.
-MARKER = b'TGCX TPL-8 0.11.3 tgcx.dll'
+VERSION = '0.11.6'
+# TPL-11: the Gather at row needs the Rust DLL that handles it.
+MARKER = b'TGCX TPL-11 0.11.6 tgcx.dll'
 
 
 def build(output, art, dll, loader):
@@ -20,7 +20,7 @@ def build(output, art, dll, loader):
     if output.exists() or Path(str(output)+'.zip').exists():
         raise ValueError('output folder/ZIP must be new')
     if MARKER not in dll.read_bytes():
-        raise ValueError('filter package requires the matching 0.11.3 DLL and GUI')
+        raise ValueError('filter package requires the matching 0.11.6 DLL and GUI')
     package = output/'mod/tgcx_army_universal'
     (package/'interface').mkdir(parents=True)
     (package/'gfx/interface').mkdir(parents=True)
@@ -49,7 +49,7 @@ def build(output, art, dll, loader):
     shutil.copy2(loader, output/'lua51.dll')
     (output/'README.txt').write_text(
         'ATCU - Army Template and Conform Universal\n'
-        'Non-core culture test candidate, internal version 0.11.3\n\n'
+        'Build Army gathering test candidate, internal version 0.11.6\n\n'
         'The SAME mod folder/descriptor and DLL work with the active supported 3.04 base.\n'
         'No installer, scripts, per-base preparation or original GUI overrides.\n'
         'Close the game normally before copying. Keep backups of existing files.\n'
@@ -72,6 +72,16 @@ def build(output, art, dll, loader):
         'Conform keeps its separate land-reach restriction and ignores this selector.\n'
         'Filters combine with normal unit eligibility and free soldier capacity.\n'
         'Recruitment queues what fits and reports what is left out.\n\n'
+        'GATHER AT: one Recruit Template click makes one army. Each regiment is\n'
+        'built in its own province, then marches by a safe land route to the\n'
+        'target and merges; the first one to finish becomes the army. Arrows choose\n'
+        'Best supply (your province with the highest supply limit that the\n'
+        'regiments reach by land), Capital, or each of your land rally points.\n'
+        'If any army of yours already stands there, or an earlier click still\n'
+        'gathers there, the army gathers in the free province beside it with the\n'
+        'highest supply. Pops with no land route to the target are left out.\n'
+        'Needs at least one army of yours to plan the routes. Session-only choice.\n'
+        'Orders are kept in tgcx_gather_orders.txt and resumed after a load.\n\n'
         'CONFORM ORDERS: regiments being built for a Conform are also listed in\n'
         'tgcx_conform_orders.txt in the same settings folder (country tag, date,\n'
         'stack and construction ids). Loading a save of the same country dated\n'
@@ -94,9 +104,9 @@ def build(output, art, dll, loader):
         'ROLLBACK: restore the previous complete ATCU folder and descriptor.\n'
         'The old build reads its retained v2 or v1 file; edits made in this\n'
         'candidate remain in v3 and will not appear in the old build. Keep all files.\n\n'
-        'TEST CANDIDATE: automated checks pass; filter gameplay and visuals\n'
-        'still need player verification. Check allowed cultures, continents,\n'
-        'Conform shortages, paused switching, save/reload and native Navy tabs.\n'
+        'TEST CANDIDATE: automated checks pass; gathering gameplay and visuals\n'
+        'still need player verification. Check Gather at choices, the army forming\n'
+        'and merging, a second army beside the first, left-out pops, save/reload.\n'
         'Preserve Logs/tgcx.log. This ZIP is for local testing, not publication.\n', encoding='utf-8')
     manifest={p.relative_to(output).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
               for p in sorted(output.rglob('*')) if p.is_file()}

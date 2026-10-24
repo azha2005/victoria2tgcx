@@ -43,6 +43,25 @@
 
 ## 1. Status by stage (as of 2026-10-24)
 
+2026-10-24, TPL-11 0.11.6 **passed in game** (user): both rally points
+listed, armies gathered at Raab and Triest, a third beside Triest at Görz.
+report-tpl-11-rally-1024.md §9.
+
+2026-10-24, TPL-11 0.11.5: 0.11.4 worked in game for Best supply, Capital
+and armies beside a taken target (tgcx.log). The map selection option was
+unusable (the Military screen closes the province window), so the third
+Gather at option now uses the land rally point; 0.11.6 cycles every land
+rally point (user: only the first showed). Local candidate, **not
+tested in game**. report-tpl-11-rally-1024.md.
+
+2026-10-24, TPL-11: Build Army gathering built in Rust (0.11.4): one army
+per Recruit click, gathered at the best-supply province (or capital, or the
+map selection), later armies in the free province beside it; unreachable
+pops left out; orders resumed after a load from tgcx_gather_orders.txt.
+7 new Rust tests, layout test, check_exe (195 guards), Python suite pass.
+Local candidate; **done, not tested in game**. report-tpl-11-gather-1024.md;
+instructions-tpl-11-check.md.
+
 2026-10-24, TPL-8: Non-core only built in Rust (0.11.3): culture mode 3 in
 the shared filter, third box in Templates, two-line Conform band with 6
 Changes rows, tgcx_templates_v3.txt importing v2/v1. 5 Rust tests, layout
@@ -387,6 +406,10 @@ When closing, in this order:
    session** that lacks a current one, and add them to `docs/README.md`.
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
+
+2026-10-24: TPL-11 researched (supply limit, adjacency, map selection),
+mockup accepted, built in Rust as 0.11.4; local candidate, not installed.
+No commit/push.
 
 2026-10-24: TPL-8 implemented in Rust as 0.11.3 (Non-core only, v3 settings,
 two-line Conform band). Local candidate built; not installed or tested in

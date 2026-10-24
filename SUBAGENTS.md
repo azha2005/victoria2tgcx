@@ -1,5 +1,10 @@
 # SUBAGENTS.md — The project, in cards
 
+2026-10-24 TPL-11: 0.11.6 passed in game (rally points; report-tpl-11-rally-1024.md).
+Earlier: done in Rust 0.11.4, not tested in game; candidate in
+work/tpl11-0114, check in instructions-tpl-11-check.md. No subagents used.
+report-tpl-11-gather-1024.md.
+
 2026-10-24 TPL-8: done in Rust 0.11.3, not tested in game; candidate in
 work/noncore-0113, check in instructions-tpl-8-check.md. No subagents used.
 report-tpl-8-noncore-1024.md.

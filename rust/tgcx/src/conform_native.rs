@@ -26,9 +26,10 @@ use crate::conform::{
     REGIMENTS, Refusal, Tracker,
 };
 use crate::conform_gui;
+use crate::gather::{self, GtOrder, Site};
 use crate::snapshot::{COUNTRY_MANAGER_RVA, WORLD_RVA};
 use crate::sys::{
-    Bytes, Global, Tag, at, base, guard, in_image, keep_last_error, rd8, rd32, rdi, rdp,
+    Bytes, Global, Tag, Text, at, base, guard, in_image, keep_last_error, rd8, rd32, rdi, rdp,
     read_game_string, slot, thread_id,
 };
 use crate::templates::{self, ArmyFilter, TplCountry, TplPop, TplResult, UNITS};
@@ -460,6 +461,19 @@ pub fn reachable(stack: usize, province: i32) -> bool {
 /// How many provinces the stack's safe land route from `province` to where it stands
 /// passes through (0 when it is already there); None when there is no such route.
 pub fn route_len(stack: usize, province: i32) -> Option<u32> {
+    route(stack, province, None)
+}
+
+/// TPL-11: the same safe land route from `province` to province `to`, asked as the
+/// stack would march it (its owner's access); the stack itself stays where it is.
+pub fn route_between(stack: usize, province: i32, to: i32) -> Option<u32> {
+    if !(0..=65535).contains(&to) {
+        return None;
+    }
+    route(stack, province, Some(to))
+}
+
+fn route(stack: usize, province: i32, to: Option<i32>) -> Option<u32> {
     let n = NATIVES.get();
     if n.path_fn == 0 || n.path_clear_fn == 0 || stack == 0 || !(0..=65535).contains(&province) {
         return None;
@@ -473,7 +487,11 @@ pub fn route_len(stack: usize, province: i32) -> Option<u32> {
         } else {
             0
         };
-        let destination = rdp(stack + 0xDC);
+        let destination = match to {
+            Some(to) if provinces != 0 => rdp(provinces + to as usize * 4),
+            Some(_) => 0,
+            None => rdp(stack + 0xDC),
+        };
         let start_map = if start != 0 { rdp(start + 0x5C) } else { 0 };
         let end_map = if destination != 0 {
             rdp(destination + 0x5C)
@@ -578,6 +596,22 @@ pub struct Session {
     orders_dirty: bool,
     orders_failed: bool,
     orders_path: Vec<u16>,
+    // TPL-11: Build Army clicks still gathering, and their saved orders (own file).
+    groups: Vec<Group>,
+    gathers: Vec<GtOrder>,
+    gathers_loaded: bool,
+    gathers_ok: bool,
+    gathers_dirty: bool,
+    gathers_failed: bool,
+    gathers_path: Vec<u16>,
+}
+
+/// One Build Army click: where its army gathers, and the army once a regiment appears.
+#[derive(Clone, Copy)]
+struct Group {
+    id: u32,
+    province: i32,
+    army: CfId,
 }
 
 pub static TRACKER: Global<Tracker> = Global::new(Tracker {
@@ -595,6 +629,13 @@ static SESSION: Global<Session> = Global::new(Session {
     orders_dirty: false,
     orders_failed: false,
     orders_path: Vec::new(),
+    groups: Vec::new(),
+    gathers: Vec::new(),
+    gathers_loaded: false,
+    gathers_ok: false,
+    gathers_dirty: false,
+    gathers_failed: false,
+    gathers_path: Vec::new(),
 });
 
 const ORDERS_TEXT: usize = 131072;
@@ -777,7 +818,7 @@ fn order_new(task: usize, r: CfOrder) {
             .get()
             .task
             .iter_mut()
-            .filter(|t| t.used && t.record != 0)
+            .filter(|t| t.used && t.group == 0 && t.record != 0)
         {
             if t.record == dropped + 1 {
                 t.record = 0;
@@ -797,9 +838,14 @@ fn forget(why: &str) {
         t.used = false;
         n += 1;
     }
-    for r in SESSION.get().orders.iter_mut() {
+    let s = SESSION.get();
+    for r in s.orders.iter_mut() {
         r.active = false;
     }
+    for r in s.gathers.iter_mut() {
+        r.active = false;
+    }
+    s.groups.clear();
     if n != 0 {
         log!("Conform: {n} pending orders forgotten ({why})");
     }
@@ -886,7 +932,7 @@ fn orders_close(date: u32) {
             .get()
             .task
             .iter()
-            .any(|t| t.used && t.record == i + 1);
+            .any(|t| t.used && t.group == 0 && t.record == i + 1);
         if !live {
             s.orders[i].active = false;
             s.orders[i].done = date;
@@ -894,6 +940,7 @@ fn orders_close(date: u32) {
         }
     }
     orders_save();
+    gathers_close(date);
 }
 
 /// A changed target location/access can strand an earlier reinforcement. Release only
@@ -1380,6 +1427,7 @@ fn daily(g: &CfGlobals) {
         s.date = date;
         mobo_reset();
         resume(g, date);
+        gathers_resume(g, date);
         mobo_resume(g, date);
         return;
     }
@@ -1390,12 +1438,22 @@ fn daily(g: &CfGlobals) {
         s.step = date - s.date;
     }
     s.date = date;
+    // TPL-11: regiments resumed for a Build Army click need the class of land stacks,
+    // known only from one of the player's armies when no Conform ran this session.
+    if s.stack_vtable == 0 && TRACKER.get().task.iter().any(|t| t.used && t.group != 0) {
+        s.stack_vtable = player_armies(g).first().map_or(0, |&a| rdp(a));
+    }
     let vtable = s.stack_vtable;
     for i in 0..conform::TASKS {
         let t = &mut TRACKER.get().task[i];
         if !t.used {
             continue;
         }
+        if t.group != 0 && !gather_lead(g, i, vtable) {
+            continue;
+        }
+        let t = &mut TRACKER.get().task[i];
+        let who = if t.group != 0 { "Gather" } else { "Conform" };
         let target = stack_of(g, t.target, vtable);
         let stack = stack_of(g, t.stack, vtable);
         let seen = CfSeen {
@@ -1413,7 +1471,7 @@ fn daily(g: &CfGlobals) {
             let t = &mut TRACKER.get().task[i];
             t.used = false;
             log!(
-                "Conform: reinforcement {} has no land route to target {}; left in place",
+                "{who}: reinforcement {} has no land route to target {}; left in place",
                 t.stack.id,
                 t.target.id
             );
@@ -1427,21 +1485,21 @@ fn daily(g: &CfGlobals) {
             Action::Move => {
                 if !send(make_move(stack, destination), g.vt_move) {
                     log!(
-                        "Conform: Move {} to province {destination} not queued",
+                        "{who}: Move {} to province {destination} not queued",
                         t.stack.id
                     );
                 } else {
                     log!(
-                        "Conform: stack {} marches to province {destination} (safe path)",
+                        "{who}: stack {} marches to province {destination} (safe path)",
                         t.stack.id
                     );
                 }
             }
             Action::Merge => {
                 if !send(make_merge(target, stack), g.vt_merge) {
-                    log!("Conform: Merge of {} not queued", t.stack.id);
+                    log!("{who}: Merge of {} not queued", t.stack.id);
                 } else {
-                    log!("Conform: stack {} joins {}", t.stack.id, t.target.id);
+                    log!("{who}: stack {} joins {}", t.stack.id, t.target.id);
                 }
             }
             Action::Transfer => {
@@ -1530,12 +1588,12 @@ fn daily(g: &CfGlobals) {
                 }
             }
             Action::TargetGone => log!(
-                "Conform: stack {} stays: the stack it was joining is gone",
+                "{who}: stack {} stays: the stack it was joining is gone",
                 t.stack.id
             ),
             Action::Cancelled => {
                 log!(
-                    "Conform: order for stack {} dropped (construction cancelled or stack not created)",
+                    "{who}: order for stack {} dropped (construction cancelled or stack not created)",
                     t.stack.id
                 )
             }
@@ -1546,6 +1604,666 @@ fn daily(g: &CfGlobals) {
         log!("Mobo driver fault; nothing sent today");
     }
     orders_close(date);
+}
+
+// ---------------------------------------------------------------- Build Army gathering (TPL-11, D20)
+
+// One Recruit click is one army. Its regiments are tracked like Conform's builds, with
+// no target until one of them appears: that stack becomes the army and marches by a
+// safe path to the click's province; every later regiment marches to the army and
+// merges, as a Conform build does. Every read here is read only (docs/symbols.md
+// "TPL-11"); the only commands are the same Move and Merge (R5).
+const GATHER_TEXT: usize = 131072;
+/// Best supply asks routes only for this many provinces, best first.
+const GATHER_TRIES: usize = 12;
+pub const GATHER_RVAS: [u32; 10] = [
+    0xB3C40, 0xB3DF3, // supply limit, RET 8
+    0x42DB08, 0x42DB40, // map province adjacency
+    0x13F3B0, 0x13F3D3, 0x33F03C, // rally points
+    0x4CF4A9, // capital
+    0xAAF90, 0xC4558, // province name
+];
+
+struct Gathering {
+    enabled: bool,
+    supply_fn: usize,
+}
+
+static GATHERING: Global<Gathering> = Global::new(Gathering {
+    enabled: false,
+    supply_fn: 0,
+});
+
+pub fn gather_enabled() -> bool {
+    GATHERING.get().enabled
+}
+
+fn province_at(world: usize, id: i32) -> usize {
+    let provinces = rdp(world + 0xACC);
+    if provinces == 0 || !(0..=65535).contains(&id) {
+        return 0;
+    }
+    rdp(provinces + id as usize * 4)
+}
+
+/// FUN_004B3C40(province, ref) RET 8, the result in thousandths written through ESI.
+/// Owner and controller both `country`, so only ref+4 (the country index) is read.
+fn supply_limit(province: usize, country: i32) -> i32 {
+    let owner: [i32; 2] = [0, country];
+    let mut out: i32 = 0;
+    // SAFETY: the native supply limit (signatures GATHER_RVAS), as the map tooltip
+    // calls it: ESI saved around the call, the callee pops its two arguments.
+    unsafe {
+        std::arch::asm!(
+            "push esi",
+            "mov esi, edx",
+            "push ecx",
+            "push edi",
+            "call eax",
+            "pop esi",
+            in("ecx") owner.as_ptr(),
+            in("edx") &raw mut out,
+            in("edi") province,
+            in("eax") GATHERING.get().supply_fn,
+            clobber_abi("C"),
+        );
+    }
+    out
+}
+
+/// A land province the country owns and controls, with its supply limit.
+fn site(world: usize, country: i32, id: i32) -> Option<i32> {
+    let province = province_at(world, id);
+    if province == 0 || rdi(province + 0x12C) != country || rdi(province + 0x134) != country {
+        return None;
+    }
+    let map = rdp(province + 0x5C);
+    if map == 0 || rd8(map + 0x2A) == 0 {
+        return None;
+    }
+    Some(supply_limit(province, country))
+}
+
+/// Land neighbours: map province +0xC8/+0xCC, 0x24-byte entries, +0 type (4 is
+/// impassable), +4 the neighbour's id.
+fn neighbours(world: usize, id: i32) -> Vec<i32> {
+    let province = province_at(world, id);
+    let map = if province != 0 {
+        rdp(province + 0x5C)
+    } else {
+        0
+    };
+    let mut out = Vec::new();
+    if map == 0 {
+        return out;
+    }
+    let (begin, end) = (rdp(map + 0xC8), rdp(map + 0xCC));
+    if begin == 0 || end < begin || (end - begin) / 0x24 > 64 {
+        return out;
+    }
+    let mut entry = begin;
+    while entry + 0x24 <= end {
+        if rdi(entry) != 4 {
+            out.push(rdi(entry + 4));
+        }
+        entry += 0x24;
+    }
+    out
+}
+
+/// The country's land rally points in the game's order: country +0x1570/+0x1574
+/// holds pointers to rally points, +8 the province id, +0x20 the kind (0 land, 1 naval).
+fn rally_points(country: usize) -> Vec<i32> {
+    let mut out = Vec::new();
+    let (begin, end) = (rdp(country + 0x1570), rdp(country + 0x1574));
+    if begin == 0 || end < begin || (end - begin) / 4 > 4096 {
+        return out;
+    }
+    let mut p = begin;
+    while p < end {
+        let rally = rdp(p);
+        p += 4;
+        if rally != 0 && rd8(rally + 0x20) == 0 {
+            out.push(rdi(rally + 8));
+        }
+    }
+    out
+}
+
+fn player_rally_points() -> Vec<i32> {
+    let country = player_country(&live_globals());
+    if country == 0 || !gather_enabled() {
+        return Vec::new();
+    }
+    rally_points(country)
+}
+
+/// How many land rally points the arrows cycle through; logs them.
+pub fn gather_rallies() -> u32 {
+    use std::fmt::Write as _;
+    let rallies = guard(player_rally_points).unwrap_or_default();
+    let world = rdp(at(WORLD_RVA));
+    let mut names = Text::<256>::new();
+    for &id in &rallies {
+        let name = guard(|| province_name(world, id)).unwrap_or_default();
+        let _ = write!(names, " {id} {name};");
+    }
+    log!("Gather: {} land rally points:{names}", rallies.len());
+    rallies.len() as u32
+}
+
+/// The name the map shows (map province +0xE4), else its id.
+fn province_name(world: usize, id: i32) -> Text<64> {
+    let province = province_at(world, id);
+    let map = if province != 0 {
+        rdp(province + 0x5C)
+    } else {
+        0
+    };
+    match (map != 0)
+        .then(|| read_game_string::<64>(map + 0xE4))
+        .flatten()
+        .filter(|n| !n.is_empty())
+    {
+        Some(name) => name,
+        None => crate::text!(64, "province {id}"),
+    }
+}
+
+/// The player's land armies from the country's unit list, checked against the registry.
+fn player_armies(g: &CfGlobals) -> Vec<usize> {
+    let country = player_country(g);
+    if country == 0 || !mobo_enabled() {
+        return Vec::new();
+    }
+    let player = player(g);
+    let mut out = Vec::new();
+    let mut node = rdp(country + UNIT_LIST);
+    let mut n = 0;
+    while node != 0 && n < 20000 {
+        let unit = rdp(node);
+        node = rdp(node + 8);
+        n += 1;
+        if unit != 0
+            && rdi(unit + 0xC4) == player
+            && lookup(g, stack_id(unit)) == unit + 8
+            && land(unit)
+        {
+            out.push(unit);
+        }
+    }
+    out
+}
+
+/// What the footer's label shows for a mode: the rally point's name in that mode.
+pub fn gather_label(mode: u32) -> Text<64> {
+    match mode {
+        gather::MODE_CAPITAL => Text::from_latin1("Capital"),
+        _ if mode >= gather::MODE_RALLY => {
+            let world = rdp(at(WORLD_RVA));
+            let k = (mode - gather::MODE_RALLY) as usize;
+            guard(|| {
+                (world != 0)
+                    .then(|| player_rally_points().get(k).copied())
+                    .flatten()
+                    .map(|id| province_name(world, id))
+            })
+            .flatten()
+            .unwrap_or(Text::from_latin1("Rally point"))
+        }
+        _ => Text::from_latin1("Best supply"),
+    }
+}
+
+#[derive(Default)]
+pub struct GatherOutcome {
+    pub result: TplResult,
+    /// Where the army gathers, its name and supply limit (whole units).
+    pub province: i32,
+    pub name: Text<64>,
+    pub supply: i32,
+    /// The chosen province, when an army there moved this one beside it.
+    pub moved_from: Option<Text<64>>,
+    /// Why nothing was queued.
+    pub refusal: Option<&'static str>,
+}
+
+fn gathers_load() {
+    let s = SESSION.get();
+    if s.gathers_loaded {
+        return;
+    }
+    s.gathers_loaded = true;
+    s.gathers.clear();
+    s.gathers_ok = false;
+    let Some(path) = settings_path("tgcx_gather_orders.txt") else {
+        return;
+    };
+    s.gathers_path = path.clone();
+    match read_settings(&path, GATHER_TEXT) {
+        Stored::Absent => s.gathers_ok = true,
+        Stored::Unreadable(error) => {
+            log!("Gather orders file unreadable ({error}); armies are not resumed after a load")
+        }
+        Stored::TooBig => {
+            log!("Gather orders file invalid: kept as is, not resumed or overwritten")
+        }
+        Stored::Text(text) => match gather::gather_parse(&text, UNITS) {
+            Some(orders) => {
+                s.gathers = orders;
+                s.gathers_ok = true;
+                log!("Gather orders file: {} saved orders", s.gathers.len());
+            }
+            None => log!("Gather orders file invalid: kept as is, not resumed or overwritten"),
+        },
+    }
+}
+
+fn gathers_save() {
+    let s = SESSION.get();
+    if !s.gathers_dirty || !s.gathers_ok || s.gathers_path.is_empty() {
+        return;
+    }
+    if !write_settings(
+        &s.gathers_path,
+        gather::gather_write(&s.gathers, GATHER_TEXT),
+    ) {
+        if !s.gathers_failed {
+            log!(
+                "Gather orders file not saved; this session's armies will not resume after a load"
+            );
+        }
+        s.gathers_failed = true;
+        return;
+    }
+    s.gathers_dirty = false;
+}
+
+/// A dropped (oldest) record moves the later ones down: keep the tasks' links.
+fn gather_new(task: usize, r: GtOrder) {
+    gathers_load();
+    let s = SESSION.get();
+    if !s.gathers_ok {
+        return;
+    }
+    let (index, dropped) = gather::gather_add(&mut s.gathers, r);
+    if let Some(dropped) = dropped {
+        for t in TRACKER
+            .get()
+            .task
+            .iter_mut()
+            .filter(|t| t.used && t.group != 0 && t.record != 0)
+        {
+            if t.record == dropped + 1 {
+                t.record = 0;
+            } else if t.record > dropped + 1 {
+                t.record -= 1;
+            }
+        }
+    }
+    TRACKER.get().task[task].record = index + 1;
+    s.gathers[index].active = true;
+    s.gathers_dirty = true;
+}
+
+/// The group's army, in the session and in every open saved order of its click.
+fn set_army(k: usize, army: CfId) {
+    let s = SESSION.get();
+    s.groups[k].army = army;
+    let id = s.groups[k].id;
+    for r in s.gathers.iter_mut().filter(|r| r.active && r.group == id) {
+        if r.army != army {
+            r.army = army;
+            s.gathers_dirty = true;
+        }
+    }
+}
+
+/// Ended records are finished from today, and a click with no regiment left to track
+/// is forgotten (its army, if any, stands on its own).
+fn gathers_close(date: u32) {
+    let s = SESSION.get();
+    let tasks = &TRACKER.get().task;
+    for i in 0..s.gathers.len() {
+        if s.gathers[i].active
+            && !tasks
+                .iter()
+                .any(|t| t.used && t.group != 0 && t.record == i + 1)
+        {
+            s.gathers[i].active = false;
+            s.gathers[i].done = date;
+            s.gathers_dirty = true;
+        }
+    }
+    s.groups
+        .retain(|grp| tasks.iter().any(|t| t.used && t.group == grp.id));
+    gathers_save();
+}
+
+/// A gathering regiment's target for today: its click's army. The first regiment to
+/// appear becomes that army and marches to the click's province; false then (its task
+/// is done), and when the click is unknown.
+fn gather_lead(g: &CfGlobals, i: usize, vtable: usize) -> bool {
+    let s = SESSION.get();
+    let t = &mut TRACKER.get().task[i];
+    let Some(k) = s.groups.iter().position(|grp| grp.id == t.group) else {
+        t.used = false;
+        return false;
+    };
+    let grp = s.groups[k];
+    if !grp.army.none() && stack_of(g, grp.army, vtable) == 0 {
+        log!(
+            "Gather: army {} of click {} is gone; the next regiment to appear leads",
+            grp.army.id,
+            grp.id
+        );
+        set_army(k, CfId::default());
+    }
+    let army = s.groups[k].army;
+    let stack = stack_of(g, t.stack, vtable);
+    if army.none() && stack != 0 {
+        set_army(k, t.stack);
+        t.used = false;
+        let at = province(stack);
+        if at == grp.province {
+            log!(
+                "Gather: stack {} forms army {} at province {at}",
+                t.stack.id,
+                grp.id
+            );
+        } else if send(make_move(stack, grp.province), g.vt_move) {
+            log!(
+                "Gather: stack {} leads army {} and marches to province {} (safe path)",
+                t.stack.id,
+                grp.id,
+                grp.province
+            );
+        } else {
+            log!(
+                "Gather: Move of leading stack {} to province {} not queued",
+                t.stack.id,
+                grp.province
+            );
+        }
+        return false;
+    }
+    t.target = army;
+    true
+}
+
+/// After a load, as Conform's resume: every saved order of the player's tag whose date
+/// window holds the loaded date is tracked again, with its click's army if it has one.
+fn gathers_resume(g: &CfGlobals, date: u32) {
+    gathers_load();
+    let s = SESSION.get();
+    if !s.gathers_ok || s.gathers.is_empty() {
+        return;
+    }
+    let country = player_country(g);
+    if country == 0 {
+        return;
+    }
+    let tag = rd32(country + 0x1C);
+    let (mut resumed, mut building, mut refused) = (0, 0, 0);
+    for i in 0..s.gathers.len() {
+        let r = s.gathers[i];
+        s.gathers[i].active = false;
+        if !gather::gather_applies(&r, tag, date) {
+            continue;
+        }
+        let k = match s.groups.iter().position(|grp| grp.id == r.group) {
+            Some(k) => k,
+            None => {
+                s.groups.push(Group {
+                    id: r.group,
+                    province: r.province,
+                    army: CfId::default(),
+                });
+                s.groups.len() - 1
+            }
+        };
+        if !r.army.none() {
+            s.groups[k].army = r.army;
+        }
+        let Some(t) = conform::add(
+            TRACKER.get(),
+            Kind::Join,
+            CfId::default(),
+            r.stack,
+            r.construction,
+            r.unit,
+            r.created,
+        ) else {
+            refused += 1;
+            continue;
+        };
+        let task = &mut TRACKER.get().task[t];
+        task.group = r.group;
+        task.record = i + 1;
+        task.construction_seen = true;
+        s.gathers[i].active = true;
+        resumed += 1;
+        building += u32::from(lookup(g, r.construction) != 0);
+    }
+    if resumed != 0 || refused != 0 {
+        log!(
+            "Gather: {resumed} saved orders resumed after a load ({building} still being built), {refused} refused"
+        );
+    }
+}
+
+fn gather_inner(
+    g: &CfGlobals,
+    counts: &[i32; UNITS],
+    filter: &ArmyFilter,
+    mode: u32,
+    out: &mut GatherOutcome,
+) {
+    let country = player_country(g);
+    if country == 0 {
+        out.refusal = Some("Cannot read the player's country; nothing queued.");
+        return;
+    }
+    let index = player(g);
+    let armies = player_armies(g);
+    let Some(&reference) = armies.first() else {
+        out.refusal = Some("Needs one army of yours to plan land routes; nothing queued.");
+        return;
+    };
+    SESSION.get().stack_vtable = rdp(reference);
+    let world = g.world;
+    let (owned, owned_end) = (rdp(country + 0x9D8), rdp(country + 0x9DC));
+    if owned_end < owned || (owned_end - owned) / 4 > 65536 {
+        out.refusal = Some("Cannot read the player's provinces; nothing queued.");
+        return;
+    }
+    let mut sites = Vec::new();
+    let mut p = owned;
+    while p < owned_end {
+        let id = rdi(p);
+        p += 4;
+        if let Some(supply) = site(world, index, id) {
+            sites.push(Site {
+                province: id,
+                supply,
+            });
+        }
+    }
+    let base = match mode {
+        gather::MODE_CAPITAL => {
+            let capital = rdi(country + 0xBE4);
+            if !sites.iter().any(|s| s.province == capital) {
+                out.refusal =
+                    Some("The capital is not a land province you own and control; nothing queued.");
+                return;
+            }
+            capital
+        }
+        _ if mode >= gather::MODE_RALLY => {
+            let k = (mode - gather::MODE_RALLY) as usize;
+            let Some(rally) = rally_points(country).get(k).copied() else {
+                out.refusal = Some(
+                    "No land rally point at this choice; set one or click the arrows. Nothing queued.",
+                );
+                return;
+            };
+            if !sites.iter().any(|s| s.province == rally) {
+                out.refusal = Some(
+                    "The rally point is not in a province you own and control; nothing queued.",
+                );
+                return;
+            }
+            rally
+        }
+        _ => {
+            let Some(sources) = templates::plan_sources(counts, Some(filter)) else {
+                out.refusal = Some("Recruitment eligibility unavailable; nothing queued.");
+                return;
+            };
+            if sources.is_empty() {
+                out.refusal = Some("No free soldier pops can build this template; nothing queued.");
+                return;
+            }
+            let mut routes: Vec<(i32, i32, bool)> = Vec::new();
+            let mut reach = |to: i32| {
+                let mut n = 0;
+                for &from in &sources {
+                    let ok = match routes.iter().find(|r| r.0 == from && r.1 == to) {
+                        Some(r) => r.2,
+                        None => {
+                            let ok = route_between(reference, from, to).is_some();
+                            routes.push((from, to, ok));
+                            ok
+                        }
+                    };
+                    n += u32::from(ok);
+                }
+                n
+            };
+            let Some(best) = gather::best(&sites, sources.len() as u32, GATHER_TRIES, &mut reach)
+            else {
+                out.refusal = Some("No province of yours can be reached by land from these pops.");
+                return;
+            };
+            best
+        }
+    };
+    // Any army of ours, or an earlier click still gathering, takes a province.
+    let mut taken: Vec<i32> = armies.iter().map(|&a| province(a)).collect();
+    taken.extend(SESSION.get().groups.iter().map(|grp| grp.province));
+    let mut near = |id: i32| neighbours(world, id);
+    let mut supply_of = |id: i32| site(world, index, id);
+    let Some(target) = gather::around(base, &mut near, &mut supply_of, &|id| taken.contains(&id))
+    else {
+        out.refusal = Some("Every province around the target holds an army; nothing queued.");
+        return;
+    };
+    out.province = target;
+    out.name = province_name(world, target);
+    out.supply = sites
+        .iter()
+        .find(|s| s.province == target)
+        .map_or(0, |s| s.supply / 1000);
+    if target != base {
+        out.moved_from = Some(province_name(world, base));
+    }
+    gathers_load();
+    let s = SESSION.get();
+    let live: Vec<u32> = s.groups.iter().map(|grp| grp.id).collect();
+    let group = gather::next_group(&s.gathers, &live);
+    let date = rd32(world + 0xB0C);
+    let tag = rd32(country + 0x1C);
+    let mut on_queued = |unit: usize, province: i32, construction: [u32; 2], stack: [u32; 2]| {
+        let s = CfId {
+            kind: stack[0],
+            id: stack[1],
+        };
+        let k = CfId {
+            kind: construction[0],
+            id: construction[1],
+        };
+        match conform::add(
+            TRACKER.get(),
+            Kind::Join,
+            CfId::default(),
+            s,
+            k,
+            unit as i32,
+            date,
+        ) {
+            Some(task) => {
+                let t = &mut TRACKER.get().task[task];
+                t.origin = province;
+                t.group = group;
+                if !k.none() && !s.none() {
+                    gather_new(
+                        task,
+                        GtOrder {
+                            tag,
+                            created: date,
+                            done: 0,
+                            province: target,
+                            group,
+                            army: CfId::default(),
+                            stack: s,
+                            construction: k,
+                            unit: unit as i32,
+                            active: false,
+                        },
+                    );
+                }
+            }
+            None => log!(
+                "Gather: tracker full; regiment from province {province} will not march by itself"
+            ),
+        }
+    };
+    let mut eligible = |province: i32| route_between(reference, province, target).is_some();
+    out.result = templates::recruit(
+        counts,
+        Some(&mut on_queued),
+        Some(&mut eligible),
+        Some(filter),
+    );
+    if out.result.queued != 0 {
+        SESSION.get().groups.push(Group {
+            id: group,
+            province: target,
+            army: CfId::default(),
+        });
+    }
+    gathers_save();
+    log!(
+        "Gather: army {group} at province {target} ({}, supply {}{}): {} queued, {} left out",
+        out.name,
+        out.supply,
+        if target != base {
+            ", beside a taken one"
+        } else {
+            ""
+        },
+        out.result.queued,
+        out.result.missing
+    );
+}
+
+/// TPL-11: recruit one template army that gathers in one province. counts[unit index]
+/// regiments; sources without a land route to the target are left out (D17, D20).
+pub fn gather_recruit(counts: &[i32; UNITS], filter: &ArmyFilter, mode: u32) -> GatherOutcome {
+    let mut out = GatherOutcome::default();
+    if !gather_enabled() {
+        out.refusal = Some("Gathering unavailable (guards); nothing queued.");
+        return out;
+    }
+    let g = live_globals();
+    if g.world == 0 || guard(|| gather_inner(&g, counts, filter, mode, &mut out)).is_none() {
+        log!("Gather rejected: guarded native read fault");
+        out = GatherOutcome {
+            refusal: Some("Game read failed; nothing queued."),
+            ..GatherOutcome::default()
+        };
+    }
+    out
 }
 
 // ---------------------------------------------------------------- conforming one stack
@@ -2042,5 +2760,14 @@ pub fn install() {
         log!("Mobo stacks enabled");
     } else {
         log!("Mobo stacks rejected: guards; no stack can be marked");
+    }
+    // TPL-11 needs the unit list the mobo guards cover.
+    if mobo_enabled() && sys::require_signatures(&GATHER_RVAS) {
+        let gathering = GATHERING.get();
+        gathering.supply_fn = at(0xB3C40);
+        gathering.enabled = true;
+        log!("Build Army gathering enabled: supply limit, adjacency and rally point read only");
+    } else {
+        log!("Build Army gathering rejected: guards; Recruit Template recruits without gathering");
     }
 }
