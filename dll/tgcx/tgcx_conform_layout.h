@@ -15,6 +15,7 @@ enum tgcx_CfButtonId {
     TGCX_CF_B_CANCEL,
     TGCX_CF_B_CULTURE_ACCEPTED,
     TGCX_CF_B_CULTURE_PRIMARY,
+    TGCX_CF_B_MOBO,
     TGCX_CF_BUTTONS
 };
 static constexpr const char* tgcx_cf_button_names[]={
@@ -30,6 +31,7 @@ static constexpr const char* tgcx_cf_button_names[]={
     "tgcx_cf_cancel",
     "tgcx_cf_culture_accepted",
     "tgcx_cf_culture_primary",
+    "tgcx_cf_mobo",
 };
 enum tgcx_CfTextId {
     TGCX_CF_T_TITLE,
@@ -80,6 +82,7 @@ enum tgcx_CfTextId {
     TGCX_CF_T_CULTURE,
     TGCX_CF_T_CULTURE_ACCEPTED,
     TGCX_CF_T_CULTURE_PRIMARY,
+    TGCX_CF_T_MOBO,
     TGCX_CF_TEXTS
 };
 static constexpr const char* tgcx_cf_text_names[]={
@@ -131,5 +134,6 @@ static constexpr const char* tgcx_cf_text_names[]={
     "tgcx_cf_text_culture",
     "tgcx_cf_text_culture_accepted",
     "tgcx_cf_text_culture_primary",
+    "tgcx_cf_text_mobo",
 };
-#define TGCX_CF_THUNKS(M) M(0) M(1) M(2) M(3) M(4) M(5) M(6) M(7) M(8) M(9) M(10) M(11)
+#define TGCX_CF_THUNKS(M) M(0) M(1) M(2) M(3) M(4) M(5) M(6) M(7) M(8) M(9) M(10) M(11) M(12)

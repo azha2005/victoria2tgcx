@@ -359,7 +359,8 @@ pub fn add(
     Some(i)
 }
 
-/// Regiments of each type already coming to this target (planner input).
+/// Regiments of each type already coming to this target (planner input). A recruit is
+/// one regiment; a mobo join (MOBO-1) records how many its stack holds.
 pub fn pending(k: &Tracker, target: CfId) -> [i32; UNITS] {
     let mut pending = [0; UNITS];
     for t in k
@@ -368,7 +369,7 @@ pub fn pending(k: &Tracker, target: CfId) -> [i32; UNITS] {
         .filter(|t| t.used && t.kind == Kind::Join && t.target == target)
     {
         if let Some(u) = valid_unit(t.unit) {
-            pending[u] += 1;
+            pending[u] += t.regiments.max(1) as i32;
         }
     }
     pending
@@ -446,6 +447,14 @@ pub fn orders_write(k: &[CfOrder], size: usize) -> Option<String> {
     (out.len() < size).then_some(out)
 }
 
+fn id_pair(s: &str) -> Option<CfId> {
+    let (kind, id) = s.split_once('/')?;
+    Some(CfId {
+        kind: kind.parse().ok()?,
+        id: id.parse().ok()?,
+    })
+}
+
 /// The fields of one canonical order line; the round trip below rejects anything else.
 fn parse_line(line: &str) -> Option<CfOrder> {
     let mut r = CfOrder::default();
@@ -456,19 +465,12 @@ fn parse_line(line: &str) -> Option<CfOrder> {
     r.created = created.parse().ok()?;
     let (done, rest) = rest.split_once(" target=")?;
     r.done = done.parse().ok()?;
-    let pair = |s: &str| -> Option<CfId> {
-        let (kind, id) = s.split_once('/')?;
-        Some(CfId {
-            kind: kind.parse().ok()?,
-            id: id.parse().ok()?,
-        })
-    };
     let (target, rest) = rest.split_once(" stack=")?;
-    r.target = pair(target)?;
+    r.target = id_pair(target)?;
     let (stack, rest) = rest.split_once(" construction=")?;
-    r.stack = pair(stack)?;
+    r.stack = id_pair(stack)?;
     let (construction, unit) = rest.split_once(" unit=")?;
-    r.construction = pair(construction)?;
+    r.construction = id_pair(construction)?;
     r.unit = unit.parse().ok()?;
     Some(r)
 }
@@ -497,4 +499,137 @@ pub fn orders_parse(text: &[u8]) -> Option<Vec<CfOrder>> {
         at = &at[end + 2..];
     }
     Some(out)
+}
+
+// ---------------------------------------------------------------- mobo stacks (pure; MOBO-1)
+
+// A stack marked to be completed with infantry when its country mobilizes. The mark is
+// kept in a local file like the saved orders (outside the save), with the same date
+// window: it applies to a loaded game of the same tag whose date lies from its creation
+// up to (not including) its end, so a save made before the mark, or after it was
+// removed, never brings it back. `infantry` is how many infantry regiments the template
+// the stack was marked with asks for.
+pub const MARKS_MAX: usize = 256;
+
+#[derive(Clone, Copy, Default)]
+pub struct CfMark {
+    pub tag: u32,
+    pub created: u32,
+    pub done: u32,
+    pub stack: CfId,
+    pub infantry: i32,
+    /// This session tracks it: only an active mark is ended when its stack is gone, so a
+    /// mark of another save's timeline is left as it is.
+    pub active: bool,
+}
+
+pub fn mark_applies(r: &CfMark, tag: u32, date: u32) -> bool {
+    r.tag == tag && r.created <= date && (r.done == 0 || date < r.done)
+}
+
+/// Full: the oldest ended mark goes first, else the oldest open one. Returns the new
+/// mark's index (an eviction moves later marks down one).
+pub fn mark_add(k: &mut Vec<CfMark>, r: CfMark) -> usize {
+    if k.len() >= MARKS_MAX {
+        let (mut drop, mut done) = (0, false);
+        for (i, c) in k.iter().enumerate() {
+            let d = c.done != 0;
+            if (d && !done) || (d == done && c.created < k[drop].created) {
+                drop = i;
+                done = d;
+            }
+        }
+        k.remove(drop);
+    }
+    k.push(CfMark { active: false, ..r });
+    k.len() - 1
+}
+
+fn mark_line(r: &CfMark) -> String {
+    format!(
+        "mark tag={:08X} created={} done={} stack={}/{} infantry={}\r\n",
+        r.tag, r.created, r.done, r.stack.kind, r.stack.id, r.infantry
+    )
+}
+
+const MARKS_HEADER: &str = "tgcx_mobo_marks 1\r\n";
+
+/// The file's text, or None when it would not fit in `size` bytes.
+pub fn marks_write(k: &[CfMark], size: usize) -> Option<String> {
+    let mut out = String::from(MARKS_HEADER);
+    for r in k {
+        out.push_str(&mark_line(r));
+    }
+    (out.len() < size).then_some(out)
+}
+
+fn parse_mark(line: &str) -> Option<CfMark> {
+    let mut r = CfMark::default();
+    let rest = line.strip_prefix("mark tag=")?;
+    let (tag, rest) = rest.split_once(" created=")?;
+    r.tag = u32::from_str_radix(tag, 16).ok()?;
+    let (created, rest) = rest.split_once(" done=")?;
+    r.created = created.parse().ok()?;
+    let (done, rest) = rest.split_once(" stack=")?;
+    r.done = done.parse().ok()?;
+    let (stack, infantry) = rest.split_once(" infantry=")?;
+    r.stack = id_pair(stack)?;
+    r.infantry = infantry.parse().ok()?;
+    Some(r)
+}
+
+/// Strict, as the orders: every line must print back byte for byte, or the whole file
+/// is refused.
+pub fn marks_parse(text: &[u8]) -> Option<Vec<CfMark>> {
+    let text = text.split(|&c| c == 0).next().unwrap_or_default();
+    let mut at = text.strip_prefix(MARKS_HEADER.as_bytes())?;
+    let mut out = Vec::new();
+    while !at.is_empty() {
+        let end = at.windows(2).position(|w| w == b"\r\n")?;
+        if end >= 190 || out.len() >= MARKS_MAX {
+            return None;
+        }
+        let r = parse_mark(std::str::from_utf8(&at[..end]).ok()?)?;
+        if mark_line(&r).as_bytes() != &at[..end + 2] || r.stack.none() || r.infantry <= 0 {
+            return None;
+        }
+        out.push(r);
+        at = &at[end + 2..];
+    }
+    Some(out)
+}
+
+/// An infantry stack that appeared while its country mobilized: how many regiments it
+/// holds, and for each marked stack the length of its safe land route there (None: no
+/// route).
+pub struct MoboCandidate {
+    pub regiments: i32,
+    pub route: Vec<Option<u32>>,
+}
+
+/// Pairs (candidate, marked stack), nearest route first, each candidate once. A stack
+/// joins only if all its regiments fit in what the marked stack still needs, so no
+/// template is overshot; one that fits nowhere stays where it is.
+pub fn mobo_assign(need: &[i32], candidates: &[MoboCandidate]) -> Vec<(usize, usize)> {
+    let mut pairs = Vec::new();
+    for (c, candidate) in candidates.iter().enumerate() {
+        for (m, route) in candidate.route.iter().enumerate().take(need.len()) {
+            if let Some(length) = route {
+                pairs.push((*length, c, m));
+            }
+        }
+    }
+    pairs.sort_unstable();
+    let mut need = need.to_vec();
+    let mut taken = vec![false; candidates.len()];
+    let mut out = Vec::new();
+    for (_, c, m) in pairs {
+        let regiments = candidates[c].regiments;
+        if !taken[c] && regiments > 0 && need[m] >= regiments {
+            taken[c] = true;
+            need[m] -= regiments;
+            out.push((c, m));
+        }
+    }
+    out
 }

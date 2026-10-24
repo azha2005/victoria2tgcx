@@ -22,10 +22,11 @@ use windows_sys::Win32::Storage::FileSystem::{
 };
 
 use crate::conform::{
-    self, Action, CfId, CfOrder, CfPlan, CfRegiment, CfSeen, Kind, REGIMENTS, Refusal, Tracker,
+    self, Action, CfId, CfMark, CfOrder, CfPlan, CfRegiment, CfSeen, Kind, MoboCandidate,
+    REGIMENTS, Refusal, Tracker,
 };
 use crate::conform_gui;
-use crate::snapshot::WORLD_RVA;
+use crate::snapshot::{COUNTRY_MANAGER_RVA, WORLD_RVA};
 use crate::sys::{
     Bytes, Global, Tag, at, base, guard, in_image, keep_last_error, rd8, rd32, rdi, rdp,
     read_game_string, slot, thread_id,
@@ -453,9 +454,15 @@ fn path_query(
 }
 
 pub fn reachable(stack: usize, province: i32) -> bool {
+    route_len(stack, province).is_some()
+}
+
+/// How many provinces the stack's safe land route from `province` to where it stands
+/// passes through (0 when it is already there); None when there is no such route.
+pub fn route_len(stack: usize, province: i32) -> Option<u32> {
     let n = NATIVES.get();
     if n.path_fn == 0 || n.path_clear_fn == 0 || stack == 0 || !(0..=65535).contains(&province) {
-        return false;
+        return None;
     }
     let mut path = Path::default();
     let result = guard(|| {
@@ -479,10 +486,10 @@ pub fn reachable(stack: usize, province: i32) -> bool {
         // edges; no embarked/sea node is admitted.
         if start_map == 0 || end_map == 0 || rd8(start_map + 0x2A) == 0 || rd8(end_map + 0x2A) == 0
         {
-            return false;
+            return None;
         }
         if start == destination {
-            return true;
+            return Some(0);
         }
         let finder = base() + 0xA03794;
         let mut result = path_query(
@@ -508,9 +515,9 @@ pub fn reachable(stack: usize, province: i32) -> bool {
             }
             node = rdp(node + 8);
         }
-        result
+        result.then_some(visited)
     });
-    let mut result = result.unwrap_or(false);
+    let mut result = result.flatten();
     // Match Move's cleanup on both successful and failed queries. Never cross
     // allocators or retain native list nodes after this snapshot.
     let cleared = guard(|| {
@@ -519,7 +526,7 @@ pub fn reachable(stack: usize, province: i32) -> bool {
         unsafe { std::mem::transmute::<usize, Clear>(NATIVES.get().path_clear_fn)(&mut path, 0) };
     });
     if cleared.is_none() {
-        result = false;
+        result = None;
         log!("Conform: route cleanup fault; recruitment refused");
     }
     result
@@ -591,32 +598,36 @@ static SESSION: Global<Session> = Global::new(Session {
 });
 
 const ORDERS_TEXT: usize = 131072;
+const MARKS_TEXT: usize = 65536;
 
-fn orders_load() {
-    let s = SESSION.get();
-    if s.orders_loaded {
-        return;
-    }
-    s.orders_loaded = true;
-    s.orders.clear();
-    s.orders_ok = false;
+/// A file in the settings folder beside the templates, as a NUL-terminated wide path.
+fn settings_path(name: &str) -> Option<Vec<u16>> {
     templates::load_library(); // sets the settings folder the templates live in
     let tpl_path = templates::STORE.get().path.clone();
     let end = tpl_path
         .iter()
         .position(|&c| c == 0)
         .unwrap_or(tpl_path.len());
-    let Some(leaf) = tpl_path[..end].iter().rposition(|&c| c == u16::from(b'\\')) else {
-        return;
-    };
+    let leaf = tpl_path[..end]
+        .iter()
+        .rposition(|&c| c == u16::from(b'\\'))?;
     let mut path = tpl_path[..=leaf].to_vec();
-    path.extend("tgcx_conform_orders.txt".encode_utf16());
+    path.extend(name.encode_utf16());
     if path.len() >= 260 {
-        return;
+        return None;
     }
     path.push(0);
-    let s = SESSION.get();
-    s.orders_path = path.clone();
+    Some(path)
+}
+
+enum Stored {
+    Absent,
+    Unreadable(u32),
+    TooBig,
+    Text(Vec<u8>),
+}
+
+fn read_settings(path: &[u16], size: usize) -> Stored {
     let file = unsafe {
         CreateFileW(
             path.as_ptr(),
@@ -630,13 +641,13 @@ fn orders_load() {
     };
     if file == INVALID_HANDLE_VALUE {
         let error = unsafe { GetLastError() };
-        s.orders_ok = error == ERROR_FILE_NOT_FOUND;
-        if !s.orders_ok {
-            log!("Conform orders file unreadable ({error}); orders are not resumed after a load");
-        }
-        return;
+        return if error == ERROR_FILE_NOT_FOUND {
+            Stored::Absent
+        } else {
+            Stored::Unreadable(error)
+        };
     }
-    let mut text = vec![0u8; ORDERS_TEXT - 1];
+    let mut text = vec![0u8; size - 1];
     let mut read = 0;
     let whole = unsafe {
         ReadFile(
@@ -647,36 +658,18 @@ fn orders_load() {
             null_mut(),
         )
     } != 0
-        && (read as usize) < ORDERS_TEXT - 1;
+        && (read as usize) < size - 1;
     unsafe { CloseHandle(file) };
-    text.truncate(if whole { read as usize } else { 0 });
-    let parsed = if whole {
-        conform::orders_parse(&text)
-    } else {
-        None
-    };
-    match parsed {
-        Some(orders) => {
-            s.orders = orders;
-            s.orders_ok = true;
-            log!("Conform orders file: {} saved orders", s.orders.len());
-        }
-        None => {
-            s.orders.clear();
-            s.orders_ok = false;
-            log!("Conform orders file invalid: kept as is, not resumed or overwritten");
-        }
+    if !whole {
+        return Stored::TooBig;
     }
+    text.truncate(read as usize);
+    Stored::Text(text)
 }
 
 /// Written whole to a .pending file, then moved over the old one.
-fn orders_save() {
-    let s = SESSION.get();
-    if !s.orders_dirty || !s.orders_ok || s.orders_path.is_empty() {
-        return;
-    }
-    let text = conform::orders_write(&s.orders, ORDERS_TEXT);
-    let mut temporary: Vec<u16> = s.orders_path[..s.orders_path.len() - 1].to_vec();
+fn write_settings(path: &[u16], text: Option<String>) -> bool {
+    let mut temporary: Vec<u16> = path[..path.len() - 1].to_vec();
     temporary.extend(".pending".encode_utf16());
     temporary.push(0);
     let mut ok = text.is_some() && temporary.len() <= 260;
@@ -713,11 +706,53 @@ fn orders_save() {
         unsafe { CloseHandle(file) };
     }
     let flags = MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH;
-    ok = ok && unsafe { MoveFileExW(temporary.as_ptr(), s.orders_path.as_ptr(), flags) } != 0;
-    if !ok {
-        if file != INVALID_HANDLE_VALUE {
-            unsafe { DeleteFileW(temporary.as_ptr()) };
+    ok = ok && unsafe { MoveFileExW(temporary.as_ptr(), path.as_ptr(), flags) } != 0;
+    if !ok && file != INVALID_HANDLE_VALUE {
+        unsafe { DeleteFileW(temporary.as_ptr()) };
+    }
+    ok
+}
+
+fn orders_load() {
+    let s = SESSION.get();
+    if s.orders_loaded {
+        return;
+    }
+    s.orders_loaded = true;
+    s.orders.clear();
+    s.orders_ok = false;
+    let Some(path) = settings_path("tgcx_conform_orders.txt") else {
+        return;
+    };
+    s.orders_path = path.clone();
+    match read_settings(&path, ORDERS_TEXT) {
+        Stored::Absent => s.orders_ok = true,
+        Stored::Unreadable(error) => {
+            log!("Conform orders file unreadable ({error}); orders are not resumed after a load")
         }
+        Stored::TooBig => {
+            log!("Conform orders file invalid: kept as is, not resumed or overwritten")
+        }
+        Stored::Text(text) => match conform::orders_parse(&text) {
+            Some(orders) => {
+                s.orders = orders;
+                s.orders_ok = true;
+                log!("Conform orders file: {} saved orders", s.orders.len());
+            }
+            None => log!("Conform orders file invalid: kept as is, not resumed or overwritten"),
+        },
+    }
+}
+
+fn orders_save() {
+    let s = SESSION.get();
+    if !s.orders_dirty || !s.orders_ok || s.orders_path.is_empty() {
+        return;
+    }
+    if !write_settings(
+        &s.orders_path,
+        conform::orders_write(&s.orders, ORDERS_TEXT),
+    ) {
         if !s.orders_failed {
             log!(
                 "Conform orders file not saved; this session's orders will not resume after a load"
@@ -821,7 +856,11 @@ fn resume(g: &CfGlobals, date: u32) {
             continue;
         };
         let alive = lookup(g, r.construction) != 0;
+        let joining = stack_of(g, r.stack, vt);
         let task = &mut TRACKER.get().task[t];
+        if joining != 0 {
+            task.regiments = rdi(joining + 0x40).max(0) as usize; // a mobo join may hold several
+        }
         task.record = i + 1;
         task.construction_seen = true;
         s.orders[i].active = true;
@@ -882,6 +921,446 @@ fn prune_routes(g: &CfGlobals, target_id: CfId, target: usize) {
     }
 }
 
+// ---------------------------------------------------------------- mobo stacks (MOBO-1)
+
+// A mobo stack is a stack marked (conform_gui) to be completed with infantry when its
+// country mobilizes. Mobilization raises its regiments from a schedule, a few per day,
+// each into the land stack of its province if there is one and otherwise into a new
+// stack that the engine sends to the country's rally point (FUN_00446A30). So the
+// infantry that can be brought to a mobo stack are the new all-infantry stacks that
+// appear while the schedule is being worked off: each is told to march to the nearest
+// mobo stack still short of infantry and join it, by the same Move and Merge tracking
+// as a recruit. CCountry fields (docs/symbols.md "MOBO-1"): +0x120 the mobilized flag
+// (written by CToggleMobilizationCommand, read by is_mobilised); +0x15DC/+0x15E0 the
+// schedule, a vector of pointers cleared once every entry has raised its regiments;
+// +0x7B4 the unit list (head; node +0 unit, +8 next).
+const MOBILISED: usize = 0x120;
+const SCHEDULE: usize = 0x15DC;
+const UNIT_LIST: usize = 0x7B4;
+const MOBO_RVAS: [u32; 6] = [0x1804BE, 0x50003E, 0x108FB0, 0x113CA8, 0x113CCF, 0x10834B];
+
+struct Mobo {
+    enabled: bool,
+    marks: Vec<CfMark>,
+    loaded: bool,
+    ok: bool,
+    dirty: bool,
+    failed: bool,
+    path: Vec<u16>,
+    /// The player's land stacks seen the last game day; only meaningful once seeded.
+    known: Vec<CfId>,
+    seeded: bool,
+    /// The schedule still had regiments to raise the last game day.
+    raising: bool,
+}
+
+static MOBO: Global<Mobo> = Global::new(Mobo {
+    enabled: false,
+    marks: Vec::new(),
+    loaded: false,
+    ok: false,
+    dirty: false,
+    failed: false,
+    path: Vec::new(),
+    known: Vec::new(),
+    seeded: false,
+    raising: false,
+});
+static MOBO_COUNTRY: Global<TplCountry> = Global::new(TplCountry::ZERO);
+static MOBO_STACK: Global<CfStack> = Global::new(CfStack::EMPTY);
+
+pub fn mobo_enabled() -> bool {
+    MOBO.get().enabled
+}
+
+fn marks_load() {
+    let m = MOBO.get();
+    if m.loaded {
+        return;
+    }
+    m.loaded = true;
+    m.marks.clear();
+    m.ok = false;
+    let Some(path) = settings_path("tgcx_mobo_marks.txt") else {
+        return;
+    };
+    m.path = path.clone();
+    match read_settings(&path, MARKS_TEXT) {
+        Stored::Absent => m.ok = true,
+        Stored::Unreadable(error) => {
+            log!("Mobo marks file unreadable ({error}); marks are not kept")
+        }
+        Stored::TooBig => log!("Mobo marks file invalid: kept as is, no mobo stacks this session"),
+        Stored::Text(text) => match conform::marks_parse(&text) {
+            Some(marks) => {
+                m.marks = marks;
+                m.ok = true;
+                log!("Mobo marks file: {} marks", m.marks.len());
+            }
+            None => log!("Mobo marks file invalid: kept as is, no mobo stacks this session"),
+        },
+    }
+}
+
+fn marks_save() {
+    let m = MOBO.get();
+    if !m.dirty || !m.ok || m.path.is_empty() {
+        return;
+    }
+    if !write_settings(&m.path, conform::marks_write(&m.marks, MARKS_TEXT)) {
+        if !m.failed {
+            log!("Mobo marks file not saved; this session's marks will not survive a load");
+        }
+        m.failed = true;
+        return;
+    }
+    m.dirty = false;
+}
+
+/// The infantry a marked stack is to be completed with (None: not marked).
+pub fn mobo_quota(id: CfId) -> Option<i32> {
+    MOBO.get()
+        .marks
+        .iter()
+        .find(|r| r.active && r.done == 0 && r.stack == id)
+        .map(|r| r.infantry)
+}
+
+/// Marks the stack, or changes how much infantry it is marked for. False when marks
+/// cannot be kept (guards rejected, or the marks file is unusable).
+pub fn mobo_mark(g: &CfGlobals, stack: usize, infantry: i32) -> bool {
+    let m = MOBO.get();
+    if !m.enabled || infantry <= 0 {
+        return false;
+    }
+    marks_load();
+    if !m.ok {
+        return false;
+    }
+    let id = stack_id(stack);
+    if let Some(r) = m
+        .marks
+        .iter_mut()
+        .find(|r| r.active && r.done == 0 && r.stack == id)
+    {
+        r.infantry = infantry;
+    } else {
+        let mark = CfMark {
+            tag: rd32(stack + 0xC0),
+            created: rd32(g.world + 0xB0C),
+            done: 0,
+            stack: id,
+            infantry,
+            active: false,
+        };
+        SESSION.get().stack_vtable = rdp(stack);
+        let i = conform::mark_add(&mut m.marks, mark);
+        m.marks[i].active = true;
+        m.seeded = false;
+        log!(
+            "Mobo: stack {}/{} marked for {infantry} infantry",
+            id.kind,
+            id.id
+        );
+    }
+    m.dirty = true;
+    marks_save();
+    true
+}
+
+pub fn mobo_unmark(g: &CfGlobals, id: CfId) {
+    let m = MOBO.get();
+    let date = rd32(g.world + 0xB0C);
+    for r in m
+        .marks
+        .iter_mut()
+        .filter(|r| r.active && r.done == 0 && r.stack == id)
+    {
+        r.active = false;
+        r.done = date;
+        m.dirty = true;
+        log!("Mobo: stack {}/{} no longer marked", id.kind, id.id);
+    }
+    marks_save();
+}
+
+/// A load: nothing is tracked until the saved marks have been looked at again.
+fn mobo_reset() {
+    let m = MOBO.get();
+    m.known.clear();
+    m.seeded = false;
+    m.raising = false;
+    for r in m.marks.iter_mut() {
+        r.active = false;
+    }
+}
+
+/// After a load: every mark of the player's tag whose date window holds the loaded
+/// date, and whose stack is again the player's land stack, is tracked again.
+fn mobo_resume(g: &CfGlobals, date: u32) {
+    let m = MOBO.get();
+    if !m.enabled {
+        return;
+    }
+    marks_load();
+    if !m.ok || m.marks.is_empty() {
+        return;
+    }
+    let player = player(g);
+    let (mut resumed, mut refused) = (0, 0);
+    for i in 0..m.marks.len() {
+        let r = m.marks[i];
+        if r.created > date || (r.done != 0 && date >= r.done) {
+            continue;
+        }
+        let entry = lookup(g, r.stack);
+        let stack = if entry != 0 { entry - 8 } else { 0 };
+        if stack == 0
+            || rdi(stack + 0xC4) != player
+            || !conform::mark_applies(&r, rd32(stack + 0xC0), date)
+        {
+            continue;
+        }
+        let s = SESSION.get();
+        let vt = rdp(stack);
+        let accepted = if s.stack_vtable != 0 {
+            vt == s.stack_vtable
+        } else {
+            land(stack)
+        };
+        if !accepted {
+            refused += 1;
+            continue;
+        }
+        s.stack_vtable = vt;
+        m.marks[i].active = true;
+        resumed += 1;
+    }
+    if resumed != 0 || refused != 0 {
+        log!("Mobo: {resumed} marks resumed after a load, {refused} refused");
+    }
+}
+
+fn player_country(g: &CfGlobals) -> usize {
+    let manager = rdp(at(COUNTRY_MANAGER_RVA));
+    let index = player(g);
+    if manager == 0 || index < 0 || index >= rdi(manager) {
+        return 0;
+    }
+    let countries = rdp(manager + 4);
+    if countries != 0 {
+        rdp(countries + index as usize * 4)
+    } else {
+        0
+    }
+}
+
+/// Regiments the country's mobilization schedule still has to raise.
+fn schedule_len(country: usize) -> u32 {
+    let (begin, end) = (rdp(country + SCHEDULE), rdp(country + SCHEDULE + 4));
+    if end > begin {
+        ((end - begin) / 4) as u32
+    } else {
+        0
+    }
+}
+
+/// The player's land stacks from the country's unit list, each checked against the
+/// registry so a stale entry is never used.
+fn land_stacks(g: &CfGlobals, country: usize, vtable: usize) -> Vec<(usize, CfId)> {
+    let player = player(g);
+    let mut out = Vec::new();
+    let mut node = rdp(country + UNIT_LIST);
+    let mut n = 0;
+    while node != 0 && n < 20000 {
+        let unit = rdp(node);
+        node = rdp(node + 8);
+        n += 1;
+        if unit == 0 || rdp(unit) != vtable || rdi(unit + 0xC4) != player {
+            continue;
+        }
+        let id = stack_id(unit);
+        if lookup(g, id) == unit + 8 {
+            out.push((unit, id));
+        }
+    }
+    out
+}
+
+/// A new all-infantry stack that appeared while the country mobilized.
+struct Raised {
+    id: CfId,
+    province: i32,
+    regiments: i32,
+}
+
+/// A marked stack and how much infantry it still lacks.
+struct Marked {
+    stack: usize,
+    id: CfId,
+    need: i32,
+}
+
+/// One game day of mobo stacks. Marked stacks that are gone are ended. While the country
+/// is mobilized and its schedule is being worked off (and the day after it empties, for
+/// the last regiments), each new all-infantry stack is sent to the nearest marked stack
+/// that still needs infantry, if it fits all of them.
+fn mobo_daily(g: &CfGlobals, date: u32) {
+    let m = MOBO.get();
+    if !m.enabled || !m.marks.iter().any(|r| r.active) {
+        m.seeded = false;
+        m.known.clear();
+        m.raising = false;
+        return;
+    }
+    let country = player_country(g);
+    let vtable = SESSION.get().stack_vtable;
+    if country == 0 || vtable == 0 {
+        return;
+    }
+    for r in m.marks.iter_mut().filter(|r| r.active) {
+        if stack_of(g, r.stack, vtable) == 0 {
+            r.active = false;
+            r.done = date;
+            m.dirty = true;
+            log!(
+                "Mobo: marked stack {}/{} is gone; mark ended",
+                r.stack.kind,
+                r.stack.id
+            );
+        }
+    }
+    marks_save();
+    let stacks = land_stacks(g, country, vtable);
+    let mobilized = rd8(country + MOBILISED) != 0;
+    let scheduled = schedule_len(country) != 0;
+    let window = mobilized && (scheduled || m.raising);
+    m.raising = mobilized && scheduled;
+    let was_seeded = m.seeded;
+    let known = std::mem::take(&mut m.known);
+    m.known = stacks.iter().map(|&(_, id)| id).collect();
+    m.seeded = true;
+    if !window || !was_seeded {
+        return;
+    }
+    let tracker = TRACKER.get();
+    let fresh: Vec<(usize, CfId)> = stacks
+        .iter()
+        .copied()
+        .filter(|(_, id)| {
+            !known.contains(id)
+                && !tracker
+                    .task
+                    .iter()
+                    .any(|t| t.used && (t.stack == *id || t.target == *id))
+                && !m.marks.iter().any(|r| r.active && r.stack == *id)
+        })
+        .collect();
+    if fresh.is_empty() {
+        return;
+    }
+    let scanned = MOBO_COUNTRY.get();
+    if !templates::scan(&templates::live_globals(), scanned) {
+        log!("Mobo: cannot read the player's unit types");
+        return;
+    }
+    let Some(infantry) = templates::unit_by_name(scanned, b"infantry") else {
+        log!("Mobo: this country has no infantry unit type");
+        return;
+    };
+    let read = MOBO_STACK.get();
+    let mut raised = Vec::new();
+    for &(stack, id) in &fresh {
+        if read_stack(stack, Some(&scanned.unit), read)
+            && !read.regiment.is_empty()
+            && read.regiment.iter().all(|r| r.unit == infantry as i32)
+        {
+            raised.push(Raised {
+                id,
+                province: read.province,
+                regiments: read.regiment.len() as i32,
+            });
+        }
+    }
+    if raised.is_empty() {
+        return;
+    }
+    let mut marked = Vec::new();
+    for r in m.marks.iter().filter(|r| r.active && r.done == 0) {
+        let stack = stack_of(g, r.stack, vtable);
+        if stack == 0 || !read_stack(stack, Some(&scanned.unit), read) {
+            continue;
+        }
+        let have = read
+            .regiment
+            .iter()
+            .filter(|c| c.unit == infantry as i32)
+            .count() as i32;
+        let coming = conform::pending(TRACKER.get(), r.stack)[infantry];
+        marked.push(Marked {
+            stack,
+            id: r.stack,
+            need: r.infantry - have - coming,
+        });
+    }
+    if marked.iter().all(|t| t.need <= 0) {
+        return;
+    }
+    let candidates: Vec<MoboCandidate> = raised
+        .iter()
+        .map(|c| MoboCandidate {
+            regiments: c.regiments,
+            route: marked
+                .iter()
+                .map(|t| route_len(t.stack, c.province))
+                .collect(),
+        })
+        .collect();
+    let need: Vec<i32> = marked.iter().map(|t| t.need).collect();
+    let tag = rd32(marked[0].stack + 0xC0);
+    for (c, t) in conform::mobo_assign(&need, &candidates) {
+        let (from, to) = (&raised[c], &marked[t]);
+        let Some(task) = conform::add(
+            TRACKER.get(),
+            Kind::Join,
+            to.id,
+            from.id,
+            CfId::default(),
+            infantry as i32,
+            date,
+        ) else {
+            log!(
+                "Mobo: tracker full; infantry stack {} will not march by itself",
+                from.id.id
+            );
+            continue;
+        };
+        let joining = &mut TRACKER.get().task[task];
+        joining.regiments = from.regiments as usize;
+        joining.origin = from.province;
+        order_new(
+            task,
+            CfOrder {
+                tag,
+                created: date,
+                done: 0,
+                target: to.id,
+                stack: from.id,
+                construction: CfId::default(),
+                unit: infantry as i32,
+                active: false,
+            },
+        );
+        log!(
+            "Mobo: infantry stack {} ({} regiments) goes to mobo stack {}",
+            from.id.id,
+            from.regiments,
+            to.id.id
+        );
+    }
+    orders_save();
+}
+
 fn daily(g: &CfGlobals) {
     if g.world == 0 {
         return;
@@ -899,7 +1378,9 @@ fn daily(g: &CfGlobals) {
         s.player = player;
         s.step = 0;
         s.date = date;
+        mobo_reset();
         resume(g, date);
+        mobo_resume(g, date);
         return;
     }
     if date == s.date {
@@ -1060,6 +1541,9 @@ fn daily(g: &CfGlobals) {
             }
             Action::Wait | Action::Done => {}
         }
+    }
+    if guard(|| mobo_daily(g, date)).is_none() {
+        log!("Mobo driver fault; nothing sent today");
     }
     orders_close(date);
 }
@@ -1553,4 +2037,10 @@ pub fn install() {
     }
     VIEWS_STATE.get().enabled = true;
     log!("Conform hooks installed: unit panel refresh/destructor; engine commands only");
+    if sys::require_signatures(&MOBO_RVAS) {
+        MOBO.get().enabled = true;
+        log!("Mobo stacks enabled");
+    } else {
+        log!("Mobo stacks rejected: guards; no stack can be marked");
+    }
 }
