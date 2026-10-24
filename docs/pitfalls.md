@@ -928,3 +928,121 @@ accepts water0/water0, rejects land1/land1 for a navy, and permits mixed
 endpoints only through land's linked port. Use such independent semantic
 evidence; mock ABI/call tests cannot validate unknown field meaning.
 See report-universal-land-flag-1019.md; live correction retry pending.
+
+### P59 - Cross-type GUI names can dispatch a destructor during construction
+
+2026-10-20. Province Rename0.1.0 used the same names for its opening,
+Apply and Cancel buttons and their text labels. User selected a province
+and clicked its name; the UI timer crashed before any rename command.
+V2DLL's C0000374 stack passed through named-root/button construction and
+FUN_00A593A0, freeing an invalid field at+0x144.
+
+Native button builder FUN_009CFF20 (RVA0x5CFF20) resolves a definition by
+name then calls slot11. The colliding definition resolves to another type;
+its slot11 at VA0x00A5A430/RVA0x65A430 subtracts this by0x64 and jumps to
+the scalar destructor. This matches the fault chain. The registry does not
+enforce the requested control type. Braces/font/sprite validation alone
+cannot detect this ABI violation.
+
+Fix: unique names for every generated definition, including overlaid text
+labels; labels pass clicks through with allwaystransparent=yes. Reject
+duplicate names during packaging. Before native root construction, resolve
+our button keys and require the measured concrete type and factory. For
+these plain buttons,0.1.3 uses CButtonType's tableRVA0xA3CFBC and factory
+RVA0x5F0310. The interim CEU3ButtonType assumption was wrong; see P60.
+Resolve the owner through CEU3Gui+0x34, then use that CWindowType definition's
+button registry at+0x150, matching FUN_009CFF20. These are separate registries;
+the preflight fixture must distinguish them.0.1.2 corrects the interim0.1.1
+preflight scope; report-province-rename-preflight-1021.md.
+0.1.1's regression executes the actual native button builder and wrong-type
+thunk, intercepting the destructor endpoint before destructive effects;
+the new runtime preflight refuses the collision. Game retry remains open.
+See report-province-rename-crash-1020.md. The earlier30native checks did
+not exercise root construction and therefore missed this failure.
+
+### P60 - A related GUI class is not the concrete parsed button type
+
+2026-10-21. Rename0.1.2 required CEU3ButtonType's tableRVA0xA08D2C.
+The screenshot had no entry and the log refused construction. Read-only
+inspection of the live game shows all three plain guiButtonType definitions
+use native CButtonType tableRVA0xA3CFBC and slot11 factoryRVA0x5F0310.
+The earlier fixture supplied the same guessed CEU3ButtonType as the guard,
+so it could not reveal the mismatch. Root/child registry scope was correct.
+
+0.1.3 checks the measured standard type and factory. New fixtures execute
+actual native registry wrapper/lookup/trie traversal, then standard-type
+builder dispatch; wrong-type and changed-factory cases still refuse.
+Match a concrete class to live or actual parser/constructor evidence, not
+just a similar RTTI name. The P59 recommendation's CEU3ButtonType constant
+was incorrect for these plain buttons and is superseded by this finding.
+Do not weaken the guard to accept arbitrary types. Runtime display/input
+retry remains pending; report-province-rename-button-type-1021.md.
+
+### P61 - Window size and text origin are not interchangeable layout fields
+
+2026-10-21. Rename0.2.0 created both roots but refused ABC placement because
+it read definition+0xA0 as width. The live CWindowType there stores X=0;
+width380 is at+0xA8. A constructor's ESI-relative field had been applied to
+another object without establishing the register's precise base. Actual
+CFixedWindow constructor stores runtime size at+0x4A0/+0x4A4, confirmed as
+380/525 in the selected live panel. 0.2.1 uses that runtime width.
+
+A second assumption would have misplaced the button: text's graphical
+matrix was identity, while native Draw separately uses text inner+0x188/
++0x18C for local17,45. Sum those with the P40 owner chain before measuring
+the province name. Root/header/name lookup and font methods were valid.
+
+The old fixture supplied width at the wrong definition offset and put
+text offsets in the matrix, repeating both assumptions (P58). Corrected
+fixture retains live X=0, runtime width, identity matrix and separate local
+origin; an additional test executes actual native Draw and observes17,45
+at the font/GPU boundary. Actual native font measurement remains covered.
+Check concrete object layout and semantic consumers before using offsets;
+log the precise failed placement stage. Do not relax bounds to accept zero
+width or compensate with one base's fixed coordinates. 0.2.1 installed,
+53native checks pass; player retry pending. Report-province-rename-anchor-1021.md.
+
+
+### P62 - Native edit insets affect both raster padding and entity position
+
+2026-10-21. Province Rename0.2.3 centers by changing CEditBox+0x150/+0x154
+before display refresh. It passes native fixtures, but the user reports
+flickering/off-center input. The native refresh FUN_009B6400 (RVA0x5B6400)
+forwards the insets to text texture setter FUN_009DDCF0 (RVA0x5DDCF0), which
+passes padding to the rasterizer. Separately, native packed position method
+FUN_009B5A40 (RVA0x5B5A40) adds the insets to the text entity origin.
+The centered offset therefore applies twice; parent positioning can repeat
+it. The prior spy checked only inset values before refresh, so it missed
+the second consumer. A shared caret field is not proof of rendered layout.
+
+0.2.4 runs the original refresh with zero texture padding, restores the
+centered shared text/caret insets and calls native placement synchronously.
+Repeated placement now keeps one offset. The regression executes actual
+native refresh, line/cursor getters, texture setter and position method,
+intercepting only raster/GPU endpoints. It reproduces old visible X314
+instead of182 for origin50/name width32, then verifies new X182 and stable
+empty/short/accented names through repeated parent position calls.
+Live keyboard/caret/flicker acceptance remains pending. See
+report-province-rename-centering-1021.md. Trace all downstream layout
+consumers and execute them in a regression; do not mirror field writes.
+
+### P63 - Native cursor visible ink is offset inside its sprite container
+
+2026-10-21. Province Rename0.2.4 centers text stably, but the user sees its
+caret displaced. Native cursor is32x32 with visible ink at(7,6)..(8,22),
+only1x16; native pixel measurement adds3px after the measured text width.
+Aligning the texture container with the font row does not align its ink.
+The CEditBox constructor initializes separate caret-only offsets at+0x184/
++0x188, used by both native caret update paths in addition to shared text
+insets.0.2.5 sets X=1-7-3=-9 and Y=(fontHeight-16)/2-6. Text centering,
+blink, cursor indices and keyboard handling stay native and unchanged.
+
+Static five-base checks verify the native sprite bounds. The regression
+executes actual native caret update and its pixel getter with a seeded
+cache, tests visible ink at16px/18px font heights and intercepts clock/final
+position endpoints. Its initial call omitted the native update's frame
+argument (RET4 despite the decompiler's no-argument signature), crashing
+only the fixture executable. Corrected/guarded ABI now passes; P31 applies.
+Do not equate sprite size/origin with visible pixels, or fixture-only error
+with a game crash. See report-province-rename-readability-1021.md.0.2.5
+player check remains pending.

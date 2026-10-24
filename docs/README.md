@@ -1,5 +1,55 @@
 # Index of `docs/`
 
+- `report-tpl-8-noncore-1024.md`: TPL-8 Non-core only built in Rust 0.11.3; v3 settings, two-line Conform band, tests, local candidate; not tested in game.
+- `instructions-tpl-8-check.md`: in-game check of the 0.11.3 candidate (also the Templates/Conform half of RUST-CHECK).
+- `report-tpl-8-rust-coordination-1021.md`: approved non-core checkbox scope, user hold, verified merged Rust-loader PR/C++ build changes and no ATCU implementation yet.
+- `instructions-tpl-8.md`: TPL-8 implementation steps (completed 2026-10-24; superseded by instructions-tpl-8-check.md).
+
+- `report-province-rename-package-1021.md`: accepted0.2.5, final ABC placement0.2.6 checked/installed, verified local ZIP; user explicitly defers publication.
+- `instructions-rename-026.md`: current local ZIP/final ABC check and no-publication boundary.
+- `release-province-rename-0.2.6/`: prepared README/notes, prospective only; not published.
+- `archive/province-rename-layout-025.svg`: preceding board retained verbatim.
+
+- `report-province-rename-readability-1021.md`: user0.2.4 short success, native caret bounds/offsets,24px ABC/Garamond input, corrected fixture RET4 call and checked/installed0.2.5.
+- `instructions-rename-025.md`: historical caret/readability/compact ABC retry and extended follow-ups.
+- `archive/province-rename-layout-024.svg`: preceding board retained verbatim.
+
+- `report-province-rename-centering-1021.md`:0.2.3 runtime centering failure, doubled native inset consumers, actual native regression and checked/installed0.2.4; player retry pending.
+- `instructions-rename-024.md`: historical stable-typing/caret/appearance/rename retry and remaining extended cases.
+- `report-province-rename-redesign-implemented-1021.md`:0.2.3 implementation of the aesthetic handoff and latest horizontal centering instruction; superseded centering correction by0.2.4.
+- `instructions-rename-023.md`: historical0.2.3 checks.
+- `archive/province-rename-layout-022.svg` / `archive/province-rename-layout-023.svg`: previous boards retained verbatim.
+
+- `report-province-rename-aesthetic-redesign-1021.md`: user feedback on 0.2.2 appearance, double-braid input frame, clean continuous parchment, weird divider removal, native period serif typography, and button option matrix.
+- `report-province-rename-title-1021.md`: accepted0.2.1 short behavior, native white title/no beige plate in checked/installed0.2.2; all other text black.
+- `instructions-rename-022.md`: historical white-title appearance check and remaining behavior/persistence follow-ups.
+- `archive/province-rename-layout-021.svg`: pre-white-title board retained verbatim.
+
+- `report-province-rename-anchor-1021.md`: missing0.2.0 ABC, ATCU pitfall audit, read-only live/native size/text-origin evidence, independent native Draw regression and verified0.2.1 installation.
+- `instructions-rename-021.md`: current ABC appearance/opening retry, expected0.2.1/59guards and extended input/save checks.
+
+- `report-province-rename-020-installed-1021.md`: verified0.2.0 r3 installation, full backup and protected hashes; current player check next.
+
+- `report-province-rename-universal-ui-1021.md`: accepted0.1.3 short behavior, checked/staged Universal0.2.0 native ABC/black-text UI, native font placement, five-base static matrix and MP theory; fresh exit confirmation pending before installation.
+- `instructions-rename-020.md`: exact dedicated-copy update gate and native UI/input/save checks, later base/ATCU/MP follow-ups.
+- `archive/province-rename-layout-0100.svg`: original Province Rename board retained verbatim.
+
+- `report-province-rename-button-type-1021.md`: missing0.1.2 entry, read-only live native type/registry evidence, checked/installed0.1.3 and explicitly authorized stuck-process force-close.
+- `instructions-rename-013.md`: current player retry for the installed0.1.3 candidate.
+
+- `report-province-rename-preflight-1021.md`: final 0.1.2 candidate, owning-window button registry correction, native regression and verified installation.
+- `instructions-rename-012.md`: current player retry for the installed 0.1.2 candidate.
+
+- `report-province-rename-crash-1020.md`: 0.1.0 construction crash, native type-collision evidence, ATCU pitfall audit, checked/installed 0.1.1 and remaining runtime limits.
+- `instructions-rename-011.md`: next player retry, selection/open/close gate, correct log paths and full behavior checks.
+
+- `report-province-rename-fresh-tgc-1020.md`: NEW dedicated stock/TGC/current-V2DLL/Rename copy, full hash verification, independent profile and player-launch instructions.
+
+- `report-province-rename-1020.md`: separate V2DLL Province Rename0.1.0 candidate, native command/map evidence, loader probes, packaging and explicit runtime limits.
+- `instructions-rename-u.md`: current player-check entry point.
+- `province-rename-layout.svg`: local interface specification for the new province editor.
+- `research-province-rename-1019.md`: original feasibility note; native command uncertainty resolved by the2026-10-20report.
+
 - `report-army-filters-implementation-1019.md`:0.11.0culture/continent filters, migration, exact checks, isolated TGC installation and rollback; player test pending.
 - `report-release-002-1019.md`: ATCU 0.0.2 ZIP built from internal 0.11.2 (source a90050c); published as pre-release v0.0.2.
 - `report-tpl-7-orders-1019.md`: 0.11.2 Conform orders saved to a local file and resumed after a load (D13 revised); installed in the isolated TGC copy, passed in game (pre-Conform save case unconfirmed).
@@ -282,3 +332,6 @@ TPL-0/U-8 instructions before runtime acceptance are retained verbatim in
 
 - [TPL-1 0.6.3 visual candidate](report-tpl-1-visual-1017.md): army styling, lifetime guards, gates and limits.
 - [TPL-1 0.6.3 installation/player check](instructions-tpl-1-063-check.md): next steps.
+
+
+2026-10-22: [PR-2 review and pull](report-pr-2-review-1022.md); [remaining Rust runtime check](instructions-rust-check.md). C++ remains the release default.

@@ -25,7 +25,7 @@
    §11.
 2. Work on **one card at a time**; the next one does not start while the
    previous one is red. New pitfall: `Pnn` in `docs/pitfalls.md` and in the
-   index in `AGENTS.md` §8 (the next one is **P59**).
+   index in `AGENTS.md` §8 (the next one is **P64**).
 3. **When closing the session: §7** (required).
 
 **Process rules (not negotiable):**
@@ -41,7 +41,147 @@
 
 ---
 
-## 1. Status by stage (as of 2026-10-19)
+## 1. Status by stage (as of 2026-10-24)
+
+2026-10-24, TPL-8: Non-core only built in Rust (0.11.3): culture mode 3 in
+the shared filter, third box in Templates, two-line Conform band with 6
+Changes rows, tgcx_templates_v3.txt importing v2/v1. 5 Rust tests, layout
+tests, check_exe, Python suite pass. Local candidate, first packaged Rust
+logic DLL. Installed in the own-loader test copy; **passed in game**
+(Non-core recruit, Conform detach/build, resume after load, merge).
+report-tpl-8-noncore-1024.md; instructions-tpl-8-check.md.
+
+2026-10-22, PR-2: reviewed full parallel Rust DLL port, merged exact head
+5c1ed6fe and pulled both Rust PRs to master09a361d6. Rust build/fmt/Clippy,
+three isolated Rust tests, actual Rust plugin probe, C++ native/GPU and
+12installer tests pass. Full Rust gameplay remains unverified; C++ release
+default retained.61local files backed up/restored; check_exe integrates
+upstream environment handling with Rename guards. No installation or
+unpublished publication. TPL-8 still held. report-pr-2-review-1022.md;
+instructions-rust-check.md.
+
+
+2026-10-21, TPL-8/Rust coordination: user approves third Non-core only
+checkbox in both Templates/Conform, mutually exclusive/noneAll/clickclear,
+two-line Conform allowed. Before implementation user says wait for
+fedacking Rust port. Verified mergedPR#1: loader-only Rust plus C++ build
+fixes; local HEAD045bbfd5 predates merge1727804b. No ATCU source/header/art/
+build/install/settings changes; only inspection/scratch executable gate.
+Hold feature work pending scope coordination and safe upstream reconciliation.
+Report-tpl-8-rust-coordination-1021.md; instructions-tpl-8.md. Province Rename
+ZIP/installed0.2.6 and publication deferral retained.
+
+2026-10-21, RENAME-026: user accepts0.2.5, requests final ABC adjustment.
+0.2.6 raises ABC2px/adds2px gap;301guards/66native/4package/4loader checks
+pass. Installed after fresh normal exit,11payload/25,388protected hashes
+verified; before-026 retained. User supersedes release request: ZIP ONLY,
+DO NOT PUBLISH YET. Local12-file/264502byte beta ZIP prepared/verified,
+README/hash/provenance/source-hash sidecars. No source commit/push/tag or
+publication. Report-province-rename-package-1021.md; next instructions-rename-026.md.
+Final2px visual check/extended lifetime/save/base/ATCU/MP unconfirmed.
+
+2026-10-21, RENAME-025: user reports0.2.4 works almost perfectly; remaining
+caret displacement, oversized ABC and thin input font addressed in0.2.5.
+Native cursor visible bounds differ from its32x32 container. Caret-only
+fields compensate the margins/3px native gap; ABC24x24 and native Garamond16
+bold input. Working single-origin refresh retained. Initial added fixture
+omitted native caret RET4 argument and crashed only the test executable;
+corrected, guarded and66native checks now pass.301guards/4package/4loader
+checks pass. Installed after fresh normal-exit confirmation;11payload/
+25,388protected hashes pass, before-025 retained. Player retry next:
+instructions-rename-025.md; report-province-rename-readability-1021.md.
+P63, next P64. Full lifetime/persistence/other-base/ATCU/MP remain unproven.
+
+2026-10-21, RENAME-023/024: implemented the aesthetic handoff and installed
+0.2.3 after fresh normal exit. User confirms it works but reports typing
+flicker/off-center text. Native placement and text raster both consume the
+border insets; 0.2.4 applies the offset once. Actual native refresh/setter/
+position regression reproduces the doubled offset and checks repeated
+placement. 295 guards, 65 native, 4 package and 4 loader checks pass.
+Installed on fresh explicit user instruction with clear process gate;
+11 payload/25,388 protected hashes pass, before-024 rollback retained.
+No literal new normal-exit confirmation asserted. Player retry next:
+instructions-rename-024.md; report-province-rename-centering-1021.md.
+P62, next P63. Full keyboard/persistence/base/ATCU/MP cases remain unproven.
+
+2026-10-21, RENAME-022: user accepts0.2.1 short ABC/rename behavior,
+requests white title/no beige title background.0.2.2 uses native vic_22
+white on actual green and removes plate; other text black, proven native
+placement/command logic unchanged.282guards/53native/4package/4loader checks
+pass. Installed after normal exit,11payload/25,388protected hashes pass;
+full before-022 backup. Current appearance check: instructions-rename-022.md;
+report-province-rename-title-1021.md. Extended persistence/base/MP untested.
+
+2026-10-21, RENAME-021: user saw no ABC on0.2.0. Audited ATCU pitfalls;
+read-only live Amiens402 shows definition+0xA0 is X, actual size at runtime
++0x4A0/+0x4A4, and text-local17,45 is separate from its identity matrix.
+Both mistaken fixture assumptions corrected.0.2.1 uses native layout and
+precise refusal logging; actual native Draw regression plus live-layout
+case added.282guards/53native/4package/4loader checks pass. Installed after
+fresh normal exit,11payload/25,388protected hashes verified; full backup.
+P61, next P62. Player retry next, instructions-rename-021.md. Report:
+report-province-rename-anchor-1021.md. Earlier0.2.0 statuses historical.
+
+2026-10-21, RENAME-020 installation: user explicitly directs installation
+following the pending-exit explanation; process gate clear. Exact0.2.0 r3
+installed in the dedicated TGC/V2DLL copy,11payload hashes and25,388protected
+hashes pass before/after; full0.1.3/guide backup retained. No game control,
+main/other-copy changes or new build. No literal normal-exit confirmation
+asserted. Report-province-rename-020-installed-1021.md. Player UI/input/
+persistence check next, instructions-rename-020.md sections2-3. Earlier
+pending-install statuses below are historical.
+
+2026-10-21, RENAME-020: user accepts short0.1.3 rename behavior (three
+native commands/readback/header/map names, editor reopen). Universal0.2.0
+staged with native28x28 ABC right of measured province name, genuine native
+green/braid/parchment and black text. One additive package; V2DLL/reference
+3.04 required.279guards/51native/4package/4loader checks pass; five-base
+static anchors/assets pass, not gameplay. Read-only target preflight passes
+25,388protected hashes. Fresh normal-exit answer pending, no game-copy
+writes; installed0.1.3 retained. MP theoretically follows synchronized
+command0x707 but untested. Report-province-rename-universal-ui-1021.md;
+next instructions-rename-020.md. Earlier retry statuses below historical.
+
+2026-10-21, RENAME-U missing entry: user screenshot and log show0.1.2
+refused construction. Read-only live inspection measured all three standard
+CButtonType definitions (A3CFBC/factory5F0310); requiring related CEU3ButtonType
+was incorrect.0.1.3 corrects the guard, adds actual native registry traversal
+fixtures and diagnostic addresses.272guards/42native/4package/4loader
+checks pass. User's normal exit left a hidden process; installation refused.
+User explicitly authorized force-close; only verified test PID47976 was
+terminated, then0.1.3 installed.25,388protected files unchanged. No launch.
+P60; report-province-rename-button-type-1021.md. Player retry next:
+instructions-rename-013.md. Prior0.1.2 and0.1.1 statuses below are historical.
+
+2026-10-20, RENAME-U failure/correction:0.1.0 crashed during native root
+construction after province selection/name click. Cross-type button/label
+name collisions led native slot11 to a destructor; P59 documents the cause.
+User requested the ATCU pitfall audit.0.1.2 uses unique transparent labels,
+runtime button-type preflight, native allocation-size guard, click-time root
+identity and better diagnostics.265guards,38native checks,4package tests
+and4loader probes pass. After fresh fully-closed confirmation and process
+gate, installed only in the dedicated TGC/V2DLL copy;25,388protected files
+unchanged. In-game retry pending: instructions-rename-012.md and
+report-province-rename-preflight-1021.md. Interim0.1.1 preflight scope
+was corrected to the owning window definition before handoff. No ATCU source or main install changed.
+
+2026-10-20, RENAME-U preparation: user corrects the target to a NEW game
+copy. Initial addition to the old test copy reverted by exact hashes;
+142protected files unchanged. Fresh normal-exit/process gates passed, then
+work/Victoria-II-Province-Rename-TGC252 staged with stock game, canonical
+TGC2.5.2, current upstream V2DLL(cdad55c7,dinput8/core loader) and Rename.
+Independent profile;25,399payload hashes,259guards and TGC scan pass. No
+ATCU/Politics in the new copy. User launch/player check next; no agent game
+controls. docs/report-province-rename-fresh-tgc-1020.md.
+
+2026-10-20, RENAME-0: **Province Rename0.1.0 implemented as a separate V2DLL
+plugin; not installed or tested in game.** User selected free text in the
+province window and V2DLL. Native command0x707, owned-land selection checks,
+native editor and observed-application header refresh; independent GUI files
+and own art.259guards, Win32 build,30native fixture checks,3package tests and
+4probes through pinned current V2DLL loader source pass.11-file ZIP staged;
+ATCU/Politics and game copies unchanged. Next RENAME-U,
+docs/instructions-rename-u.md; report-province-rename-1020.md.
 
 2026-10-19 filter candidate: user authorized culture/continent filters and session-only continent default Any, then confirmed normal exit and selected isolated TGC. Implemented0.11.0,223guards/179runtime header, Win32/native real-D3D9,109full-suite Python cases plus added package-mismatch guard and packaged loader/plugin probes pass.39/39mod files installed with0.10.4rollback; main0.0.1 and accepted ZIP unchanged. Current screenshots retained, local layout previews generated; player verification next. report-army-filters-implementation-1019.md.
 
@@ -119,6 +259,10 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 ---
 
 ## 2. The version matrix
+
+| Separate candidate | Staged | Installed | Game acceptance |
+|---|---|---|---|
+| Province Rename0.2.6 Universal, V2DLL API1 | work/releases/province-rename/0.2.6/Province-Rename-Universal-0.2.6.zip | Dedicated copy0.2.6,11payload/25,388protected hashes verified |0.2.5 accepted, final ABC2px check pending; ZIP only, publication deferred |
 
 2026-10-19 filter candidate: user authorized culture/continent filters and session-only continent default Any, then confirmed normal exit and selected isolated TGC. Implemented0.11.0,223guards/179runtime header, Win32/native real-D3D9,109full-suite Python cases plus added package-mismatch guard and packaged loader/plugin probes pass.39/39mod files installed with0.10.4rollback; main0.0.1 and accepted ZIP unchanged. Current screenshots retained, local layout previews generated; player verification next. report-army-filters-implementation-1019.md.
 
@@ -243,6 +387,70 @@ When closing, in this order:
    session** that lacks a current one, and add them to `docs/README.md`.
 4. Update §1-§2 of this file and the status in `SUBAGENTS.md` §4.
 5. One line below with the date and what was done (newest first).
+
+2026-10-24: TPL-8 implemented in Rust as 0.11.3 (Non-core only, v3 settings,
+two-line Conform band). Local candidate built; not installed or tested in
+game. Session73 NEXT archived; instructions-tpl-8-check.md. No commit/push.
+
+2026-10-21: TPL-8 checkbox design approved; user then holds implementation
+for fedacking Rust coordination. MergedPR#1/local pre-merge HEAD verified;
+no ATCU source/build/install changes. Session70 NEXT archived, current
+instructions-tpl-8.md written. Province Rename publication remains deferred.
+
+2026-10-21: Accepted0.2.5; final ABC placement0.2.6 checked/installed after
+normal exit. ZIP12files/264502bytes verified, publication explicitly deferred
+by user.301guards/66native/4package/4loader,11payload/25,388protected hashes
+pass. Session69 NEXT archived; instructions-rename-026.md. No commit/push.
+
+2026-10-21: User accepts nearly perfect0.2.4 short operation; installed
+checked0.2.5 caret offsets/24px ABC/Garamond input after normal exit.
+301guards/66native/4package/4loader,11payload/25,388protected hashes pass.
+Fixture-only RET4 error corrected, P63 recorded, full rollback retained.
+Session68 NEXT archived; next instructions-rename-025.md. No game control.
+
+2026-10-21: Implemented/installed0.2.3 native redesign, diagnosed user-reported
+centering flicker/double offset and installed checked0.2.4. P62;295guards/
+65native/4package/4loader checks,11payload/25,388protected hashes pass. Full
+rollback retained. Session67 NEXT archived; next instructions-rename-024.md.
+
+2026-10-21:0.2.1 short behavior accepted; installed checked0.2.2 white
+native title/no beige plate after normal exit.282guards/53native/4package/
+4loader and11payload/25,388protected hashes pass. Session66 NEXT archived;
+next instructions-rename-022.md. No game control/other-copy changes.
+
+2026-10-21: Diagnosed missing0.2.0 ABC with read-only live/native evidence,
+audited pitfalls, added P61, installed checked0.2.1 after normal exit.
+282guards/53native/4package/4loader checks,11payload/25,388protected hashes
+pass. Full rollback retained; user retry next. Session65 NEXT archived.
+
+2026-10-21: Installed Rename Universal0.2.0 r3 after explicit fresh install
+instruction and clear process gate;11payload/25,388protected hashes verified,
+full backup retained. No game launched/terminated; main/other copies unchanged.
+Session64 NEXT archived, next player check instructions-rename-020.md.
+
+2026-10-21: Accepted Rename0.1.3 short behavior; staged Universal0.2.0
+native ABC/black-text UI,279guards/51native/4package/4loader checks and five
+static base profiles. Preflight25,388protected hashes pass; fresh exit
+answer pending, no game-copy writes. MP assessed, untested. Session63 NEXT
+archived; next installation/player instructions in instructions-rename-020.md.
+
+2026-10-21: Measured Rename0.1.2 missing-entry cause read-only in live game;
+built/checked/installed0.1.3,272guards/42native/4package/4loader checks,
+25,388protected files unchanged. Explicitly user-authorized force-close of
+stuck test PID47976 only. P60, next RENAME-U retry. Session62 NEXT archived.
+
+2026-10-21: Diagnosed Rename0.1.0 crash, audited ATCU pitfalls and installed
+checked0.1.2 after fresh closed confirmation, including the preflight scope
+correction. Native collision regression,265guards/38checks/4package/4loader probes pass;25,388protected hashes
+unchanged. RENAME-U retry next. Session61 NEXT archived verbatim.
+
+2026-10-20: New dedicated TGC/current-V2DLL/Rename game copy staged after
+user correction and normal exit; prior addition reverted,25,399hashes
+verified. Player check next. Session60 NEXT archived verbatim.
+
+2026-10-20: RENAME-0 separate V2DLL candidate staged and checked; RENAME-U
+installation/player instructions prepared. No game changes, commit/push or
+publication. Session59 NEXT archived verbatim, including pre-existing edits.
 
 2026-10-19 filter candidate: user authorized culture/continent filters and session-only continent default Any, then confirmed normal exit and selected isolated TGC. Implemented0.11.0,223guards/179runtime header, Win32/native real-D3D9,109full-suite Python cases plus added package-mismatch guard and packaged loader/plugin probes pass.39/39mod files installed with0.10.4rollback; main0.0.1 and accepted ZIP unchanged. Current screenshots retained, local layout previews generated; player verification next. report-army-filters-implementation-1019.md.
 

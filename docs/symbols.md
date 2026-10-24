@@ -957,3 +957,219 @@ Consequences for the feature (`rust/tgcx/src/conform_native.rs`, "mobo stacks"):
 
 Signatures added to `tools/check_exe.py` (185 now): RVAs `0x1804BE`, `0x50003E`,
 `0x108FB0`, `0x113CA8`, `0x113CCF`, `0x10834B`.
+
+## RENAME-0: native province rename command (2026-10-20)
+
+Reference hash62d48c20...6648, read-only/noanalysis Ghidra, bounded to the
+rename command, province name accessors and native text entry. Private exports
+in work/province-rename/. VA = RVA +0x400000 throughout this table.
+Confidence **C static**, with isolated native execution where indicated;
+none of this section is live-game acceptance.
+
+| Native symbol / role | Ghidra VA | RVA | Evidence |
+|---|---|---|---|
+| FUN_0057FF20, CChangeProvinceNameCommand default constructor |0x0057FF20|0x17FF20|stdcall(this),RET4; command ids+0x2C/+0x30=0x707; vtable and owned empty name initialized; executed in fixture |
+| CChangeProvinceNameCommand primary table |0x00E00F1C|0xA00F1C|slot0 destructor,2serializer,4parser,6execute,7type id,13clone,14native true predicate |
+| FUN_005802A0, clone |0x005802A0|0x1802A0|native new(0x5C), copies name+0x3C and province id+0x58; independent allocation-size evidence |
+| FUN_00580040, execute |0x00580040|0x180040|ECX command,RET; province vector world+0xACC[id+0x58], province slot8(name); both label update paths; executed in fixture |
+| FUN_00580140 / FUN_005801C0, serialize/parse |0x00580140/0x005801C0|0x180140/0x1801C0|native name token0x1A and province-id token0x2C9; prototype registration in FUN_0081B290 (RVA0x41B290) |
+| FUN_0057FFD0, scalar command destructor |0x0057FFD0|0x17FFD0|frees long name storage and command when delete flag set; executed in fixture |
+| FUN_004B89B0, province slot8 name setter |0x004B89B0|0x0B89B0|forwards native string copy into [province+0x5C]+0xE4; executed in fixture |
+| FUN_004AAF90 / FUN_004C4540, name getter |0x004AAF90/0x004C4540|0x0AAF90/0x0C4540|native hidden result, map province name string+0xE4; getter executed in fixture |
+| FUN_00740050, province refresh |0x00740050|0x340050|stdcall(view),RET4; six stolen bytes PUSH EBP/MOV EBP,ESP/AND ESP,-8; view+0x20 root,+0x24 province; sole function detour |
+| CProvinceView primary / FUN_0073D9E0 destructor |0x00E13768/0x0073D9E0|0xA13768/0x33D9E0|slot0(this),RET; root is hidden/released by native teardown; plugin releases its separate roots first |
+| FUN_009E4D20, edit lookup |0x009E4D20|0x5E4D20|CFixedWindow slot16; named unitname is native precedent in FUN_00798A50 (RVA0x398A50) |
+| FUN_009F5290 / FUN_009F5950, edit SetText/GetText |0x009F5290/0x009F5950|0x5F5290/0x5F5950|embedded buffer at edit+0x54, slots16/19; raw string at buffer+0x18; real ABI executed with stub font-dependent insert |
+| FUN_009B6400, edit display refresh |0x009B6400|0x5B6400|stdcall(edit),RET4; called after unit-name text assignment by native unit constructor |
+
+The command name payload is at+0x3C, length+0x4C, capacity+0x50; province
+id+0x58. The word+0x54 is not identified and is not assigned by this plugin.
+The readonly province snapshot checks the loaded vector bound, exact selected
+pointer/id, player tag/index, owner id+0x12C and map province IS LAND+0x2A.
+No province pointer or name is persisted outside the native save path.
+
+Native execute calls FUN_00802800 (RVA0x402800) for the name cache and
+FUN_007F18B0 (RVA0x3F18B0) for the positioned label. Fixture boundaries
+observe these calls without rendering a real map. It does not call the
+province-header rebuild, so the plugin only requests that GUI refresh after
+reading back the applied name. No direct simulation/name/cache writes.
+
+Separate guards are tools/tgcx_rename_signatures.py and generated
+dll/province_rename/tgcx_rename_signatures.h,36entries; existing Army/Politics
+table remains179. Report and confidence limits: report-province-rename-1020.md.
+
+## RENAME-1: native type collision and allocation guard (2026-10-20)
+
+Confidence: observed crash chain plus C static and isolated native execution;
+corrected in-game construction remains unverified. VA=RVA+0x400000.
+
+| Site | VA | RVA | Contract / evidence |
+|---|---|---|---|
+| Native named button builder |0x009CFF20|0x5CFF20|ESI=context; by-value28-byte name plus parent; RET0x20. Registry at context+0x150 resolves a definition and invokes slot11 at0x009CFFF0/RVA0x5CFFF0. Actual builder exercised in regression. |
+| Expected CEU3ButtonType table |0x00E08D2C|0xA08D2C|Slot11 points to native button factory0x00646B50/RVA0x246B50. Runtime preflight validates this table before root creation. |
+| Collided definition slot11 |0x00A5A430|0x65A430|SUB ECX,0x64; JMP scalar destructor0x00A59540/RVA0x659540. Actual thunk exercised with destructive endpoint intercepted. Native destructor's free at0x00A59438/RVA0x659438 matches crash return0x65943D. |
+| Native rename clone allocation |0x005802BD|0x1802BD|PUSH0x5C followed by operator new call at0x005802C6/RVA0x1802C6. Added guard and independent fixture size comparison (P45). |
+
+Private exports: work/province-rename/crash-0100-1020/native-stack*.txt,
+type-create*.txt and dispatch-asm.txt. Separate Rename runtime guard table
+now41; total executable checks264, unchanged Army runtime179/research44.
+See report-province-rename-crash-1020.md and P59.
+
+2026-10-21, RENAME-2: button builder's ESI is the CWindowType definition,
+not CEU3Gui or the runtime root. Button lookup uses definition+0x150;
+CEU3Gui+0x34 resolves the owning root definition. FUN_009CDE70 passes that
+definition to FUN_009E16C0, which stores it in runtime root+0x94. Actual
+lookup instructions at VA0x009CFF42/RVA0x5CFF42 are guarded.0.1.2 preflight
+matches those two distinct registry scopes; fixture separates them. Rename
+guards42, total265. report-province-rename-preflight-1021.md.
+
+## RENAME-3: live standard-button type and real registry (2026-10-21)
+
+**R observed live**, plus C static and actual native registry/builder fixture.
+The earlier CEU3ButtonType assumption is superseded for plain guiButtonType.
+Live PID47976 selected owned province438; all three Rename buttons resolve
+to native standard CButtonType tableVA0x00E3CFBC/RVA0xA3CFBC and slot11
+factoryVA0x009F0310/RVA0x5F0310. Root definitions useRVA0xA3B2CC. Both
+root and button registries use tableVA0x00E41E84/RVA0xA41E84.
+
+Registry slot1 wrapperVA0x00641BA0/RVA0x241BA0 accepts native string*,
+selects inline/heap characters and calls slot2. Slot2VA0x009E6B10/RVA0x5E6B10
+passes registry+4 (head pointer) inEAX to traversalVA0x009E6C10/RVA0x5E6C10.
+Each20-byte ternary node has value+0, character+4, low+8, high+0xC,
+equal+0x10; CRT lowercase compares the search character. These native
+methods run in the new independent fixture. Only CRT tolower is replaced.
+
+Seven added guards cover the live standard table/factory slot, factory,
+registry table/wrapper/lookup/traversal. Rename49, total272; Army179 and
+prior research44 unchanged. Live addresses/dumps/private exports remain
+under work/province-rename/missing-012-1021/. P60 and
+report-province-rename-button-type-1021.md record the scope and remaining
+full GUI/runtime acceptance gate.
+
+## RENAME-UI: native host width and proportional name metrics (2026-10-21)
+
+**C static plus isolated execution of actual font routines; live0.2.0
+placement unverified.** VA=RVA+0x400000. Executable gate passed before
+address work. Private exports in work/province-rename/ui-universal-020-1021/.
+
+| Site | VA | RVA | Contract / evidence |
+|---|---|---|---|
+| Window factory width/height loads |0x009CDEAA|0x5CDEAA|FUN_009CDE70 reads WORD definition+0xA0/+0xA4; runtime root+0x94 is that owning definition (RENAME-2). Width now drives modal placement. |
+| Bitmap-font width |0x00A24E20|0x624E20|thiscall(font,const char*,int length),RET8; glyph advances and kerning, not character count. CEU3BitmapFont slot10. Actual native routine exercised with proportional/CP1252 fixture. |
+| Width epilogue guard |0x00A24F56|0x624F56|Guard includes stack restore/RET8; fastcall adapter carries this in ECX, unused EDX and two stack args. |
+| Font virtual width/height pointers |0x00E19AB4|0xA19AB4|Slots10/11 of CEU3BitmapFont table atVA0x00E19A8C/RVA0xA19A8C. Runtime refuses mismatched methods before measurement. |
+| Bitmap-font line height |0x00A24F90|0x624F90|Returns DWORD font+0x494,RET; native routine executed in fixture. |
+| Rendered text string |0x00A5ECE3|0x65ECE3|FUN_00A5ECC0 uses native owned string at rendered-text inner+0x150. Current displayed name is measured, not the localisation key. |
+| Rendered text loaded font |0x00A5ED44|0x65ED44|Same native text path loads inner+0x1BC; province text control stores inner pointer at+0xA0. |
+
+Native width reads glyph pointer font[(byte)+0x25], glyph advance+0x18,
+kerning pairs+0x1C/+0x20 and count+0x81C. Its format policy getter
+FUN_009CD7A0/RVA0x5CD7A0 reads font+8. Fixtures leave that policy zero and
+execute the original getter; these observations are not separate new patch
+sites. Input and dimensions are bounded. Unknown font methods fall back
+to the native header's right edge; missing header/name anchors refuse.
+Full renderer owner-chain coordinates remain P37/P40.
+
+Seven added Rename guards:56runtime,279total (unchanged Army179/research44).
+51native checks pass, including actual font width/height, translated-name
+and host geometry fixtures. All five static base profiles keep
+province_view_header/province_name and vic_18, with380px hosts. No new live
+0.2.0 rendering, other-base gameplay or multiplayer claim follows.
+
+## RENAME-4: live geometry supersedes 0.2.0 offset assumptions (2026-10-21)
+
+**R observed live** (PID16424, Amiens402, viewport2560x1440), plus **C static**
+and actual native Draw/font execution. Prior RENAME-UI definition+0xA0
+width interpretation is incorrect for the live CWindowType and superseded.
+VA=RVA+0x400000. Original executable/282guards pass; all code uses RVAs.
+
+| Site | VA | RVA | Measured contract / evidence |
+|---|---|---|---|
+| CFixedWindow constructor size stores |0x009E1CFA|0x5E1CFA|FUN_009E16C0 stores DWORD width/height at runtime root+0x4A0/+0x4A4. Live380/525; use this actual host size. |
+| Native text Draw local Y |0x00A5EB00|0x65EB00|thiscall(text,three arguments),RET0xC; reads text+0x18C into the font drawing rectangle. |
+| Native text Draw local X |0x00A5EB20|0x65EB20|Same Draw uses text+0x188. These are additional to graphical+0x84/-0x88 owner matrices. Actual native Draw fixture observes17,45 at its font/GPU boundary. |
+| Measured native Draw slot10 |0x00E41F38|0xA41F38|Native text-inner tableVA0x00E41F10/RVA0xA41F10; slot10 is FUN_00A5EB00, checked before interpreting text-local fields. |
+
+Live root+0x94 is the correct definition pointer. Its CWindowType table is
+RVA0xA3B2CC, name province_view. Definition+0xA0/+0xA4 are DWORD X=0/Y=-599;
++0xA8/+0xAC are380/525. Do not apply an ESI-relative factory field to this
+base without tracing adjustments.0.2.1 reads runtime width instead. Earlier
+RENAME-2 owning-definition scope remains valid; the size interpretation did not.
+
+Root rendered origin(0,841), header matrix(0,0), name inner matrix(0,0),
+separate text-local(17,45). Thus name origin(17,886). Font inner+0x1BC and
+native metrics methods from RENAME-UI match live and remain unchanged.
+Full read-only pointer/owner/container/native-font evidence is in
+work/province-rename/missing-020-1021/live-anchor.json; native-geometry.txt
+contains constructor/Draw decompilation. No live calls or memory writes.
+
+Removed the misleading0x5CDEAA definition-width guard, added four guards
+above:59Rename/282total, unchanged Army179/research44.53native checks pass,
+including a live-layout regression and actual Draw with only GPU/font
+boundary callbacks replaced.0.2.1 installed; display/input retry remains.
+P61 and report-province-rename-anchor-1021.md.
+
+## RENAME-5/6: native edit refresh and single text origin (2026-10-21)
+
+**C static plus isolated native execution; short 0.2.4 operation accepted
+by the player.** The reference executable gate passed before address work.
+VA=RVA+0x400000; all runtime code uses RVAs. Read-only native exports are
+under work/province-rename/redesign-023-1021/ and centering-024-1021/.
+
+| Native site | VA | RVA | Contract / confidence |
+|---|---|---|---|
+| CEditBox concrete table |0x00E39878|0xA39878|Constructor initializes primary table; embedded input buffer at edit+0x54 uses table RVA0xA39938. C static/actual buffer ctor fixture. |
+| Buffer constructor stores |0x009F4C58|0x5F4C58|FUN_009F4BC0 is stdcall(buffer,inputContext,font), RET0xC. buffer+0x74 is input context; +0x78 is font. Independently executed constructor. |
+| Border-inset constructor stores |0x009B55F0|0x5B55F0|CEditBox stores +0x150/+0x154 X/Y insets and buffer usable dimensions separately at edit+0x9C/+0x9E. |
+| Native display refresh |0x009B6400|0x5B6400|stdcall(edit), RET4 at0x009B669D/RVA0x5B669D. Resolves active cached line and passes it to the concrete text texture setter. Native refresh executed in fixture. |
+| Display border arguments |0x009B6635|0x5B6635|Reads edit+0x154/+0x150 into the text texture setter's padding arguments. |
+| Native caret offset consumers |0x009B5ED2 /0x009B5EF7|0x5B5ED2 /0x5B5EF7|Caret path reads edit+0x188/+0x184 separately from shared border insets. C static. |
+| Concrete text texture table |0x00E3BB58|0xA3BB58|Native text texture entity constructed by FUN_009DCDE0; slot51 position=FUN_00A1FEB0, slots60/61 raster/refresh=FUN_009DD4D0/FUN_009DDCF0. |
+| Edit packed position |0x009B5A40|0x5B5A40|thiscall(edit,packedXY), RET4. Saves edit+0x15C, adds border insets and orientation offsets, calls text entity slot51. Actual native method executed in regression. |
+| Text texture refresh |0x009DDCF0|0x5DDCF0|thiscall(texture,nine stack arguments). Copies line/font/material strings, stores padding and calls native raster slot60. Actual native setter executed to raster boundary. |
+
+The 0.2.3 inset-only correction applied padding twice: native texture
+raster and entity positioning both consume it.0.2.4 temporarily supplies
+zero texture padding during the original refresh, restores centered shared
+text/caret insets and calls native packed placement synchronously. Parent
+placement then applies one origin. P62, report-province-rename-centering-1021.md.
+The actual refresh/line getter/texture setter/position regression reproduces
+old X314 vs desired182 for host origin50/name width32, and checks the new
+stable origin through repeated parent placement. Only raster/GPU endpoints
+are replaced.0.2.4 player reports almost perfect operation, with remaining
+caret alignment and font/button-size feedback handled below.
+
+## RENAME-7: visible native caret bounds and offsets (2026-10-21)
+
+**C static plus isolated native execution and effective native asset checks;
+0.2.5 visual acceptance pending.** VA=RVA+0x400000. Private exports in
+work/province-rename/readability-025-1021/. No live calls or memory writes.
+
+| Native site | VA | RVA | Contract / confidence |
+|---|---|---|---|
+| Caret-only offset constructor stores |0x009B54FE|0x5B54FE|FUN_009B5400 stores two independent caret offsets at edit+0x184/+0x188. Consumers in both native update paths establish their meaning. |
+| Native caret frame update |0x009B6160|0x5B6160|thiscall(edit,frameArg), **RET4** at0x009B63F0/RVA0x5B63F0. Decompiler's apparent no-argument signature is incomplete. Actual native update executed with the stack argument. |
+| Caret X origin |0x009B63B2|0x5B63B2|Adds edit+0x184, shared border X and stored control/orientation origin to the measured caret X, then sends it to caret sprite slot51. |
+| Exact buffer pixel getter |0x009F4FB0|0x5F4FB0|Buffer table slot11 (+0x2C) points here. thiscall(buffer,outPackedXY), RET4. Native regression executes its cached-position branch. |
+| Native caret gap |0x009F5126|0x5F5126|Uncached measurement adds3 to the font width, then caches packed pixel coordinates at buffer+0x7E and cursor index at+0x82. C static; cache maintenance stays engine-owned. |
+
+The native `cursor` sprite image is32x32, with alpha-visible bounds
+(7,6)..(8,22), a1x16 strip. Package checks verify these bounds on all five
+static base profiles. A container's origin therefore differs from the
+visible caret.0.2.5 sets caret-only X=1-7-3=-9 and
+Y=(fontHeight-16)/2-6, leaving one pixel after text and centering the line
+within the font row. Text refresh remains0.2.4's single-origin method.
+All fields written belong to the validated editor; no simulation write.
+
+Regression executes actual native caret update and pixel getter with a
+seeded cache, clock/position endpoints intercepted, then evaluates visible
+ink bounds for16px and18px fonts and short/empty/accented names. Initial
+test call omitted the frame argument, corrupting the fixture's stack and
+showing a Windows application-error dialog. Corrected RET4 ABI is guarded;
+P31 applies. This was never installed. Test-only error handling now reports
+and exits on a native exception. Runtime plugin adds no new hook here.
+
+Current total:78 Rename runtime/301 executable guards, unchanged Army179
+and research44.66 native/4 package/4 loader checks pass. Native caret
+behavior with the complete game's keyboard, mouse and scrolling remains a
+player check; P63 and report-province-rename-readability-1021.md.

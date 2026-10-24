@@ -15,6 +15,7 @@ import hashlib
 import os
 import sys
 from tgcx_pe import PE
+from tgcx_rename_signatures import SIGNATURES as RENAME_SIGNATURES
 
 DEFAULT_EXE = os.environ.get("TGCX_EXE", r"E:\Victoria.II.v3.04.Inclu.ALL.DLC\v2game.exe")
 
@@ -311,7 +312,7 @@ def main() -> int:
         bad += 1
 
     image = PE(path)
-    for rva, expect, what in SIGNATURES + RESEARCH_SIGNATURES:
+    for rva, expect, what in SIGNATURES + RESEARCH_SIGNATURES + RENAME_SIGNATURES:
         off = image.offset(rva)
         want = bytes.fromhex(expect)
         got = data[off:off + len(want)]

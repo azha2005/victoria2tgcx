@@ -1,3 +1,1893 @@
+# Session74 - TPL-8 Non-core only built in Rust, 0.11.3 candidate (2026-10-24)
+
+Implemented D19 in Rust: culture mode 3 (neither primary nor accepted) in the
+shared filter, third box in Templates, two-line culture band in Conform (6
+Changes rows), tgcx_templates_v3.txt importing v2 then v1 and never rewriting
+them. Headers regenerated; marker TGCX TPL-8 0.11.3. 5 new Rust tests, layout
+tests, check_exe and the Python suite pass (Rename package test needs its own
+DLL). Local candidate work/noncore-0113/ATCU-noncore-0.11.3-test.zip, first
+packaged Rust logic DLL. Not installed, not tested in game, not committed.
+report-tpl-8-noncore-1024.md; instructions-tpl-8-check.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-24 (73). **PR #3 (fedacking, mobo stacks) reviewed and merged.**
+Local master and origin/master are at `abc6806`. Session 72 NEXT archived
+verbatim in docs/archive/sessions.md.
+
+## Current scope and evidence
+
+- **All new DLL code is Rust** (user, 2026-10-24): `rust/tgcx/`, in
+  fedacking's style (`guard(..)` around native work, `log!` lines, short doc
+  comments; `cargo clippy --release -- -D warnings` and `cargo fmt` clean).
+  The C++ DLL is not extended; only its generated headers follow.
+- PR #3: a "Mobo stack" box in the Conform title marks a stack; during a
+  mobilization, new all-infantry stacks march to the nearest marked stack and
+  merge if they fit. Marks in `tgcx_mobo_marks.txt`. Six MOBO signatures in
+  `check_exe.py`, all OK on the reference exe; clippy/fmt clean. Tested in
+  game by fedacking only; `docs/symbols.md` "MOBO-1".
+- Player report (Discord, 2026-10-24): crash on Recruit Template with too
+  few soldier pops. **Not reproduced** in `work/Victoria-II-TGC252-own-loader`
+  (exact v0.0.2 DLL `7afefc61...`): 92 recruits, including partial (7 queued,
+  5 left out) and zero-pop clicks, no fault. Reporter's `tgcx.log`, ATCU
+  version and mod list requested; read them when they arrive.
+- Release builds still use C++; the Rust DLL is not deployed or released.
+
+## Next session in order
+
+The Army feature queue from the v0.0.2 release notes, order set by the user
+2026-10-24. Every card is Rust, needs its mockup (R10) and its [user]
+questions answered (R9) before code. Full card text: docs/archive/sessions.md,
+"Next up after 0.0.2".
+
+1. **TPL-8 Non-core culture mode.** Design approved (D19): third exclusive
+   checkbox in Templates and Conform, none = All, clicking the selected box
+   clears it, Conform may use two lines. Ready to build: follow
+   `docs/instructions-tpl-8.md` (the Rust-coordination hold is over), in
+   `templates.rs`, `templates_gui.rs`, `conform_gui.rs`. Fit around the mobo
+   box in the Conform title.
+2. **TPL-11 Build Army gathers into one army.** Reuses Conform march/merge,
+   TPL-7 saved orders and the mobo assign-and-march path. Open [user]: the
+   gathering province (player pick, capital, largest source province or the
+   native rally point); regiments without a land route (D17: leave them).
+3. **TPL-9 Autodivide.** Base: Conform's detach (Create + Transfers together,
+   P51). Open [user]: the rule (single regiments, N equal stacks, template
+   copies), the button's place, who keeps the leader.
+4. **TPL-10 Carpet siege.** Needs TPL-9 plus one safe-path Move per stack.
+   Open [user]: which provinces, regiments per province, one-off click or a
+   running order that re-targets.
+5. **TPL-12 Replace depleted regiments.** Needs research first: the regiment
+   strength field and the native disband command (R5). Open [user]: the
+   threshold, disband vs detach to a reserve, build-first order, separate
+   button or Conform option.
+
+Alongside, when selected:
+
+- **RUST-CHECK:** `docs/instructions-rust-check.md`. Full Rust Templates
+  recruit, Conform with save/reload, mobo stacks, Bill and favours in a
+  separate candidate copy; no release default switched automatically.
+- **RENAME-026:** `docs/instructions-rename-026.md` (C++, packaged; optional
+  final 2px look check). No publication implied.
+
+Next pitfall remains P64.
+
+# Session73 - PR 3 mobo stacks merged; Army feature order set (2026-10-24)
+
+Reviewed and merged fedacking PR 3 (mobo stacks, abc6806): clippy, fmt and
+all exe signatures pass. Local master fast-forwarded with local edits kept
+(symbols.md: MOBO-1 and RENAME-0 sections both retained). User rule: all
+new DLL code in Rust, fedacking style. A player-reported crash on Recruit
+with too few soldier pops did not reproduce on the exact v0.0.2 DLL (92
+recruits incl. partial and zero-pop, no fault); logs requested from the
+reporter. User set the Army feature order below.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-22 (72). **PR #2 reviewed, merged and pulled.** Local master and
+origin/master are at `09a361d68dbdfaca3a11dd8b93948c9315edc8f4`, incorporating
+both Rust PRs. All pre-existing unpublished Province Rename work is restored.
+Starting NEXT archived verbatim in docs/archive/sessions.md.
+
+## Current scope and evidence
+
+- PR #2 adds `rust/tgcx/`, the full TPL-7 0.11.2 DLL port. PR #1 adds
+  `rust/loader/` and C++ compatibility fixes. Build/release tools still
+  use C++; pulling does not switch the deployed implementation.
+- Rust loader and logic release builds, fmt and strict Clippy pass. The
+  Rust DLL passes the actual plugin probe and three isolated review tests
+  (repeated/nested SEH recovery, SHA vectors, parser/planning). Existing
+  C++ native/GPU regression and 12 installer tests pass. These do not
+  establish full Rust gameplay parity.
+- Local work backed up in `work/pr2-local-backup-1022/local-work.zip` with
+  a verified 61-file manifest; a named Git stash is also retained. Sixty
+  files restored byte-for-byte; `tools/check_exe.py` combines the upstream
+  environment override and local Rename signatures, and passes its gate.
+- No game installation, launch, termination or release occurred. Province
+  Rename remains unpublished. The TPL-8 implementation hold remains until
+  explicit resumption; the prior loader-only scope is now superseded by PR #2.
+- Report: `docs/report-pr-2-review-1022.md`.
+
+## Next session in order
+
+1. **RUST-CHECK, only when selected:** follow `docs/instructions-rust-check.md`.
+   Full Rust Templates recruit, Conform detach/build/march/merge/save-reload,
+   Bill drawing/purchases/count and favour accrual remain unverified here.
+   Use a separate candidate; do not switch release defaults automatically.
+2. **TPL-8 held:** follow `docs/instructions-tpl-8.md`. Approved Non-core only
+   design is unchanged. Reassess both C++ and Rust implementations when the
+   user resumes work; upstream integration itself is complete.
+3. **RENAME-026:** follow `docs/instructions-rename-026.md` for the existing
+   local ZIP and optional final 2px appearance check. No publication or new
+   install implied. Existing package, backup and remaining coverage details
+   are retained in `docs/report-province-rename-package-1021.md`.
+
+The unselected future feature queue is retained in the archived session 71
+NEXT and ROADMAP/SUBAGENTS. Next pitfall remains P64.
+
+---
+
+# Session70 - TPL-8 design approved, held for Rust coordination (2026-10-21)
+
+User selects easier ATCU work and approves a third mutually exclusive
+Non-core only checkbox in both Templates/Conform, none=All/click clears,
+two lines allowed in Conform. Before implementation user says wait for
+fedacking's Rust port. Verified merged PR#1 ports the loader and includes
+C++ build fixes; local HEAD is its pre-merge base045bbfd5. No ATCU source,
+headers/assets/build/game/settings changes made. Approved design retained;
+feature work held pending port coordination/upstream reconciliation.
+Province Rename local ZIP/installed0.2.6 untouched and unpublished.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-21 (70). **Province Rename0.2.5 accepted; final ABC-adjusted0.2.6
+installed and local ZIP ready. User explicitly says DO NOT RELEASE YET.**
+Session69 starting NEXT archived verbatim in docs/archive/sessions.md.
+
+## Current scope and evidence
+
+- User says0.2.5 works awesome. Screenshot/log confirms short dialog,
+  typing/caret and repeated native renames with map/header updates.
+- 0.2.6 raises24px ABC2px and changes name gap8px to10px. Native font/name
+  anchor and clamping retained; accepted editor/caret/commands unchanged.
+  Final2px visual check itself remains pending. No new addresses/pitfall.
+- Initial request to release was superseded explicitly: dont release it
+  yet, just give me the zip. No commit/push/tag/remote creation/publication.
+  Public-release README/notes are prepared prospective material only.
+- Package is Universal additive V2DLL, reference3.04/current V2DLL required.
+  No dependencies/user_dir/replace_path/base GUI/data override. Native
+  command0x707 only changes simulation. Other-base gameplay, ATCU
+  coexistence, extended lifetime/save-reload and multiplayer remain untested.
+- Current report docs/report-province-rename-package-1021.md. Current board
+  docs/province-rename-layout.svg; previous025 board archived verbatim in
+  docs/archive/province-rename-layout-025.svg. Native art stays ignored.
+
+## Local deliverable and installed copy
+
+- ZIP work/releases/province-rename/0.2.6/Province-Rename-Universal-0.2.6.zip:
+  12files,264502bytes. SHA256
+  fcc68a16c0987c5f947d8ada1fde7060c85a2e2b3f51da4d703f8ed05055ce9f.
+  Adjacent .zip.sha256, SHA256.json, PROVENANCE.json and RELEASE.json.
+  published=false; no destination or source commit selected. ZIP's11mod
+  payload members byte-identical to checked0.2.6 candidate; README only differs.
+- work/Victoria-II-Province-Rename-TGC252 updated after fresh user Yes,
+  closed normally confirmation and process gate.11payload/25,388protected
+  hashes pass; protected unchanged. Full0.2.5/guide rollback before-026 in
+  work/province-rename/release-026-1021/, exact patch-026-installed.json.
+  Earlier backups retained. No game launch/termination/main/other-copy change.
+- Stock Lua, canonical TGC, V2DLL5.98/cdad55c7 and independent profile kept.
+- 301guards/78Rename runtime, Win32 build,66native/4package/4actual-loader
+  checks pass. Five-base checks are static, not gameplay. Native-art pixels
+  and binaries remain in ignored work/. No memory update. Next pitfall P64.
+
+## Next session in order
+
+1. Deliver local ZIP (and optional .sha256). No publication or new install.
+   Current instructions docs/instructions-rename-026.md.
+2. If user wants final appearance check, they launch dedicated copy with
+   Province Rename (Universal)+TGC v2.5.2 (stable), inspect2px higher ABC/
+   10px name gap and recheck opening/typing/rename. Expect0.2.6 Universal,
+   78native signatures in Logs/tgcx_province_rename.log. Preserve fresh logs/
+   unedited captures after normal exit. Final positioning unconfirmed yet.
+3. Full limits/ownership/lifetime/save-reload per instructions-rename-020.md
+   sections2-3; other-base gameplay/ATCU/MP only when selected later.
+4. Publishing remains expressly deferred. If user asks again, confirm exact
+   destination then finish source/release identity before publishing. Do not
+   treat the old release request as standing authorization. Installation
+   still requires fresh user exit/install instruction and process gate.
+   Never launch/terminate the game autonomously; keep all rollbacks.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0/U/025 | short rename/editor/typing/caret accepted; full cases pending | instructions-rename-020.md |
+| RENAME-026 | final ABC tweak installed, ZIP ready; publication deferred by user | instructions-rename-026.md |
+| RENAME-MP | theoretical only; no host/client/OOS test | instructions-rename-020.md section4 |
+| TPL-5/6 |0.11.2 retained; extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; separate from Rename | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6/3/4/5 | accepted0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+- **TPL-12 Replenish depleted regiments up to the template** (user,
+  2026-10-21). Unlike Conform, which only counts regiments by type, this
+  looks at strength: regiments that are depleted or close to being
+  destroyed are removed from the army, and fresh ones of the same type are
+  built and merged in (Conform's march-and-merge and TPL-7 orders), so the
+  army ends at full template strength. Open: the threshold (a fixed
+  strength %, or set per click), whether a depleted regiment is disbanded
+  (losing its pops' soldiers back to the pool?) or detached into a
+  reserve stack that reinforces normally, the order (build first and drop
+  the old one only when its replacement arrives, so the army is never
+  short), and whether it is a separate button or a Conform option. Needs
+  research: the regiment strength field and the native disband command
+  (R5: engine commands only).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+---
+
+# Session69 - accepted Rename, final ABC adjustment and ZIP only (2026-10-21)
+
+User accepts0.2.5, requests better ABC placement and initially release.
+0.2.6 raises ABC2px and increases name gap2px.301guards/66native/4package/
+4loader checks pass. Publication then explicitly cancelled: just give ZIP.
+Local12-file beta ZIP prepared/verified with README/provenance/hash sidecars;
+no source commit/push/publication. Installed in dedicated copy after fresh
+normal-exit confirmation,11payload/25,388protected hashes pass, before-026
+retained. Final2px visual check pending; accepted dialog unchanged.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-21 (69). **Province Rename0.2.4 short operation nearly perfect;
+checked0.2.5 caret/ABC/readability refinement installed, player retry next.**
+Session68 starting NEXT archived verbatim in docs/archive/sessions.md.
+
+## Current decisions and evidence
+
+- User's0.2.4 screenshot/log confirms working centered typing and short
+  native rename/header/map update and reopen. Remaining feedback: caret
+  displaced, ABC a little too big, input font too thin/hard to read.
+- 0.2.5 retains the working single-origin text refresh, compensates native
+  cursor transparent margins and its3px gap using caret-only offsets,
+  changes native ABC28x28 to24x24 and uses native Main_16_black (Garamond16
+  bold) for typed input. Native white/green/gold/parchment redesign unchanged.
+- Cursor is32x32 with1x16 visible ink at(7,6)..(8,22). P63 documents why
+  container alignment did not align that line. Actual native caret update
+  consumes a frame argument, RET4; the initial added fixture omitted it and
+  crashed only tgcx_rename_tests.exe. Corrected ABI is guarded.66native
+  checks pass, including native caret update/getter at16/18px font heights.
+- Universal additive V2DLL package, reference3.04/current V2DLL required;
+  no dependencies/user_dir/replace_path/base GUI override. Simulation only
+  via native command0x707. Other-base gameplay, ATCU coexistence and MP
+  remain untested. Army/Politics follow-ups remain separate.
+- Current report docs/report-province-rename-readability-1021.md; historical
+  aesthetic/implemented/centering reports retained unchanged. Current board
+  docs/province-rename-layout.svg; previous024 board archived verbatim in
+  docs/archive/province-rename-layout-024.svg. Native pixels stay ignored
+  in versioned work/ assets. Preview is not game acceptance.
+
+## Installed copy and validation
+
+- work/Victoria-II-Province-Rename-TGC252, canonical mod/TGC, stock Lua,
+  V2DLL5.98/cdad55c7; profile TGC252_ProvinceRename_20261020 retained.
+- User answered done to fresh normal-exit confirmation for0.2.5. Process
+  gate clear throughout update.11payload/25,388protected hashes verified;
+  protected unchanged. Full0.2.4/guide backup readability-025-1021/before-025;
+  exact patch-025-installed.json beside it. All previous backups retained.
+- ZIP work/province-rename/candidate/Province-Rename-Universal-0.2.5-test.zip,
+  12files/263759bytes; SHA256
+  9ffd4a032687348ab88285d519350f47099f77e7bbb2a29994f7907acf0d3c24.
+- 301 executable guards/78 Rename runtime, Win32 build,66native/4package/
+  4 actual-loader checks pass. Five-base font/sprite/native cursor bounds
+  checks are static. Keyboard/caret cache/scrolling timing still need player
+  verification. No full lifetime/persistence/gameplay matrix claim.
+- Evidence work/province-rename/readability-025-1021/. User screenshots,
+  0.2.4 log, native exports/build/tests/loader results retained.
+- No game launch/termination or main E:/D:/other-copy change. Only our own
+  crashed isolated test process was closed. No release/publication, source
+  commit, push or memory update. Next pitfall P64.
+
+## Next session in order
+
+1. **RENAME-025 player retry**, docs/instructions-rename-025.md. No install
+   needed. User opens dedicated copy with Province Rename (Universal) and
+   TGC v2.5.2 (stable), selects owned land and opens24px ABC. Check clearer
+   centered Garamond typing, visible caret beside/vertically aligned with
+   text, no flicker through typing/deletion/idle, mouse/Home/End/accents/
+   long names/paste and Cancel/Rename/reopen/map/header behavior. Expect
+   0.2.5 Universal,78 native signatures and single native text/caret origin
+   in Logs/tgcx_province_rename.log; V2DLL logs in V2DLL/Logs/.
+2. Complete full limits/stale selection/ownership/lifetime/save-reload cases
+   per instructions-rename-020.md sections2-3 with0.2.5/78 expectations.
+   Previous short success does not prove these extended cases.
+3. Preserve fresh logs/unedited captures after user normal exit. Review
+   applicable pitfalls, especially P31/P58-P63 before fixes. Native fixture
+   calls need actual RET/ABI evidence. New installation requires fresh user
+   exit/install instruction and clear process gate. Never launch/terminate
+   the game autonomously; keep every rollback.
+4. Other-base/ATCU/MP remain later selected work; no additional copy update
+   or publication automatically. Army follow-ups below remain separate.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0/U/021 | short rename/ABC accepted; extended checks pending | instructions-rename-020.md |
+| RENAME-023/024 | redesign and short centered typing work; caret refinement next | report-province-rename-centering-1021.md |
+| RENAME-025 | caret/24px ABC/Garamond refinement installed, retry next | instructions-rename-025.md |
+| RENAME-MP | theoretical only; no host/client/OOS test | instructions-rename-020.md section4 |
+| TPL-5/6 |0.11.2 retained; extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; no new release authorized | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6/3/4/5 | accepted0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+- **TPL-12 Replenish depleted regiments up to the template** (user,
+  2026-10-21). Unlike Conform, which only counts regiments by type, this
+  looks at strength: regiments that are depleted or close to being
+  destroyed are removed from the army, and fresh ones of the same type are
+  built and merged in (Conform's march-and-merge and TPL-7 orders), so the
+  army ends at full template strength. Open: the threshold (a fixed
+  strength %, or set per click), whether a depleted regiment is disbanded
+  (losing its pops' soldiers back to the pool?) or detached into a
+  reserve stack that reinforces normally, the order (build first and drop
+  the old one only when its replacement arrives, so the army is never
+  short), and whether it is a separate button or a Conform option. Needs
+  research: the regiment strength field and the native disband command
+  (R5: engine commands only).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+---
+
+# Session68 - caret alignment and readability refinement (2026-10-21)
+
+User confirms short0.2.4 operation nearly perfect; requests caret alignment,
+smaller ABC and more readable font.0.2.5 uses caret-only offsets for native
+sprite ink,24x24 ABC and native Garamond16 bold. Added native caret regression
+initially crashed the isolated test from missing RET4 argument; corrected
+and guarded.301guards/66native/4package/4loader checks pass. Installed after
+fresh normal-exit confirmation,11payload/25,388protected hashes verified;
+full before-025 rollback. P63, next P64; player retry next. No game control,
+main/other-copy update, publication, commit or push.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-21 (68). **Province Rename redesign works; checked 0.2.4 single-offset
+centering correction installed. Player retry next.** Session67 starting
+NEXT archived verbatim in docs/archive/sessions.md.
+
+## Decisions and current evidence
+
+- The aesthetic redesign handoff is implemented: native white title on
+  green/gold, continuous parchment, no divider/footer shelf, double input
+  braids, centered black serif captions and blue/gold native buttons.
+  Latest user instruction requires typed text centered horizontally too.
+  Icon-only native28x28 ABC remains right of the actual province name.
+- User tried installed0.2.3: works, but recenter flickers and is off-center.
+  Log confirms a successful province425 Jijolandia rename/header update
+  and reopen. The input border offsets were used twice, in text texture
+  rasterization and native entity placement. P62 documents the failure.
+- 0.2.4 supplies zero texture padding during native refresh, then restores
+  centered text/caret insets and performs native placement synchronously.
+  Actual native refresh/setter/position regression reproduces the old
+  double offset and validates a stable origin across repeated positioning.
+  Full live keyboard/mouse/scrolling/flicker acceptance remains pending.
+- Universal additive V2DLL package, reference3.04/current V2DLL required.
+  No dependencies/user_dir/replace_path/base GUI override. Simulation uses
+  native command0x707 only. Other-base gameplay, ATCU coexistence and MP
+  remain untested. No new work on Army/Politics selected.
+- Current report docs/report-province-rename-centering-1021.md; preceding
+  report-province-rename-redesign-implemented-1021.md and user-owned
+  report-province-rename-aesthetic-redesign-1021.md retained unchanged.
+  Current board docs/province-rename-layout.svg; old022/023 boards archived
+  verbatim. Native pixels stay ignored under versioned work/ paths.
+
+## Installed copy and checks
+
+- work/Victoria-II-Province-Rename-TGC252, canonical mod/TGC, stock Lua,
+  V2DLL5.98/cdad55c7; profile TGC252_ProvinceRename_20261020 retained.
+- 0.2.3 installed after fresh normal-exit confirmation. After the0.2.3
+  report, game observed exited; user explicitly said install it and ill
+  check.0.2.4 installation used that fresh instruction and a clear process
+  gate; no literal second normal-exit answer asserted. No game control.
+- 11 payload and25,388 protected hashes verified; protected unchanged.
+  Evidence work/province-rename/centering-024-1021/, exact record
+  patch-024-installed.json and full0.2.3/guide backup before-024/.
+  Earlier before-023 (0.2.2), before-022 and older backups retained.
+- ZIP work/province-rename/candidate/Province-Rename-Universal-0.2.4-test.zip,
+  12files; SHA256
+  829974db16c5d58b16b6bdd0619618347642fa284ba1bdaad2e8e75d07f70025.
+- 295 executable guards/72 Rename runtime, Win32 build,65 native/4 package/
+  4 actual-loader checks pass. Five-base font/sprite checks are static.
+  Native/GPU-boundary regression does not establish full gameplay.
+- Main E:, D:, other copies untouched. No release/publication, source
+  commit, push or memory update. Next pitfall P63.
+
+## Next session in order
+
+1. **RENAME-024 player retry**, docs/instructions-rename-024.md. No install
+   needed. User opens dedicated copy with Province Rename (Universal) and
+   TGC v2.5.2 (stable), selects owned land and opens ABC. Check stable
+   centering while typing, deleting and idling, caret/click/Home/End,
+   accents/long names/paste and Cancel/Rename/reopen/map/header behavior.
+   Expect0.2.4 Universal,72 native signatures and centered input enabled;
+   single native text/caret origin in Logs/tgcx_province_rename.log.
+2. Complete remaining full limits/stale selection/ownership/lifetime and
+   save/reload checks per instructions-rename-020.md sections2-3 with
+   0.2.4/72 expectations. Earlier short success does not prove these.
+3. Preserve fresh logs/unedited captures after user normal exit. Before
+   fixes read pitfalls, especially P58-P62; fixtures must execute independent
+   native consumers. New installation requires fresh user exit/install
+   instruction and clear process gate. Never launch/terminate autonomously.
+4. Other-base/ATCU/MP remain later selected work; no additional copy update
+   or publication. Army follow-ups below remain separate.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0/U/021 | short rename/ABC accepted; full behavior pending | instructions-rename-020.md |
+| RENAME-023 | redesign works; centering failed, superseded by024 | report-province-rename-redesign-implemented-1021.md |
+| RENAME-024 | correction installed, player retry next | instructions-rename-024.md |
+| RENAME-MP | theoretical only; no host/client/OOS test | instructions-rename-020.md section4 |
+| TPL-5/6 |0.11.2 retained; extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; no new release authorized | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6/3/4/5 | accepted0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+- **TPL-12 Replenish depleted regiments up to the template** (user,
+  2026-10-21). Unlike Conform, which only counts regiments by type, this
+  looks at strength: regiments that are depleted or close to being
+  destroyed are removed from the army, and fresh ones of the same type are
+  built and merged in (Conform's march-and-merge and TPL-7 orders), so the
+  army ends at full template strength. Open: the threshold (a fixed
+  strength %, or set per click), whether a depleted regiment is disbanded
+  (losing its pops' soldiers back to the pool?) or detached into a
+  reserve stack that reinforces normally, the order (build first and drop
+  the old one only when its replacement arrives, so the army is never
+  short), and whether it is a separate button or a Conform option. Needs
+  research: the regiment strength field and the native disband command
+  (R5: engine commands only).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+---
+
+# Session67 - native redesign and centered-input correction (2026-10-21)
+
+Implemented the user's redesign handoff as 0.2.3, installed after fresh
+normal exit. User reports working UI/rename but flickering/off-center typing.
+Traced the second native inset consumer; 0.2.4 renders zero-padded text and
+positions text/caret once. Actual native regression, 295 guards/65 native/
+4 package/4 loader checks pass. Installed on fresh explicit instruction,
+11 payload/25,388 protected hashes verified; full before-024 rollback.
+P62 added, player retry next. No game control or other-copy update.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-21 (67). **Province Rename0.2.1 short behavior accepted;
+white-title refinement0.2.2 installed, player appearance check next.**
+Session66 NEXT archived verbatim in docs/archive/sessions.md.
+
+## Current decisions and evidence
+
+- User screenshot shows ABC right of Jijolandia, editor open and map name
+  updated. Log confirms native command/readback/header refresh and reopen.
+  Short0.2.1 behavior accepted; full persistence/lifetime remains untested.
+- User requests white title and no beige title background.0.2.2 uses native
+  vic_22 white/cream directly on green, keeping native gold braid. Other
+  text/input stays black.332x224 editor,28x28 ABC, spacing, proven placement
+  and native command0x707 unchanged. Runtime source only updates version.
+- One Universal additive V2DLL package, reference3.04 + current V2DLL.
+  No dependencies, user_dir, replace_path or base GUI override; no ATCU
+  changes. Static five-base checks retained; other-base gameplay/ATCU/MP
+  remain untested. MP theory is native command serialization, not a test.
+- Current board docs/province-rename-layout.svg; previous board archived
+  verbatim in docs/archive/province-rename-layout-021.svg. Current private
+  native-font preview work/province-rename/candidate/layout-preview-022-native.png.
+  Game-derived pixels stay ignored; versioned external SVG art preserves
+  prior prepared images. No remote artifact publication.
+- Current report docs/report-province-rename-title-1021.md. Accepted capture/
+  log, build/native tests/loader probe/check records/backup under
+  work/province-rename/polish-022-1021/. Earlier reports/candidates historical.
+
+## Installed copy and validation
+
+- work/Victoria-II-Province-Rename-TGC252, canonical mod/TGC, stock Lua,
+  current V2DLL5.98/cdad55c7; profile TGC252_ProvinceRename_20261020 retained.
+  User confirmed Closed normally now; process gate clear before/through
+  update. No launch/termination. Main E:, D: and other copies untouched.
+- All11payload and25,388protected hashes verified; full0.2.1/guide backup
+  polish-022-1021/before-022/. Record patch-022-installed.json beside it.
+  Native panel pixels differ only in the old title plate rectangle; entry,
+  field/button art, GUI placement and command logic stay unchanged.
+- ZIP work/province-rename/candidate/Province-Rename-Universal-0.2.2-test.zip,
+  12files,255324bytes; SHA256
+  f02656a991dcef5db7e9b5556d4ed8e40c12e19678117ee5d1481d55288294fa.
+- 282reference guards/59Rename, Win32 build,53native/4package/4loader checks
+  pass. Font check requires white vic_22 title, black other fonts. Five-base
+  static font/sprite checks pass. Previous TGC scan still applies.
+- No new addresses or pitfall; P61 placement correction retained. Next P62.
+  No source commit, push, release/publication or memory update.
+
+## Next session in order
+
+1. **RENAME-022 appearance**, docs/instructions-rename-022.md. No new install.
+   User launches dedicated copy with Province Rename (Universal) plus
+   TGC v2.5.2 (stable), selects owned land and opens ABC. Check white title
+   on green, no beige title plate, centring/clipping, black body/input/button
+   text and Rename/Cancel/reopen. Expect0.2.2 Universal and59native signatures
+   in Logs/tgcx_province_rename.log; V2DLL logs in V2DLL/Logs/.
+2. Complete remaining full behavior/limits/accents/stale selection/ownership
+   and save/reload checks per instructions-rename-020.md sections2-3 with
+   0.2.2/59 expectations. Short0.2.1 success does not prove those cases.
+3. Preserve fresh logs/unedited screenshots after user normal exit. Read
+   applicable pitfalls before fixes; add independent semantic evidence for
+   any new field interpretation. New installation requires exit/process
+   gate. Do not launch/terminate autonomously. Keep all prior rollbacks.
+4. Other-base gameplay, ATCU coexistence and MP remain later selected work.
+   No extra copy update, release/publication, commit or push automatically.
+   Existing Army follow-ups below remain separate.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0 / RENAME-U / RENAME-021 |0.2.1 short native ABC/rename accepted; extended cases pending | report-province-rename-title-1021.md |
+| RENAME-022 | white title/no plate installed; player appearance check next | instructions-rename-022.md |
+| RENAME-MP | theoretical assessment only, gameplay untested | instructions-rename-020.md section4 |
+| TPL-5 / TPL-6 |0.11.2 retained; acceptance and extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; no new release authorized | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | accepted0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+Next pitfall P62. Private art/binaries/native exports/backups stay ignored
+under work/ or dll/**/Release/.
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+- **TPL-12 Replenish depleted regiments up to the template** (user,
+  2026-10-21). Unlike Conform, which only counts regiments by type, this
+  looks at strength: regiments that are depleted or close to being
+  destroyed are removed from the army, and fresh ones of the same type are
+  built and merged in (Conform's march-and-merge and TPL-7 orders), so the
+  army ends at full template strength. Open: the threshold (a fixed
+  strength %, or set per click), whether a depleted regiment is disbanded
+  (losing its pops' soldiers back to the pool?) or detached into a
+  reserve stack that reinforces normally, the order (build first and drop
+  the old one only when its replacement arrives, so the army is never
+  short), and whether it is a separate button or a Conform option. Needs
+  research: the regiment strength field and the native disband command
+  (R5: engine commands only).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+---
+
+# Session66 - 0.2.1 accepted, white-title refinement installed (2026-10-21)
+
+User accepts0.2.1 short functionality and supplies live Jijolandia/editor
+capture. Requests white title and no beige title background.0.2.2 removes
+plate and uses native vic_22 white on green; other text black, runtime
+behavior/placement/art outside title unchanged.282guards/53native/4package/
+4loader checks pass. Installed after confirmed normal exit,11payload and
+25,388protected hashes verified, before-022 retained. No game control or
+other-copy changes/publication. Report-province-rename-title-1021.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-21 (66). **Province Rename0.2.0 ABC missing: live geometry error
+corrected in checked/installed0.2.1. Player retry next.** Session65 NEXT
+archived verbatim in docs/archive/sessions.md.
+
+## Findings, decisions and boundaries
+
+- Standalone Universal V2DLL free-text rename. User's native28x28 ABC right
+  of province name, black text and native green/braid/parchment unchanged.
+  Keep actual province name; no extra Rename label. Native command0x707 is
+  the only simulation writer. ATCU implementation unchanged.
+- 0.2.0 log showed plugin/56guards/both roots, then placement refusal. User
+  reopened selected owned land for read-only diagnosis. Verified PID16424,
+  dedicated-copy path, Amiens402, viewport2560x1440. No injected calls or
+  memory writes. Game control remained with user.
+- Root/header/name/font all valid. Definition+0xA0 was X=0, not width380.
+  Runtime CFixedWindow size is+0x4A0/+0x4A4. Name matrix is identity; native
+  Draw separately uses local17,45 at text+0x188/+0x18C. Both previous fixture
+  assumptions repeated the implementation error. Correct both, preserve
+  owner chain and native font measurement. P61 records cause/fix; next P62.
+- 0.2.1 uses actual runtime width and text-local origin, validates Draw type,
+  and logs precise refusal stage/root/width. No UI/art/GUI/localisation
+  changes. New fixture executes actual native Draw at font/GPU boundary,
+  plus captured-layout regression; actual native font routines still run.
+- Report docs/report-province-rename-anchor-1021.md supersedes0.2.0 geometry
+  assumptions. Read-only live dumps/native exports/failed log/build/tests
+  in work/province-rename/missing-020-1021/; all ignored. Prior reports and
+  candidates retained. Main E:, D: and other copies unchanged.
+
+## Installed copy and checked candidate
+
+- Game: work/Victoria-II-Province-Rename-TGC252. User selects Province Rename
+  (Universal) + TGC v2.5.2 (stable); profile TGC252_ProvinceRename_20261020.
+  Canonical mod/TGC, stock Lua, current V2DLL5.98/cdad55c7 retained.
+- User confirmed Closed normally now after diagnostic session. Process gate
+  clear before/through update. All11payload/25,388protected hashes pass.
+  Backup0.2.0/guide: missing-020-1021/before-021/. Installed record:
+  missing-020-1021/patch-021-installed.json.0.1.3 rollback before-020 retained.
+- ZIP: work/province-rename/candidate/Province-Rename-Universal- 0.2.1-test.zip,
+  12files,250713bytes, SHA256
+  d3f9ba6881a21780149cdc91a2b9a0a8f1cd2de42b6ce7b556f01b9f8ebdca47.
+- 282reference guards,59Rename runtime, Win32 build,53native checks,
+  4package/4loader checks pass. Static five-base fonts/anchors retained;
+  prior TGC scan still applies (no TGC data changes).0.2.1 appearance/input,
+  full save/lifetime, other-base gameplay, ATCU coexistence and MP untested.
+- Board docs/province-rename-layout.svg; current private generated preview
+  work/province-rename/candidate/layout-preview-021-native.png. Layout and
+  native pixels unchanged; preview is not live acceptance.
+
+## Next session in order
+
+1. **RENAME-021 retry**, docs/instructions-rename-021.md. No new install.
+   User launches dedicated copy and selects owned land. Expect0.2.1 Universal,
+   59native signatures and Universal Rename ABC icon with screen/editor
+   pixels and measured font width in Logs/tgcx_province_rename.log. V2DLL
+   logs in V2DLL/Logs/. ABC must appear right of the actual province name.
+2. Check native look/black text and clickable entry, editor, Rename, Cancel,
+   reopen and host/selection changes. Then full behavior/limits/accents and
+   save/reload per instructions-rename-020.md sections2-3, using0.2.1/59.
+3. Preserve fresh logs/unedited capture after user normal exit. Diagnose
+   actual stage before changes, consult P37/P40/P44/P53-P61, add independent
+   semantic regression. Never launch/terminate without explicit request.
+   Any new install needs fresh exit confirmation and process gate. Old
+   PID47976 force-close authorization never extends to another process.
+4. Other bases/ATCU/MP are later selected checks. MP remains theoretical via
+   native queue/serializer/parser; no host/client/OOS proof. No commit,
+   push, release, publication or other game-copy update follows automatically.
+   Existing Army follow-ups below stay separate.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0 / RENAME-U |0.1.3 short SP rename accepted; extended checks pending | report-province-rename-universal-ui-1021.md |
+| RENAME-020 |0.2.0 ABC missing; actual width/text-origin correction0.2.1 installed | report-province-rename-anchor-1021.md |
+| RENAME-021 | checked/installed, user ABC retry next | instructions-rename-021.md |
+| RENAME-MP | theoretical assessment only; gameplay untested | instructions-rename-020.md section4 |
+| TPL-5 / TPL-6 |0.11.2 retained; acceptance and extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; no new release authorized | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | accepted0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+Next pitfall P62. Private game-derived art/binaries/native exports/backups
+stay ignored under work/ or dll/**/Release/. No memory updates.
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+- **TPL-12 Replenish depleted regiments up to the template** (user,
+  2026-10-21). Unlike Conform, which only counts regiments by type, this
+  looks at strength: regiments that are depleted or close to being
+  destroyed are removed from the army, and fresh ones of the same type are
+  built and merged in (Conform's march-and-merge and TPL-7 orders), so the
+  army ends at full template strength. Open: the threshold (a fixed
+  strength %, or set per click), whether a depleted regiment is disbanded
+  (losing its pops' soldiers back to the pool?) or detached into a
+  reserve stack that reinforces normally, the order (build first and drop
+  the old one only when its replacement arrives, so the army is never
+  short), and whether it is a separate button or a Conform option. Needs
+  research: the regiment strength field and the native disband command
+  (R5: engine commands only).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+
+---
+
+# Session65 - missing Universal ABC diagnosed live; 0.2.1 installed (2026-10-21)
+
+0.2.0 installed, but user saw no ABC. Audited ATCU pitfalls; read-only selected
+province inspection found definition+0xA0 was X, not width, and text-local17,45
+was separate from its identity matrix. Use runtime width+0x4A0 and native Draw
+local offsets+0x188/+0x18C. Independent actual Draw regression added,53native
+checks/282guards/4package/4loader probes pass.0.2.1 installed after fresh normal
+exit confirmation,11payload/25,388protected hashes pass; before-021 retained.
+P61, next P62; player ABC retry next. No game control/other-copy changes or
+publication. Report-province-rename-anchor-1021.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-21 (65). **Province Rename Universal 0.2.0 installed in the
+dedicated TGC/V2DLL copy; player UI/input/persistence check next.**
+Session64 NEXT archived verbatim in docs/archive/sessions.md.
+
+## Current state and boundaries
+
+- User accepted0.1.3 short behavior: three renames, map/header/readback and
+  editor reopen. Universal0.2.0 adds native28x28 ABC right of the province
+  name (no extra Rename label), black added text and native green/braid/
+  parchment. Actual province name remains; native font metrics/owner chain
+  and host width drive generic placement. Native332x224 editor.
+- One additive Province Rename (Universal) mod, no dependency, user_dir,
+  replace_path or base GUI/data override. Reference3.04 + V2DLL required.
+  Engine command0x707 remains the only simulation writer. ATCU unchanged.
+- User explicitly said "install it" after the pending exit gate was
+  explained. This fresh direction authorized the update; no literal normal-
+  exit confirmation is asserted. No v2game.exe before/through installation.
+  No launch or termination. Future game control stays with the user.
+- Installed: work/Victoria-II-Province-Rename-TGC252. Canonical mod/TGC,
+  stock Lua, V2DLL5.98/cdad55c7 and profile TGC252_ProvinceRename_20261020
+  retained. No ATCU/Politics; main E:, D: and other copies untouched.
+- All11payload files match final r3;25,388protected baseline hashes match
+  before/after. Backup: work/province-rename/ui-universal-020-1021/before-020/.
+  Installation evidence: patch-020-installed.json beside it. Target game
+  guide tgcx_province_rename_test.txt updated. Do not rerun the old updater
+  against now-installed0.2.0; its previous-payload gate intentionally refuses.
+- Exact ZIP: work/province-rename/candidate/Province-Rename-Universal-0.2.0-test-r3.zip,
+  12files,250479bytes, SHA256
+  5c450ba99c1f2496e936251c6c23e368faea4c5dbf73855391b5fb31f4a959da.
+- 279guards (56Rename/179Army runtime/44research), Win32 build,51native,
+  4package/4loader checks and TGC scan pass. Five-base static anchors/fonts/
+  sprites pass (vanilla, TGC2.3.4/2.5.2, HPM, DoD), not gameplay. MP is
+  theoretically feasible via native queue/serializer/parser, still untested.
+- Current board docs/province-rename-layout.svg uses external private art;
+  exact native-font preview work/province-rename/candidate/layout-preview-020-native.png.
+  Reports: docs/report-province-rename-universal-ui-1021.md (implementation)
+  and docs/report-province-rename-020-installed-1021.md (installation).
+
+## Next session in order
+
+1. **RENAME-020 player check**, docs/instructions-rename-020.md sections2-3.
+   No new install needed. User opens victoria2.exe in the dedicated copy,
+   selecting Province Rename (Universal) + TGC v2.5.2 (stable). Expected
+   0.2.0 Universal,56native signatures and Universal Rename ABC icon in
+   Logs/tgcx_province_rename.log; V2DLL logs in V2DLL/Logs/.
+2. Check ABC right of short/long/accented province names, actual province
+   name retained, black native editor text, green/braid/parchment, field and
+   buttons usable. Check Cancel/reopen, host/selection changes, rename/map/
+   header, input limits/accents, then save/reload and different-save cleanup.
+3. Preserve fresh logs/unedited captures after normal exit. Diagnose actual
+   failures, consult ATCU pitfalls/P59/P60, research/build before fixing.
+   Any further game-copy update requires the exit/process gate; the old
+   PID47976 force-close authorization never extends to another process.
+4. Other-base gameplay, ATCU coexistence and real MP test remain follow-ups
+   after user selection. No launch, termination, extra installation, release,
+   publication, commit or push follows automatically. Army follow-ups below
+   remain separate.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0 / RENAME-U | 0.1.3 short SP rename accepted; extended persistence/lifetime pending | report-province-rename-universal-ui-1021.md |
+| RENAME-020 | Universal native ABC UI installed/verified; player check next | instructions-rename-020.md; report-province-rename-020-installed-1021.md |
+| RENAME-MP | theoretical native-command assessment only; gameplay untested | report-province-rename-universal-ui-1021.md; instructions-rename-020.md section4 |
+| TPL-5 / TPL-6 | 0.11.2 retained; acceptance and extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; no new release authorized | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | accepted0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+Next pitfall P61. Game-derived art/binaries/native exports/backups stay
+ignored under work/ or dll/**/Release/. No memory updates.
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+- **TPL-12 Replenish depleted regiments up to the template** (user,
+  2026-10-21). Unlike Conform, which only counts regiments by type, this
+  looks at strength: regiments that are depleted or close to being
+  destroyed are removed from the army, and fresh ones of the same type are
+  built and merged in (Conform's march-and-merge and TPL-7 orders), so the
+  army ends at full template strength. Open: the threshold (a fixed
+  strength %, or set per click), whether a depleted regiment is disbanded
+  (losing its pops' soldiers back to the pool?) or detached into a
+  reserve stack that reinforces normally, the order (build first and drop
+  the old one only when its replacement arrives, so the army is never
+  short), and whether it is a separate button or a Conform option. Needs
+  research: the regiment strength field and the native disband command
+  (R5: engine commands only).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+
+---
+
+# Session64 - Province Rename Universal 0.2.0 installed (2026-10-21)
+
+User explicitly instructed installation after the pending exit gate was
+explained. No v2game.exe was running; no game launched/terminated. Exact r3
+candidate installed in the dedicated TGC/V2DLL copy, all 11 payload and
+25,388 protected hashes verified. Full before-020 backup retained. No
+literal normal-exit confirmation is asserted. Main E:, D: and other copies
+untouched. Player UI/persistence check next; no new build or publication.
+Report-province-rename-020-installed-1021.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-21 (64). **Province Rename 0.1.3 short behavior accepted;
+Universal 0.2.0 native ABC UI checked and staged, installation pending.**
+Session63 NEXT archived verbatim in docs/archive/sessions.md.
+
+## Selected work and decisions
+
+- Standalone free-text rename using V2DLL API1; native command0x707 remains
+  the only simulation writer. No ATCU implementation changes.
+- User reports it worked; screenshot and log confirm three name changes,
+  map/header updates and editor reopen. Full persistence/lifetime untested.
+- User selects universal compatibility like ATCU, black text, actual native
+  green/braid/parchment assets and icon-only opening control to the RIGHT
+  of the province name. Final icon choice: native ABC sprite,28x28. Keep
+  the actual province name, remove the extra Rename label.
+- One additive Province Rename (Universal) package: no dependency, user_dir,
+  replace_path or base GUI/data override. Reference3.04 + V2DLL required.
+- Actual native name width/kerning, render owner chain and host width drive
+  placement. Unsupported fonts use logged header-right fallback; missing
+  anchors refuse. Native332x224 editor with all added text black.
+- Static anchors/fonts/sprites pass on vanilla, TGC2.3.4/2.5.2, HPM, DoD.
+  These are not gameplay passes. MP is feasible in theory through the
+  native command/serializer/parser; no host/client or OOS test performed.
+- Report: docs/report-province-rename-universal-ui-1021.md. Current board:
+  docs/province-rename-layout.svg, external private native-art links only.
+  Exact bitmap-font preview: work/province-rename/candidate/layout-preview-020-native.png.
+  Prior board retained in docs/archive/province-rename-layout-0100.svg.
+
+## Candidate and dedicated copy
+
+- Target: work/Victoria-II-Province-Rename-TGC252. Still installed0.1.3,
+  canonical mod/TGC, stock Lua, V2DLL5.98/cdad55c7; no ATCU/Politics.
+  Profile TGC252_ProvinceRename_20261020. Main E:, D: and other copies stay
+  unchanged. No game launched or terminated this session.
+- Final candidate: work/province-rename/candidate/Province-Rename-Universal-0.2.0-test-r3.zip.
+  12files (11mod payload + README),250479bytes. SHA256:
+  5c450ba99c1f2496e936251c6c23e368faea4c5dbf73855391b5fb31f4a959da.
+  Earlier0.2.0 test/r2 candidates are superseded; use r3 with native ABC.
+- 279 executable guards (56Rename/179Army runtime/44research), Win32 build,
+  51native checks,4package checks and4current-V2DLL loader probes pass.
+  TGC scan passes. Native construction/input/rendering still need player QA.
+- Evidence: work/province-rename/ui-universal-020-1021/, including accepted
+  0.1.3 capture/log, native exports, base-matrix.json, candidate-final.json,
+  final test logs and install-preflight.json.
+- Read-only installation preflight passes exact old payload/guide, target
+  executable and25,388protected hashes. Fresh normal-exit question remains
+  pending. Process absence alone does not grant confirmation. No game-copy
+  writes have occurred. Old PID47976 force-close authorization was one-time.
+
+## Next session in order
+
+1. **RENAME-020 install**, docs/instructions-rename-020.md section1. Get
+   the pending fresh normal-exit answer, check no v2game.exe, rerun private
+   update_020.py preflight, then apply only to the dedicated copy. Preserve
+   complete before-020 backup and verify11payload/25,388protected hashes.
+   Add a dated installation addendum; do not rewrite the historical report.
+2. **RENAME-020 player UI/behavior**, same instructions sections2-3. User
+   launches Province Rename (Universal) + TGC v2.5.2 (stable). Expected0.2.0,
+   56native signatures, ABC28x28 right of name, black editor text, native
+   braids/green/parchment. Check clipping/clicks/focus, Cancel, rename/map/
+   header, host/selection changes, accents/limits and save/reload.
+3. Preserve fresh logs/screenshots after normal exit. Research/build before
+   further fixes; consult ATCU pitfalls/P59/P60. Never launch/terminate the
+   game without explicit user authorization. No new install without a fresh
+   exit confirmation. Other-base/ATCU/MP gameplay tests remain follow-ups
+   after the user selects them, not automatic actions.
+4. Existing Army follow-ups below stay separate. No release/publication,
+   commit, push or new game-copy staging follows automatically.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0 / RENAME-U | 0.1.3 short SP rename accepted; persistence/lifetime pending | report-province-rename-universal-ui-1021.md |
+| RENAME-020 | Universal native ABC UI checked/staged; fresh exit answer pending before install | instructions-rename-020.md |
+| RENAME-MP | theoretical native-command assessment only; gameplay untested | report-province-rename-universal-ui-1021.md; instructions-rename-020.md section4 |
+| TPL-5 / TPL-6 | 0.11.2 retained; acceptance and extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; no new release authorized | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | accepted0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+Next pitfall P61. Private game-derived artwork/binaries/native exports and
+backups remain ignored under work/ or dll/**/Release/. No memory updates.
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+- **TPL-12 Replenish depleted regiments up to the template** (user,
+  2026-10-21). Unlike Conform, which only counts regiments by type, this
+  looks at strength: regiments that are depleted or close to being
+  destroyed are removed from the army, and fresh ones of the same type are
+  built and merged in (Conform's march-and-merge and TPL-7 orders), so the
+  army ends at full template strength. Open: the threshold (a fixed
+  strength %, or set per click), whether a depleted regiment is disbanded
+  (losing its pops' soldiers back to the pool?) or detached into a
+  reserve stack that reinforces normally, the order (build first and drop
+  the old one only when its replacement arrives, so the army is never
+  short), and whether it is a separate button or a Conform option. Needs
+  research: the regiment strength field and the native disband command
+  (R5: engine commands only).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+
+---
+
+# Session63 - Province Rename accepted and Universal native UI staged (2026-10-21)
+
+User accepted the short 0.1.3 behavior. Implemented Universal0.2.0 with native
+28x28 ABC entry right of measured province name, native green/braids/parchment
+and black text. 279 guards, 51 native checks, 4 package checks and 4 loader
+probes pass; five-base static matrix. Exact r3 candidate and private native-font
+preview ready. Read-only target preflight passes 25,388 protected hashes;
+fresh normal-exit confirmation is pending, so no game-copy writes or launch.
+MP assessed as feasible through native command0x707, not tested. No ATCU
+changes, commit/push or publication. Report-province-rename-universal-ui-1021.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-21 (63). **Province Rename 0.1.3 installed; player retry next.**
+0.1.2 showed no button because its type guard refused valid standard native
+buttons. Session62 NEXT archived verbatim in docs/archive/sessions.md.
+
+## Selected work and boundaries
+
+- Standalone free-text Province Rename using V2DLL API1. Native command0x707
+  remains the only simulation writer. No ATCU implementation changes.
+- User supplied missing-entry screenshot. Read-only live inspection of the
+  selected owned province438 confirmed correct root/child registry lookup,
+  but all three guiButtonType controls resolve to CButtonType RVA0xA3CFBC,
+  factory0x5F0310. The related CEU3ButtonType guard was wrong (P60).
+- 0.1.3 checks measured type plus factory and logs actual refusal addresses.
+  Unique transparent labels and deferred GUI release remain. Actual native
+  registry wrapper/lookup/traversal fixtures replace the earlier stub as the
+  only evidence for schema acceptance. GUI/layout unchanged.
+- Report: docs/report-province-rename-button-type-1021.md. Screenshot/logs,
+  read-only live records and private native exports:
+  work/province-rename/missing-012-1021/.
+- User confirmed normal exit; hidden PID47976 remained with no window and
+  blocked installation. User then explicitly requested force-close. Only the
+  verified test-copy process was terminated, and process gate passed before
+  installation. This exception is for that stuck process only. No game
+  launched, commit/push or publication. Future game control stays with user.
+
+## Installed copy and candidate
+
+- Game: work/Victoria-II-Province-Rename-TGC252/.
+  User opens victoria2.exe and ticks **Province Rename** plus
+  **TGC v2.5.2 (stable)**. Profile TGC252_ProvinceRename_20261020.
+- Canonical mod/TGC, stock Lua and current V2DLL5.98/cdad55c7 retained.
+  No ATCU/Politics in this copy; main E: and other copies unchanged.
+- All10package files match0.1.3;25,388protected hashes match original staging
+  baseline before/after update. Only plugin/version marker/test guide changed.
+  Evidence: missing-012-1021/patch-013-installed.json; rollback before-013/.
+- ZIP: work/province-rename/candidate/Province-Rename-0.1.3-test.zip.
+  11files,179361bytes; SHA256
+  774d6fbb2dc446efd431a380005d6ac8ff6db9724cc901bf35bfb30859f2c89a.
+- 272executable guards (unchanged179Army runtime +44research +49Rename),
+  Win32 Release build,42native checks,4package tests and4loader probes pass.
+  Same unchanged TGC source retains its passed scan. Native registry/builder
+  fixtures do not prove full GUI construction, focus, rendering or persistence.
+- Plugin log: Logs/tgcx_province_rename.log. V2DLL logs: V2DLL/Logs/.
+  Current guide: tgcx_province_rename_test.txt in the game copy.
+
+## Next session in order
+
+1. **RENAME-U retry**, docs/instructions-rename-013.md. User launches the
+   installed copy, selects owned land while paused, then tests Rename,
+   Cancel/reopen/selection change and host close/reopen. Expected0.1.3,
+   49native guards, two constructed roots, entry placement and editor-open
+   records. No additional installation is needed.
+2. Once the entry works, complete docs/instructions-rename-u.md sections3-4:
+   real typing, Apply/readback/header/map, accents/limits, Cancel, stale
+   selection/ownership and save/reload. Compare actual screenshots with
+   docs/province-rename-layout.svg. ATCU coexistence remains a later check.
+3. Preserve fresh logs on any failure in a new evidence folder. Diagnose the
+   actual failed stage and read applicable ATCU pitfalls before patching.
+   Research/build first; fresh exit confirmation plus process gate before
+   installation. If exit hangs, do not terminate without new authorization.
+4. Existing Army follow-ups below stay separate. No release/publication work
+   follows automatically.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0 | 0.1.3 checked/installed; previous0.1.2 guard refused valid buttons | report-province-rename-button-type-1021.md |
+| RENAME-U | next: player retry entry/open/close, then full behavior | instructions-rename-013.md; instructions-rename-u.md |
+| TPL-5 / TPL-6 | 0.11.2 retained; acceptance and extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; no new release authorized | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | accepted0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+Next pitfall P61. Prior reports and candidates retained; binaries/native
+exports/live dumps/backups remain ignored under work/ or dll/**/Release/.
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+- **TPL-12 Replenish depleted regiments up to the template** (user,
+  2026-10-21). Unlike Conform, which only counts regiments by type, this
+  looks at strength: regiments that are depleted or close to being
+  destroyed are removed from the army, and fresh ones of the same type are
+  built and merged in (Conform's march-and-merge and TPL-7 orders), so the
+  army ends at full template strength. Open: the threshold (a fixed
+  strength %, or set per click), whether a depleted regiment is disbanded
+  (losing its pops' soldiers back to the pool?) or detached into a
+  reserve stack that reinforces normally, the order (build first and drop
+  the old one only when its replacement arrives, so the army is never
+  short), and whether it is a separate button or a Conform option. Needs
+  research: the regiment strength field and the native disband command
+  (R5: engine commands only).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+
+---
+
+# Session62 - missing Rename entry and live button-type evidence (2026-10-21)
+
+User screenshot and log show0.1.2 refusing valid standard-button definitions. Read-only live inspection measured the actual type/factory/registry.0.1.3 built/checked and installed;25,388protected files unchanged. User explicitly authorized force-close of stuck test PID47976 after normal exit hung. No game launched. Player retry pending; report-province-rename-button-type-1021.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-21 (62). **Province Rename 0.1.0 failed during GUI construction.
+Correction 0.1.2 is checked and installed in the dedicated TGC/V2DLL copy;
+player retry next.** Session61 NEXT archived verbatim in docs/archive/sessions.md.
+
+## Selected work and boundaries
+
+- Separate free-text Province Rename mod using V2DLL API 1. Native engine
+  command0x707 remains the sole simulation writer. No ATCU source changes.
+- User requested the ATCU pitfall review and a broader missed-issues audit.
+  See docs/report-province-rename-crash-1020.md and
+  docs/report-province-rename-preflight-1021.md, including limits.
+- The 0.1.0 GUI reused button names for labels. Native name lookup dispatched
+  a destructor while constructing the opening entry. No rename was queued.
+  Full logs/plugin/native exports retained in work/province-rename/crash-0100-1020/.
+- 0.1.2 fixes all three collisions, makes labels click-transparent and checks
+  button definition types in each owning window before native construction.
+  Interim 0.1.1 preflight registry scope was corrected before handoff. Adds native allocation
+  push guard, click-time stale-root refusal, aligned observers and diagnostics.
+- User confirmed fully closed after the crash. Process/executable gates passed
+  before update; only Rename GUI/version/plugin/test guide changed. No game
+  launched/terminated, commit/push or publication. Future updates need fresh
+  exit confirmation and process gate. User controls game launch/exit.
+
+## Installed copy and candidate
+
+- Game: work/Victoria-II-Province-Rename-TGC252/.
+  User opens victoria2.exe and ticks **Province Rename** and
+  **TGC v2.5.2 (stable)**. Profile TGC252_ProvinceRename_20261020.
+- Canonical mod/TGC, stock Lua and V2DLL5.98 distribution cdad55c7 retained.
+  Loader uses dinput8.dll plus V2DLL/v2dll_core.dll. No ATCU/Politics here.
+- 10/10 package hashes match 0.1.2;25,388 protected files match original baseline
+  before/after update. Evidence: crash-0100-1020/patch-012-installed.json.
+  Rollback of changed files: crash-0100-1020/before-012/.
+- ZIP: work/province-rename/candidate/Province-Rename-0.1.2-test.zip.
+  11 files, 179059 bytes; SHA-256
+  101bd8f220a4ba51f6cce3153cea247fe9d55d0531146030a2da46303956ded1.
+- 265 executable guards pass (unchanged 179 Army runtime +44 prior research
+  +42 Rename). Win32 build,38 native checks, 4 package tests,4 current-loader
+  probes and TGC scan pass. Native collision fixture executes actual builder
+  and destructor thunk with destructive endpoint intercepted. This does not
+  prove full GUI integration, text input, save/reload or multiplayer.
+- Current player guide: tgcx_province_rename_test.txt in the copy.
+  Rename log: Logs/tgcx_province_rename.log; V2DLL logs: V2DLL/Logs/.
+
+## Next session in order
+
+1. **RENAME-U retry**, docs/instructions-rename-012.md. User launches the
+   installed copy; select an owned land province while paused, then test
+   Rename open/Cancel/reopen/selection changes/host close. Verify 0.1.2,
+   42 signature guards, both native roots and placement in the log.
+2. If stable, complete docs/instructions-rename-u.md sections3-4: typing,
+   Apply, header/map readback, ownership/selection invalidation, accents,
+   boundaries and save/reload. Compare actual screenshots with
+   docs/province-rename-layout.svg. ATCU coexistence remains a later check.
+3. Preserve fresh full logs on failure. Do not overwrite the first crash
+   evidence. Read applicable ATCU pitfalls before another correction.
+   Research/build first; obtain fresh exit confirmation only before install.
+4. Existing Army follow-ups below remain separate; no release or publication
+   work follows automatically.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0 |0.1.0 construction failed; checked 0.1.2 correction installed | report-province-rename-preflight-1021.md |
+| RENAME-U | next: player retry selection/open/close, then full behavior | instructions-rename-012.md; instructions-rename-u.md |
+| TPL-5 / TPL-6 |0.11.2 retained; prior acceptance and extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU 0.0.2 published previously; no new release authorized | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU 0.0.1 | instructions-atcu-main.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | accepted 0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+Next pitfall P60. Native exports, binaries, loader fixtures and backups remain
+ignored under work/ or dll/**/Release/. Prior reports remain historical.
+
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+
+---
+
+# Session61 - Province Rename construction crash and correction (2026-10-21)
+
+User reported0.1.0 crash on province selection/name click and requested an ATCU pitfall audit. Preserved crash evidence, traced native cross-type dispatch, added P59, built/checked0.1.1 and installed after fresh fully-closed confirmation. Final preflight audit produced0.1.2;25,388protected hashes unchanged. Player retry remains pending. report-province-rename-preflight-1021.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-20 (61). **Province Rename 0.1.0 installed in a NEW dedicated game
+copy with TGC2.5.2 and current V2DLL. Player check next.** Session60 archived
+verbatim in docs/archive/sessions.md. User corrected the target: a new copy,
+not reuse of the existing Army test copy. That initial addition was reverted.
+
+## Selected work and boundaries
+
+- RENAME-0: new standalone package, no ATCU/Politics source changes, no base
+  GUI override, no replacement Lua proxy. Native CChangeProvinceNameCommand
+  (0x707) performs renames; arbitrary text never becomes generated script.
+- Owned land provinces only; native edit field, Apply/Cancel, 1-80 Windows-1252
+  characters. Selection/ownership/country/world changes invalidate the edit.
+- Current V2DLL supports each active mod's v2dll_mod.dll and dll_Submods.
+  Older 5.82 only loads the first mod plugin. Use current V2DLL for combining
+  this with ATCU. See the report and package README for the alternative route.
+- User confirmed normal exit; after the process gate, the new copy was
+  staged and verified. No game launch/exit, commit/push or publication.
+  User alone launches/exits; every subsequent update needs fresh normal-exit
+  confirmation and a process gate.
+
+## Ready-to-test game copy
+
+- Target: work/Victoria-II-Province-Rename-TGC252/.
+- User opens victoria2.exe there and selects **Province Rename** plus
+  **TGC v2.5.2 (stable)**. Only these two descriptors are present.
+- Independent profile: TGC252_ProvinceRename_20261020. Base from D: and
+  canonical mod/TGC from the verified stable source; 25,399 hashes checked.
+- Current V2DLL distribution pinned at cdad55c7 uses dinput8.dll plus
+  V2DLL/v2dll_core.dll. Stock Lua retained. LOAD_DLL_FROM_MOD_FOLDER=1.
+- No ATCU/Politics installed in this new copy. Earlier Army test copy
+  restored before staging. No main install or original game files modified.
+- Guide: work/Victoria-II-Province-Rename-TGC252/tgcx_province_rename_test.txt.
+- Installation report: docs/report-province-rename-fresh-tgc-1020.md.
+- Evidence: work/province-rename/fresh-tgc252-1020/{installed,verification}.json.
+
+## Candidate and evidence
+
+- ZIP: work/province-rename/candidate/Province-Rename-0.1.0-test.zip.
+  11 files, 178193 bytes; SHA-256
+  dfd67d998aa2c62d15b539b383a638c48a8766ddec81f22c21ce6561e4e8f082.
+- Source: dll/province_rename/; packaging: tools/prepare_province_rename.py.
+- 259 executable guards pass (179 Army/Politics runtime +44 prior research
+  +36 separate Rename runtime). Existing Army generated header unchanged.
+- 30 x86 native fixture checks, three package tests and four probes through
+  unmodified current V2DLL loader source pass. Loader probes deliberately
+  refuse an unsupported host before patches; they do not prove game loading.
+- Native reference-image execution confirms command allocation/id/name/id
+  fields, queue handoff, province setter and both map-label update paths.
+  Province header refresh occurs only after the applied name is observed.
+- Report: docs/report-province-rename-1020.md. Local layout spec:
+  docs/province-rename-layout.svg; generated preview in candidate/.
+
+## Next session in order
+
+1. **RENAME-U**, docs/instructions-rename-u.md: installation is complete in
+   the new copy above. User launches victoria2.exe, selects the two mods,
+   then verifies entry, input, Apply/Cancel, ownership/selection guards,
+   header/map labels and save/reload. Do not reinstall before this check.
+2. Preserve the full rename and V2DLL logs after normal exit. Compare actual
+   screenshots against the local layout spec; diagnose any failures before
+   another installation. Runtime and visual acceptance remain open.
+3. Army requests below stay separate. Existing TPL-5/TPL-6 extended checks
+   retain docs/instructions-tpl-5.md and docs/instructions-tpl-6.md; TPL-7
+   pre-Conform-save coverage remains unconfirmed. No release/publication
+   work follows automatically.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0 | implemented, checked and installed in the new copy; game check pending | report-province-rename-1020.md; report-province-rename-fresh-tgc-1020.md |
+| RENAME-U | next: user launches the NEW TGC/V2DLL copy and verifies | instructions-rename-u.md |
+| TPL-5 / TPL-6 | 0.11.2 retained; prior acceptance scope and extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload check passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; no new release authorized here | report-release-002-1019.md |
+| ATCU-MAIN | main E: remains previously installed ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | accepted 0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | respective existing instructions |
+
+Next pitfall P59. Binaries, native exports, loader research and test fixtures
+remain ignored under work/ or dll/**/Release/.
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+
+---
+
+# Session60 - dedicated Province Rename TGC/V2DLL copy (2026-10-20)
+
+User requested a NEW game copy, not reuse of an existing test installation. The initial Rename-only addition to the old test copy was removed with exact hash checks. After normal-exit confirmation and process gates, staged a new independent stock game + canonical TGC2.5.2 + current V2DLL + Rename copy.25,399payload hashes verified. No game launched. report-province-rename-fresh-tgc-1020.md.
+
+## NEXT.md at session start
+
+# NEXT - what comes next
+
+2026-10-20 (60). **Province Rename 0.1.0 implemented as a separate V2DLL
+plugin and staged. Not installed or tested in game.** Session59 archived
+verbatim in docs/archive/sessions.md. User selected free text in the province
+window and explicitly requested V2DLL integration.
+
+## Selected work and boundaries
+
+- RENAME-0: new standalone package, no ATCU/Politics source changes, no base
+  GUI override, no replacement Lua proxy. Native CChangeProvinceNameCommand
+  (0x707) performs renames; arbitrary text never becomes generated script.
+- Owned land provinces only; native edit field, Apply/Cancel, 1-80 Windows-1252
+  characters. Selection/ownership/country/world changes invalidate the edit.
+- Current V2DLL supports each active mod's v2dll_mod.dll and dll_Submods.
+  Older 5.82 only loads the first mod plugin. Use current V2DLL for combining
+  this with ATCU. See the report and package README for the alternative route.
+- No installation, game launch/exit, commit, push or publication performed.
+  User alone launches/exits. A fresh normal-exit confirmation and process
+  gate are required before game-copy installation writes.
+
+## Candidate and evidence
+
+- ZIP: work/province-rename/candidate/Province-Rename-0.1.0-test.zip.
+  11 files, 178193 bytes; SHA-256
+  dfd67d998aa2c62d15b539b383a638c48a8766ddec81f22c21ce6561e4e8f082.
+- Source: dll/province_rename/; packaging: tools/prepare_province_rename.py.
+- 259 executable guards pass (179 Army/Politics runtime +44 prior research
+  +36 separate Rename runtime). Existing Army generated header unchanged.
+- 30 x86 native fixture checks, three package tests and four probes through
+  unmodified current V2DLL loader source pass. Loader probes deliberately
+  refuse an unsupported host before patches; they do not prove game loading.
+- Native reference-image execution confirms command allocation/id/name/id
+  fields, queue handoff, province setter and both map-label update paths.
+  Province header refresh occurs only after the applied name is observed.
+- Report: docs/report-province-rename-1020.md. Local layout spec:
+  docs/province-rename-layout.svg; generated preview in candidate/.
+
+## Next session in order
+
+1. **RENAME-U**, docs/instructions-rename-u.md: select an isolated game copy
+   and suitable V2DLL loader; after fresh normal exit, install only this
+   package. User launches it and verifies entry, text input, Apply/Cancel,
+   ownership/selection guards, header/map labels and save/reload.
+2. Preserve the full rename and V2DLL logs after normal exit. Compare actual
+   screenshots against the local layout spec; diagnose any failures before
+   another installation. Runtime and visual acceptance remain open.
+3. Army requests below stay separate. Existing TPL-5/TPL-6 extended checks
+   retain docs/instructions-tpl-5.md and docs/instructions-tpl-6.md; TPL-7
+   pre-Conform-save coverage remains unconfirmed. No release/publication
+   work follows automatically.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0 | implemented and automatically checked; not installed or tested in game | report-province-rename-1020.md |
+| RENAME-U | next: installation choice and player verification | instructions-rename-u.md |
+| TPL-5 / TPL-6 | 0.11.2 retained; prior acceptance scope and extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload check passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; no new release authorized here | report-release-002-1019.md |
+| ATCU-MAIN | main E: remains previously installed ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 | accepted 0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | respective existing instructions |
+
+Next pitfall P59. Binaries, native exports, loader research and test fixtures
+remain ignored under work/ or dll/**/Release/.
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+
+---
+
+# Session59 - separate V2DLL province renaming (2026-10-20)
+
+User selected free-text province-window renaming and V2DLL integration. Implemented and staged Province Rename 0.1.0 independently of ATCU/Politics. Native command, loader and package checks pass; no game installation or launch. In-game verification next. See report-province-rename-1020.md.
+
+## NEXT.md at session start (including pre-existing user changes)
+
+# NEXT - what comes next
+
+2026-10-19 (59). **ATCU culture and continent filters implemented as
+internal0.11.0 and installed in the isolated TGC copy. Player test next.**
+Session58 archived in docs/archive/sessions.md.
+
+**Update 2026-10-19 (release): ATCU 0.0.2 prepared from internal 0.11.2.** work/releases/final/ATCU-0.0.2.zip, SHA-256 e656c58d...becb4a6, source a90050c, pushed; published 2026-10-19 as pre-release v0.0.2 (tag on cae2a68) with the ZIP and its .sha256, re-download hash verified. docs/report-release-002-1019.md. The 0.11.x filters were not rechecked on vanilla, HPM or DoD.
+
+**Update 2026-10-19 (later): TPL-7, 0.11.2, Conform orders survive a load; PASSED in game (2 orders resumed and merged after a load; pre-Conform save case unconfirmed); installed in the isolated TGC copy 2026-10-19 (41/41 verified, backup work/orders-0112/before-tgc/).** A reload had sent a Conform regiment to the rally point (D13 forgot it). The user chose option 2 (D13 revised): tgcx_conform_orders.txt beside the templates records tag, date, stack and construction ids; a load of that tag dated within an order resumes the march and merge. docs/report-tpl-7-orders-1019.md. Candidate work/orders-0112/ATCU-orders-0.11.2-test.zip; Run the report's section 7 check (marker TGCX TPL-7 0.11.2).
+
+**Update 2026-10-19: 0.11.1 GUI refinement installed in the isolated TGC copy; user reports it works great (checklist items not individually confirmed).** Native
+checkboxes with a "Culture" caption (no band in the builder), compact
+`Recruit from < Any continent >`, continents limited to those with owned
+provinces, and filter-guard failure keeps unrestricted Army on.
+docs/report-army-filters-gui-1019.md. Candidate
+work/filters-0111/ATCU-filters-0.11.1-test.zip; backup work/filters-0111/before-tgc/.
+Run steps 1-2 below on 0.11.1 (marker TGCX TPL-5+TPL-6 0.11.1).
+
+## User decisions and boundaries
+
+- Culture modes per template: Primary + accepted / Primary only; neither
+  means All. Used by Build Army and Conform missing recruitment. Existing
+  regiments remain counted by type, no culture-based purge.
+- Continent choice: current recruitment action, default Any. Session-only
+  builder selector, never saved per template. Conform retains independent
+  D17 land reach and ignores this continent selector.
+- User supplied current GUI screenshots, retained as visual references.
+  Keep652x528builder/eight unit rows and332x594Conform. Filter band reduces
+  visible Conform changes to seven rows, with overflow/totals retained.
+- Name ATCU - Army Template and Conform Universal. No em dashes. Files-only
+  ZIP, one README.txt, no recipient scripts. License remains undecided.
+- User alone launches/exits. Fresh normal-exit confirmation/process gate
+  before any further game-copy writes. No new commit/push/publication or
+  Politics expansion authorized.
+
+## Installed candidate
+
+User confirmed normal exit and chose isolated TGC installation.39/39mod
+files verified in work/Victoria-II-clean-TGC252. Existing V2DLL5.82/Lua,
+old packages and protected base anchors unchanged. No game launched.
+
+Open that copy's victoria2.exe, select **ATCU - Army Template and Conform
+Universal** plus **TGC v2.5.2 (stable)** only. Untick old Army/Politics.
+Expected log: TGCX TPL-5+TPL-6 0.11.0, V2DLL plugin API v1.
+Backup: work/filters-0110/before-tgc/. Installation and test evidence:
+work/filters-0110/{installed-tgc,verification}.json. Test guide in game root
+was refreshed with its original retained in the backup.
+
+Main E:/Victoria.II.v3.04.Inclu.ALL.DLC remains ATCU0.0.1/internal0.10.4;
+vanilla/HPM/DoD test copies remain0.10.4. Four-base acceptance applies to
+0.10.4, not these filters. Main install instructions remain separate.
+
+## Implementation and checks
+
+- report-army-filters-implementation-1019.md: per-pop culture snapshot,
+  cached loaded continent catalogue, exact engine-command pop selection,
+  shared preview/action filtering, paused preview revision invalidation.
+- Imports old tgcx_templates.txt when v2 absent. Edits save atomically to
+  tgcx_templates_v2.txt. Original v1 stays intact; malformed v2 refuses,
+  never falls back to unrestricted. Old build reads v1, so v2-only edits
+  remain unavailable there. No continents or native pointers persisted.
+-223executable checks pass:179runtime +44research, generated header matches;
+  TGC scan, Win32 build, native/real-D3D9 fixtures pass. Python109full-suite
+  cases plus added package-mismatch guard pass,110distinct cases checked.
+  Packaged loader and V2DLL API probes pass. No filter game acceptance yet.
+- Visual previews use actual staged art/control geometry. Current supplied
+  captures and new PNG/SVG references are indexed in visual-references.md;
+  native font/visibility/hit-testing still require player verification.
+  Remote historical artifact was not republished.
+- Files-only candidate: work/filters-0110/ATCU-filters-0.11.0-test.zip,
+  41files,1,052,283bytes; SHA256
+  04ca8a523016ce0d55099c049c76a6b81a7a75f3d3c92ec675541a0ce0ddf572.
+  Accepted slim0.0.1 ZIP and main installation retained unchanged.
+
+## Next session in order
+
+1. **TPL-5 player check**, docs/instructions-tpl-5.md. User launches isolated
+   TGC copy; compare All / Primary + accepted / Primary only from mixed
+   culture soldier pops, actual source pops and shortage. Toggle while
+   paused, save/reload; Conform existing units unchanged by culture.
+2. **TPL-6 player check**, docs/instructions-tpl-6.md. Same template with
+   Any / Europe / another owned continent; compare actual source continent
+   and shortage. Check combinations with culture, and Conform land reach
+   independently. No sea routing implied by continent membership.
+3. After normal exit preserve full Logs/tgcx.log and Logs/v2dll.log. Verify
+   marker/catalogue/commands and user visuals. Diagnose failures before
+   any additional installation; fresh exit confirmation for every update.
+4. Once TGC filters accepted, stage focused vanilla/HPM/DoD checks of the
+   changed controls/source selection. Keep previous packages as rollback;
+   do not claim acceptance from fixtures or previous0.10.4matrix.
+5. Record actual test scope and close under ROADMAP7. Public release work
+   follows instructions-release-0.md separately; no automatic upload/push.
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| TPL-5 |0.11.0implemented, installed isolated TGC, player verification next | instructions-tpl-5.md; report-army-filters-implementation-1019.md |
+| TPL-6 |0.11.0implemented, session-only selector, player verification next | instructions-tpl-6.md; same report |
+| ATCU-MAIN |0.0.1retained on main E: | instructions-atcu-main.md; report-atcu-main-install-1019.md |
+| RELEASE-0 | slim local0.0.1 retained; publication separate | instructions-release-0.md |
+| MOD-6 / MOD-3 / MOD-4 / MOD-5 |0.10.4four-base short accepted; filters unaccepted | instructions-mod-6.md |
+| TPL-3 / TPL-4 / V2D-082 | accepted baselines | existing reports |
+| LAW-4 / U-12 Bill | deferred | respective instructions |
+| V2D-2 | separate author-side enhancement | report-v2dll-mod-slot-1018.md |
+| MOD-1 / MOD-2 / LAW-3 / U-11 | accepted baselines; G1/G3 deferred | existing reports |
+| TPL-0 / TPL-1 / U-8 | accepted | existing reports |
+| TPL-2 | on hold; Conform covers it | instructions-tpl-2.md |
+| GOV-0 / Economy / COMPAT-0 | not selected / deferred | technical-plan.md; instructions-compat-0.md |
+
+Next pitfall P59. Native exports, art and binaries stay ignored work/.
+
+
+---
+
 # Session58 - ATCU culture and continent filters (2026-10-19)
 
 User authorized both filters, chose a session-only continent choice defaulting to Any, supplied current GUI references, then confirmed normal exit and selected installation in the isolated TGC copy. Implemented0.11.0, validated and installed39mod files with rollback. Main0.0.1 retained. Player verification next. See report-army-filters-implementation-1019.md.
@@ -5303,3 +7193,163 @@ There was no `NEXT.md`: it is the first session.
   upper house at `CCountry+0x8B0` (read in the code, not run).
 
 Report: `docs/report-initial-1012.md`.
+
+
+## Session 71 NEXT archived on 2026-10-22 before PR-2 integration close
+
+# NEXT - what comes next
+
+2026-10-21 (71). **TPL-8 design approved; implementation held at user's
+wait instruction for fedacking's Rust work.** Province Rename0.2.6 ZIP
+remains ready/installed and unpublished. Session70 starting NEXT archived
+verbatim in docs/archive/sessions.md.
+
+## ATCU current instruction: hold implementation for Rust coordination
+
+- User selected easier features first and approved Non-core only as a third
+  mutually exclusive checkbox in Templates AND Conform. None selected=All;
+  clicking the selected box clears. Narrow Conform can use two lines.
+- User then said wait because fedacking is porting to Rust. No ATCU source,
+  generated header, art, package, build, game or settings change was made.
+  work/noncore-0113 is only a scratch folder/executable gate, not a build.
+- Verified GitHub PR#1 merged: Rust lua51 loader plus C++ build-compatibility
+  fixes, including Templates click-body/SEH split. Merge1727804b; current
+  local HEAD045bbfd5 is its base and has not incorporated it. Preserve all
+  local uncommitted Province Rename work before any upstream integration.
+- The non-core feature does not require a loader-interface change. A wider
+  in-progress recruitment/UI port could still need the feature ported too;
+  unpublished scope is unknown. Do not infer it from the merged loader PR.
+- Before resuming implementation, clarify port ownership/scope and reconcile
+  merged changes safely. No messages to fedacking, fetch/merge/rebase/push,
+  source changes or installation were performed. No autonomous continuation
+  of feature coding while this user hold applies.
+- Report docs/report-tpl-8-rust-coordination-1021.md; current instructions
+  docs/instructions-tpl-8.md. The older TPL-8 open-choice wording in the
+  retained future queue below predates the approval above and is historical.
+
+
+## Current scope and evidence
+
+- User says0.2.5 works awesome. Screenshot/log confirms short dialog,
+  typing/caret and repeated native renames with map/header updates.
+- 0.2.6 raises24px ABC2px and changes name gap8px to10px. Native font/name
+  anchor and clamping retained; accepted editor/caret/commands unchanged.
+  Final2px visual check itself remains pending. No new addresses/pitfall.
+- Initial request to release was superseded explicitly: dont release it
+  yet, just give me the zip. No commit/push/tag/remote creation/publication.
+  Public-release README/notes are prepared prospective material only.
+- Package is Universal additive V2DLL, reference3.04/current V2DLL required.
+  No dependencies/user_dir/replace_path/base GUI/data override. Native
+  command0x707 only changes simulation. Other-base gameplay, ATCU
+  coexistence, extended lifetime/save-reload and multiplayer remain untested.
+- Current report docs/report-province-rename-package-1021.md. Current board
+  docs/province-rename-layout.svg; previous025 board archived verbatim in
+  docs/archive/province-rename-layout-025.svg. Native art stays ignored.
+
+## Local deliverable and installed copy
+
+- ZIP work/releases/province-rename/0.2.6/Province-Rename-Universal-0.2.6.zip:
+  12files,264502bytes. SHA256
+  fcc68a16c0987c5f947d8ada1fde7060c85a2e2b3f51da4d703f8ed05055ce9f.
+  Adjacent .zip.sha256, SHA256.json, PROVENANCE.json and RELEASE.json.
+  published=false; no destination or source commit selected. ZIP's11mod
+  payload members byte-identical to checked0.2.6 candidate; README only differs.
+- work/Victoria-II-Province-Rename-TGC252 updated after fresh user Yes,
+  closed normally confirmation and process gate.11payload/25,388protected
+  hashes pass; protected unchanged. Full0.2.5/guide rollback before-026 in
+  work/province-rename/release-026-1021/, exact patch-026-installed.json.
+  Earlier backups retained. No game launch/termination/main/other-copy change.
+- Stock Lua, canonical TGC, V2DLL5.98/cdad55c7 and independent profile kept.
+- 301guards/78Rename runtime, Win32 build,66native/4package/4actual-loader
+  checks pass. Five-base checks are static, not gameplay. Native-art pixels
+  and binaries remain in ignored work/. No memory update. Next pitfall P64.
+
+## Next session in order
+
+0. **TPL-8 held**: follow docs/instructions-tpl-8.md. Await clarification/
+   resumption concerning Rust scope; preserve approved checkbox design.
+   Inspect/reconcile upstream before implementation when work resumes.
+
+1. Deliver local ZIP (and optional .sha256). No publication or new install.
+   Current instructions docs/instructions-rename-026.md.
+2. If user wants final appearance check, they launch dedicated copy with
+   Province Rename (Universal)+TGC v2.5.2 (stable), inspect2px higher ABC/
+   10px name gap and recheck opening/typing/rename. Expect0.2.6 Universal,
+   78native signatures in Logs/tgcx_province_rename.log. Preserve fresh logs/
+   unedited captures after normal exit. Final positioning unconfirmed yet.
+3. Full limits/ownership/lifetime/save-reload per instructions-rename-020.md
+   sections2-3; other-base gameplay/ATCU/MP only when selected later.
+4. Publishing remains expressly deferred. If user asks again, confirm exact
+   destination then finish source/release identity before publishing. Do not
+   treat the old release request as standing authorization. Installation
+   still requires fresh user exit/install instruction and process gate.
+   Never launch/terminate the game autonomously; keep all rollbacks.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| RENAME-0/U/025 | short rename/editor/typing/caret accepted; full cases pending | instructions-rename-020.md |
+| RENAME-026 | final ABC tweak installed, ZIP ready; publication deferred by user | instructions-rename-026.md |
+| RENAME-MP | theoretical only; no host/client/OOS test | instructions-rename-020.md section4 |
+| TPL-8 | design approved, implementation held for Rust coordination; no new source/build | instructions-tpl-8.md |
+| TPL-5/6 |0.11.2 retained; extended checks unchanged | instructions-tpl-5.md; instructions-tpl-6.md |
+| TPL-7 | short reload passed; pre-Conform-save case unconfirmed | report-tpl-7-orders-1019.md |
+| RELEASE-0 | ATCU0.0.2 published previously; separate from Rename | report-release-002-1019.md |
+| ATCU-MAIN | main E: retains ATCU0.0.1 | instructions-atcu-main.md |
+| MOD-6/3/4/5 | accepted0.10.4 short matrix retained | instructions-mod-6.md |
+| LAW-4 / U-12 Bill | deferred | existing instructions |
+
+## Next up after 0.0.2 (user, 2026-10-20)
+
+From the published v0.0.2 release notes, in the order listed there. Card
+names are proposed; nothing is designed or implemented yet. Each needs its
+mockup (R10) and the open [user] questions answered (R9) before work starts.
+
+- **TPL-8 Non-core culture mode.** A third culture mode: recruit only from
+  pops that are neither primary nor accepted (spare core pops). Smallest of
+  the three: extends `tgcx_CultureMode` in `dll/tgcx/tgcx_army_filters.h`
+  and the culture checkboxes. Open: how it sits with the two existing
+  checkboxes (three exclusive options vs a fourth state), and whether
+  Conform uses it too.
+- **TPL-9 Autodivide.** Split a selected stack into N stacks by a rule.
+  Conform's extras detach (Create + Transfers queued together, P51) is the
+  base. Open: the rule (into single regiments, into N equal stacks, into
+  copies of a template), where the button lives, and what happens to the
+  leader.
+- **TPL-10 Carpet siege.** Spread a stack over enemy provinces to siege
+  them at once. Needs TPL-9's split plus one Move per new stack (safe path,
+  as Conform). Open: which provinces (all enemy-controlled in a region or
+  around the stack), how many regiments per province, and whether it keeps
+  re-targeting when a siege ends (that would be a running order, not a
+  one-off click).
+
+- **TPL-11 Build Army gathers into one army** (user, 2026-10-20). Today
+  Build Army posts one construction per province, so the regiments finish
+  as separate stacks that go to the native rally point (or stay put).
+  Instead, record a Build Army order like a Conform order (TPL-7 file):
+  every finished regiment marches to one gathering province and merges
+  into a single army; the first to arrive becomes the army. Reuses
+  Conform's march-and-merge and its load resume. Makes several rally points
+  irrelevant for template armies. Open: how the gathering province is
+  chosen (picked by the player, the capital, the largest source province,
+  or the native rally point), and what happens to regiments that cannot
+  reach it by land (D17).
+- **TPL-12 Replenish depleted regiments up to the template** (user,
+  2026-10-21). Unlike Conform, which only counts regiments by type, this
+  looks at strength: regiments that are depleted or close to being
+  destroyed are removed from the army, and fresh ones of the same type are
+  built and merged in (Conform's march-and-merge and TPL-7 orders), so the
+  army ends at full template strength. Open: the threshold (a fixed
+  strength %, or set per click), whether a depleted regiment is disbanded
+  (losing its pops' soldiers back to the pool?) or detached into a
+  reserve stack that reinforces normally, the order (build first and drop
+  the old one only when its replacement arrives, so the army is never
+  short), and whether it is a separate button or a Conform option. Needs
+  research: the regiment strength field and the native disband command
+  (R5: engine commands only).
+
+Also asked by a player (2026-10-20), not selected: **mobilisation into a
+template** (mobilised regiments join an army to fill its template). Needs
+its own research: mobilised regiments are created by mobilisation, not
+built, and taking them would partly reverse D13's "Conform always builds".

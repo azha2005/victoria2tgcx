@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P59**).
+number (**the next one is P64**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -466,6 +466,15 @@ number (**the next one is P59**).
 
 - **P58** Map province+0x2A is IS LAND (nonzero), not sea. Old route fixture repeated the wrong polarity; validate field meaning independently with native coastal/port policy.
 
+- **P59** Shared GUI definition names must be unique across control types. A button/text collision can dispatch a destructor during root construction; validate the generated schema and resolved native button type before calling the factory.
+
+- **P60** Similar GUI class names do not establish the concrete parsed type. Plain guiButtonType resolved live to CButtonType (RVA A3CFBC), not CEU3ButtonType (A08D2C). Validate live/parser evidence and actual registry lookup before encoding a type guard; a fixture using the same guessed type cannot prove it.
+
+- **P61** Verify concrete size and text-origin fields: live window width is runtime+0x4A0, not definition+0xA0 (X). Native text Draw also applies local+0x188/+0x18C beyond the graphical owner matrix. Fixtures must preserve the live distinction and execute an independent native consumer.
+- **P62** Native edit border insets feed both text texture rasterization and entity positioning. Center once: zero texture padding during refresh, then shared text/caret origin. Test actual refresh/setter/position and repeated parent placement, not only inset writes.
+- **P63** A native caret sprite's visible ink differs from its container. Compensate the native cursor's transparent margins and measured3px gap through caret-only fields, leaving shared text centering intact. Check visible bounds and actual caret update RET4 ABI.
+
+
 ## 9. Decisions
 
 | ID | Decision | Options | Status |
@@ -486,6 +495,8 @@ number (**the next one is P59**).
 | **D14** | Reforms tab offer | **A + B**: a row is offered only if its bill's decision passes its own `allow` (flag written by the favour collection), and backward steps only where the native game allows a backward reform. Mockup board 1 changes with it (R10) | **closed** (user, 2026-10-18); `docs/report-u-7-1018.md` F4, `docs/instructions-law-3.md` |
 | **D16** | V2DLL coexistence | **(a) own `lua51.dll` proxy now; (b) after MOD-1, one logic DLL (`tgcx.dll`) behind two thin loaders**: our own `lua51.dll` proxy, and V2DLL (its `v2dll_mod.dll` slot, or loading by a V2DLL setting as maxioten suggested). Per-mechanic signature gates first. (c), plugin only, rejected. Open: V2DLL's slot reads only the **first** `-mod=`, which is TGC's (MOD-0 run 1), so loading by setting, or V2DLL searching every `-mod=`, is asked of V2DLL | **closed** (user, 2026-10-18; shape agreed the same day); `docs/report-v2dll-mod-slot-1018.md` §7 |
 | **D17** | Overseas Conform recruitment | Recruit only from provinces that can reach the selected army by land; report shortages. Existing overseas troops remain for manual transport. | **closed** (user, 2026-10-19); docs/report-conform-land-reach-1019.md |
+| **D18** | Province Rename scope and UI | Separate Universal additive free-text V2DLL mod for reference3.04. Native white/green/gold/parchment editor, black centered Garamond input, aligned caret,24px ABC right of name. User accepts0.2.5;0.2.6 final ABC placement installed, local ZIP ready. Latest explicit scope: do not release yet, just give ZIP. MP untested. | **closed** (user, 2026-10-20/21); docs/report-province-rename-package-1021.md |
+| **D19** | ATCU non-core culture filter | Third Non-core only checkbox in both Templates and Conform; mutually exclusive with existing choices, none=All, click selected=clear. Narrow Conform may use two lines. Hold lifted 2026-10-24 (all new DLL code Rust); built in Rust 0.11.3, Conform 6 Changes rows, settings v3. | **closed**; passed in game (2026-10-24); docs/report-tpl-8-noncore-1024.md |
 | **D10** | Language | **English for everything**: code, comments, docs, file names, commit messages, in-game text and chat. Nothing is written in Spanish. All existing files were translated on 2026-10-12 | **closed** (user, 2026-10-12) |
 
 ---

@@ -1,5 +1,24 @@
 # Current interface references
 
+## Province Rename Universal (user, 2026-10-21)
+
+User accepts0.2.5: native white/green/gold title, continuous parchment,
+double input braids, black centered Garamond typing, aligned native caret,
+blue/gold buttons and24px native ABC right of province name. Latest tweak
+0.2.6 raises ABC2px and changes its name gap8px to10px; final position itself
+has native geometry checks but no new player appearance confirmation yet.
+Accepted editor otherwise unchanged. Report-province-rename-package-1021.md.
+
+Current board docs/province-rename-layout.svg, native332x224 editor/296x30
+input; private font preview work/province-rename/candidate/layout-preview-026-native.png.
+Native external pixels remain versioned under ignored work/province-rename/
+mockup-assets-0.2.6/, never embedded in tracked source. The host preview is
+illustrative, not a gameplay capture. Prior025/024/023/022/021/0100 boards
+retained verbatim under docs/archive/, with external paths relative to the
+original docs/ location. Historical remote artifact not republished.
+Accepted025 screenshot/log retained under work/province-rename/release-026-1021/.
+Local ZIP only; publication explicitly deferred by the user.
+
 ## Conform (user correction, 2026-10-19)
 
 The current accepted reference is `mockups/6-conform-current-1019.png`, the
@@ -60,3 +79,12 @@ supersede the 0.11.0 filter previews: native GFX_checkbox_default boxes with a
 "Culture" caption (builder row without background, at the user's request;
 Conform row keeps its regiment-row band) and the compact builder footer
 `Recruit from < Any continent >`. Generated from staged art; not game captures.
+
+## 0.11.3 Non-core previews (2026-10-24)
+
+mockups/5-templates-noncore-1024.png and mockups/6-conform-noncore-1024.png
+supersede the 1019b filter previews for TPL-8. Templates: three boxes on the
+culture row (Primary only moved 204 to 196). Conform: the culture band has two
+lines with Non-core only on line 2, and Changes drops from 7 to 6 visible rows.
+Rendered by work/noncore-0113/render_previews.py from staged art (Arial); these
+are not game captures.

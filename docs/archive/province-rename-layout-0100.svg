@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="320" viewBox="0 0 780 320">
+<style>text{font-family:Arial;fill:#342d20;font-size:14px}.title{fill:#f8f1d7;font-size:20px}.small{font-size:12px}</style>
+<rect width="780" height="320" fill="#303d42"/>
+<text x="20" y="30" fill="white" style="fill:white">Province Rename 0.1.0 - interface specification, 2026-10-20</text>
+<g transform="translate(15,65)">
+<rect width="380" height="230" fill="#e2d6b7" stroke="#675d3f"/>
+<rect width="380" height="30" fill="#4f6249"/>
+<text x="17" y="21" class="title">Buenos Aires</text>
+<rect x="17" y="27" width="84" height="18" fill="#d4c59d" stroke="#675d3f"/>
+<text x="59" y="40" text-anchor="middle" class="small">Rename</text>
+<text x="17" y="61">La Plata</text>
+<text x="17" y="115" class="small">Existing province controls stay in place.</text>
+<text x="17" y="137" class="small">Rename is available for owned provinces.</text>
+</g>
+<g transform="translate(415,65)">
+<rect width="340" height="180" rx="2" fill="#e2d6b7" stroke="#675d3f"/>
+<rect width="340" height="32" fill="#4f6249"/>
+<text x="170" y="23" text-anchor="middle" class="title">Rename province</text>
+<text x="16" y="53">La Plata</text>
+<rect x="16" y="65" width="308" height="28" fill="#f5ecd6" stroke="#675d3f"/>
+<text x="24" y="85">New La Plata</text>
+<text x="16" y="112" class="small">1-80 characters. Your provinces only.</text>
+<rect x="16" y="132" width="140" height="30" fill="#d4c59d" stroke="#675d3f"/>
+<text x="86" y="152" text-anchor="middle">Apply</text>
+<rect x="184" y="132" width="140" height="30" fill="#d4c59d" stroke="#675d3f"/>
+<text x="254" y="152" text-anchor="middle">Cancel</text>
+</g>
+</svg>
