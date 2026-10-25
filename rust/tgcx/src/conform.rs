@@ -419,6 +419,16 @@ pub const LOAD_FRAMES: u32 = 3;
 /// game date and is ignored.
 pub const DATE_MIN: u32 = 5000 * 8760;
 
+/// A forward date change no game speed makes between two frames: 45 times the smallest
+/// day step seen, or, before any step is known (right after a load, and in the main
+/// menu, whose world shows the bookmark date), more than two days. A save loaded from
+/// the menu is dated after the bookmark (0.11.14 log: 1 January, then a later save,
+/// never seen as a load).
+pub fn date_jump(previous: u32, date: u32, step: u32) -> bool {
+    let limit = if step != 0 { step * 45 } else { 48 };
+    date > previous && date - previous > limit
+}
+
 pub fn confirm_load(frames: &mut u32, load: bool) -> bool {
     if !load {
         *frames = 0;
@@ -686,5 +696,18 @@ mod tests {
         assert!(!confirm_load(&mut frames, true));
         assert!(confirm_load(&mut frames, true));
         assert_eq!(frames, 0);
+    }
+
+    #[test]
+    fn a_save_loaded_from_the_menu_is_a_jump() {
+        let jan1 = DATE_MIN + 1836 * 8760;
+        // Menu (no step yet): a save dated 39 days later is a load; one day is not.
+        assert!(date_jump(jan1, jan1 + 39 * 24, 0));
+        assert!(!date_jump(jan1, jan1 + 24, 0));
+        assert!(!date_jump(jan1, jan1 + 48, 0));
+        // Playing (one day per step): 39 days is not, 46 days is.
+        assert!(!date_jump(jan1, jan1 + 39 * 24, 24));
+        assert!(date_jump(jan1, jan1 + 46 * 24, 24));
+        assert!(!date_jump(jan1, jan1 - 24, 0));
     }
 }

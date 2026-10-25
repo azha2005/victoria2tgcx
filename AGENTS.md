@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P65**).
+number (**the next one is P66**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -474,6 +474,7 @@ number (**the next one is P65**).
 - **P62** Native edit border insets feed both text texture rasterization and entity positioning. Center once: zero texture padding during refresh, then shared text/caret origin. Test actual refresh/setter/position and repeated parent placement, not only inset writes.
 - **P63** A native caret sprite's visible ink differs from its container. Compensate the native cursor's transparent margins and measured3px gap through caret-only fields, leaving shared text centering intact. Check visible bounds and actual caret update RET4 ABI.
 - **P64** One odd frame (bogus date around a save) looked like a load: tasks were dropped and the resume skipped them, so new regiments stayed put. A load must now hold three frames in a row (0.11.14).
+- **P65** The main menu's world shows the bookmark date: a save loaded from the menu jumps forward with no day step known and was never a load. Any jump over two days then counts (0.11.15).
 
 
 ## 9. Decisions

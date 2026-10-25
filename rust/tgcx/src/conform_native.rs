@@ -1431,7 +1431,7 @@ fn daily(g: &CfGlobals) {
     // A load: another world or country, the date going back, or a jump no game speed
     // makes between two frames (45 times the smallest day step), seen on several
     // frames in a row; until then nothing steps.
-    let jump = date > s.date && s.step != 0 && date - s.date > s.step * 45;
+    let jump = conform::date_jump(s.date, date, s.step);
     let load = g.world != s.world || player != s.player || date < s.date || jump;
     let confirmed = conform::confirm_load(&mut s.load_frames, load);
     if load && !confirmed {

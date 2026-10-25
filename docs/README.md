@@ -1,6 +1,7 @@
 # Index of `docs/`
 
-- `report-tpl-12-load-1024.md`: current 0.11.14: 0.11.13 regiment did not march; false load detection (P64) fixed with a three-frame confirmation; verified install; not tested in game.
+- `report-tpl-12-menu-load-1024.md`: current 0.11.15: a save loaded from the main menu was never seen as a load (P65); fixed; verified install; not tested in game.
+- `report-tpl-12-load-1024.md`: previous 0.11.14: 0.11.13 regiment did not march; false load detection (P64) fixed with a three-frame confirmation; verified install; not tested in game.
 - `report-tpl-12-reload-1024.md`: previous 0.11.13, review of 0.11.12, Replace reload fixes (merged state, orders file v2, unresumable records closed), README wording, verified install; not tested in game.
 - `report-tpl-12-visual-check-1024.md`: current 0.11.12 alignment/title visual short pass and preserved-log audit; 206 guards OK, empty error logs, no new replacement execution/resume evidence; functional checks open.
 
@@ -13,7 +14,7 @@
 - `report-tpl-12-install-1024.md`: 0.11.8 installed in the own-loader TGC test copy, backup and payload/protected-file hashes verified; player check pending.
 
 - `report-tpl-12-header-1024.md`: previous TPL-12 option A, Rust 0.11.8, independent header buttons/chooser/culture, verified local ZIP with README/changelog; installation recorded separately in report-tpl-12-install-1024.md.
-- `instructions-tpl-12-check.md`: current player checks for installed 0.11.14: stranded regiment from the 9 February save, new replacement, save during construction and after the merge.
+- `instructions-tpl-12-check.md`: current player checks for installed 0.11.15: stranded regiment from the 9 February save, new replacement, save during construction and after the merge.
 
 - `report-tpl-11-gather-1024.md`: TPL-11 Build Army gathering built in Rust 0.11.4; Gather at row, Best supply/Capital/Selected, ring placement, gather orders file, tests, local candidate; not tested in game.
 - `report-tpl-12-replace-1024.md`: TPL-12 Replace depleted built in Rust 0.11.7: chooser window beside Conform, depleted rule, detach after merge, replace orders file, gates, candidate and short gameplay pass (section 9); superseded interface by 0.11.8.

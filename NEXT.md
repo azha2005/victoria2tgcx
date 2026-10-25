@@ -1,10 +1,10 @@
 # NEXT - what comes next
 
-2026-10-24 (81). **TPL-12 0.11.14 installed in the test copy. User: 0.11.13
-GUI fine, but the new regiment did not go to the stack. Cause: a false
-"load" dropped the order (P64); 0.11.14 needs three frames in a row.
-Not tested in game.** `work/tpl12-01114/ATCU-0.11.14-candidate.zip`.
-Fix: `docs/report-tpl-12-load-1024.md`. 0.11.13 reload fixes and README:
+2026-10-24 (81). **TPL-12 0.11.15 installed in the test copy (not committed;
+0.11.14 is b9bf601). User: Lubny regiment still did not march on 0.11.14.
+Cause: a save loaded from the main menu was never seen as a load (P65).
+Not tested in game.** `work/tpl12-01115/ATCU-0.11.15-candidate.zip`.
+Fixes: `docs/report-tpl-12-menu-load-1024.md`, `docs/report-tpl-12-load-1024.md` (P64). 0.11.13 reload fixes and README:
 `docs/report-tpl-12-reload-1024.md`.
 Earlier visual short pass (0.11.12): `docs/report-tpl-12-visual-check-1024.md`.
 
@@ -35,7 +35,8 @@ Earlier visual short pass (0.11.12): `docs/report-tpl-12-visual-check-1024.md`.
   old-regiment detach (report-tpl-12-replace-1024.md section 9). Strength
   scale was confirmed. 0.11.8 then passed the user's general short check and supplied capture.
   Neither acceptance proves the remaining reload/multiplayer cases.
-- **0.11.14 is installed** in `work/Victoria-II-TGC252-own-loader`;
+- **0.11.15 is installed** in `work/Victoria-II-TGC252-own-loader`;
+  immediate 0.11.14 rollback: `work/tpl12-01115/before-01115`;
   immediate 0.11.13 rollback (with log and settings): `work/tpl12-01114/before-01114`;
   0.11.12 rollback (with settings): `work/tpl12-01113/before-01113`
   (restore `tgcx_replace_orders.txt` too: 0.11.12 ignores the v2 file);
@@ -54,7 +55,7 @@ Earlier visual short pass (0.11.12): `docs/report-tpl-12-visual-check-1024.md`.
 
 | Card | Status | Instructions |
 |---|---|---|
-| TPL-12-CHECK | 0.11.14 installed; GUI passed; march/merge/detach and reload open | `docs/instructions-tpl-12-check.md` |
+| TPL-12-CHECK | 0.11.15 installed; GUI passed; march/merge/detach and reload open | `docs/instructions-tpl-12-check.md` |
 | TPL-11-CHECK | Rally selector/gather short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
 
 1. TPL-12-CHECK: use `docs/instructions-tpl-12-check.md` steps 1-4, starting
@@ -80,4 +81,4 @@ Earlier visual short pass (0.11.12): `docs/report-tpl-12-visual-check-1024.md`.
 
 Installation completed on explicit user instruction with clear process
 gates. No public release, commit/push or game launch/termination.
-Next pitfall is P65.
+Next pitfall is P66.

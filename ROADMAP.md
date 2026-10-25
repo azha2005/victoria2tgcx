@@ -43,6 +43,13 @@
 
 ## 1. Status by stage (as of 2026-10-24)
 
+2026-10-24, session 81 (last): 0.11.14 committed/pushed (b9bf601). User:
+Lubny regiment still did not march. Log: only the menu's bookmark-date
+load was seen; the later save loaded forward was never a load (P65).
+Rust **0.11.15**: before a day step is known, a jump over two days is a
+load. 31 tests/gates pass; installed, 58-file rollback. **Not tested in
+game; not committed.** report-tpl-12-menu-load-1024.md.
+
 2026-10-24, session 81 (later): user ran 0.11.13: **GUI fine, new regiment
 did not go to the stack**. Log: a false load right after the click dropped
 the order and the resume skipped it; game.log shows no load (P64). Rust
@@ -354,7 +361,8 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 
 | Separate candidate | Staged | Installed | Game acceptance |
 |---|---|---|---|
-| ATCU 0.11.14 (TPL-12 false-load fix, Rust) | work/tpl12-01114/ATCU-0.11.14-candidate.zip | Own-loader TGC copy; 0.11.13 rollback retained | Not tested in game |
+| ATCU 0.11.15 (TPL-12 menu-load fix, Rust) | work/tpl12-01115/ATCU-0.11.15-candidate.zip | Own-loader TGC copy; 0.11.14 rollback retained | Not tested in game |
+| ATCU 0.11.14 (TPL-12 false-load fix, Rust) | work/tpl12-01114/ATCU-0.11.14-candidate.zip | Superseded by 0.11.15 | Lubny regiment still did not march (P65) |
 | ATCU 0.11.13 (TPL-12 Replace reload fixes, Rust) | work/tpl12-01113/ATCU-0.11.13-candidate.zip | Superseded by 0.11.14 | GUI fine (user); new regiment did not march (P64) |
 | ATCU 0.11.12 (TPL-12 native Y/single-line titles, Rust) | work/tpl12-01112/ATCU-0.11.12-candidate.zip | Superseded in the test copy by 0.11.13 | Alignment/title visual short pass, clean short-run logs; functional/reload/MP open |
 | Province Rename0.2.6 Universal, V2DLL API1 | work/releases/province-rename/0.2.6/Province-Rename-Universal-0.2.6.zip | Dedicated copy0.2.6,11payload/25,388protected hashes verified |0.2.5 accepted, final ABC2px check pending; ZIP only, publication deferred |

@@ -1067,3 +1067,19 @@ and earlier in TPL-11 0.11.5 (`tpl11-0115/before-0115/Logs/tgcx.log`).
 (`conform::confirm_load`); dates before year 0 are ignored; the log
 records what changed. A stranded order still resumes from a save taken
 during construction. See report-tpl-12-load-1024.md.
+
+### P65 - The main menu's world carries the bookmark date
+
+**Cause.** In the main menu the world shows the bookmark date (1 January
+1836) with player 0; picking a country changes the player, which counts
+as a load with nothing to resume. Loading a save then moves the date
+forward. A forward jump counted as a load only once a day step was known,
+and right after a load the step is unknown, so a menu-loaded save never
+resumed its orders.
+
+**Symptom.** One `load seen ... player 0->65` at the bookmark date, no
+later load line, no "saved orders resumed"; regiments built for Replace,
+Conform or Build Army stay where they were built (TPL-12 0.11.14).
+
+**Fix (0.11.15).** With no step known, a forward change of more than two
+days is a load (`conform::date_jump`). See report-tpl-12-menu-load-1024.md.

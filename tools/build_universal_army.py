@@ -10,9 +10,9 @@ from PIL import Image
 import tgcx_templates_gui as tpl
 import tgcx_conform_gui as cf
 
-VERSION = '0.11.14'
+VERSION = '0.11.15'
 # TPL-12: the Replace depleted chooser needs the Rust DLL that handles it.
-MARKER = b'TGCX TPL-12 0.11.14 tgcx.dll'
+MARKER = b'TGCX TPL-12 0.11.15 tgcx.dll'
 
 
 def build(output, art, dll, loader):
@@ -20,7 +20,7 @@ def build(output, art, dll, loader):
     if output.exists() or Path(str(output)+'.zip').exists():
         raise ValueError('output folder/ZIP must be new')
     if MARKER not in dll.read_bytes():
-        raise ValueError('filter package requires the matching 0.11.14 DLL and GUI')
+        raise ValueError('filter package requires the matching 0.11.15 DLL and GUI')
     package = output/'mod/tgcx_army_universal'
     (package/'interface').mkdir(parents=True)
     (package/'gfx/interface').mkdir(parents=True)
@@ -49,7 +49,7 @@ def build(output, art, dll, loader):
     shutil.copy2(loader, output/'lua51.dll')
     (output/'README.txt').write_text(
         'ATCU - Army Template and Conform Universal\n'
-        'Replace depleted adaptive header, internal version 0.11.14, local candidate\n\n'
+        'Replace depleted adaptive header, internal version 0.11.15, local candidate\n\n'
         'The SAME mod folder/descriptor and DLL work with the active supported 3.04 base.\n'
         'No installer, scripts, per-base preparation or original GUI overrides.\n'
         'Close the game normally before copying. Keep backups of existing files.\n'
@@ -134,6 +134,14 @@ def build(output, art, dll, loader):
         'the preview, replacements merging, old regiments detached, save/reload.\n'
         'Preserve Logs/tgcx.log. This ZIP is for local testing, not publication.\n', encoding='utf-8')
     (output/'CHANGELOG.txt').write_text(
+        'ATCU 0.11.15 - 2026-10-24 (local candidate)\n\n'
+        '- Fix: a save loaded from the main menu (dated after the menu\'s\n'
+        '  1 January 1836) was never seen as a load, so its regiments being\n'
+        '  built for Replace, Conform or Build Army were not resumed and stayed\n'
+        '  where they were built. Before a day step is known, any jump of more\n'
+        '  than two days is now a load. Loading from the in-game menu was\n'
+        '  already handled when the date goes back.\n'
+        '- No visual, GUI, texture, chooser or settings change from 0.11.14.\n\n'
         'ATCU 0.11.14 - 2026-10-24 (local candidate)\n\n'
         '- Fix: a regiment built by Replace, Conform or Build Army could stay\n'
         '  where it was built instead of marching to its army. One odd frame\n'
