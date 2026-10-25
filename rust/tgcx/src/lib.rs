@@ -1,5 +1,5 @@
 //! Rust port of dll/tgcx (tgcx.dll, TPL-7 0.11.2): the same hooks, gates and log as
-//! the C++ build, module by module. TPL-8 0.11.3 (Non-core only) and TPL-11 0.11.6 (Build Army gathering) exist only here. Nothing is installed from DllMain: a loader calls
+//! the C++ build, module by module. TPL-8 0.11.3 (Non-core only) TPL-11 (Build Army gathering) and TPL-12 0.11.14 (Replace depleted) exist only here. Nothing is installed from DllMain: a loader calls
 //! tgcx_Init (our lua51.dll) or V2Mod_Init (V2DLL's plugin API).
 
 // The loops index several parallel arrays as the C++ does.
@@ -14,6 +14,7 @@ mod gather;
 mod packages;
 mod reforms;
 mod renderer;
+mod replace;
 mod sha256;
 mod snapshot;
 mod sys;
@@ -198,7 +199,7 @@ fn initialize(origin: &[u8]) -> bool {
     sys::set_log(log);
     sys::set_base(unsafe { GetModuleHandleW(null()) } as usize);
     log!(
-        "TGCX TPL-11 0.11.6 tgcx.dll loaded_by={} base={:08X} preferred={PREFERRED_BASE:08X} simulation_writes=engine_commands_only",
+        "TGCX TPL-12 0.11.14 tgcx.dll loaded_by={} base={:08X} preferred={PREFERRED_BASE:08X} simulation_writes=engine_commands_only",
         Bytes(origin),
         base()
     );
@@ -288,9 +289,9 @@ fn initialize(origin: &[u8]) -> bool {
         log!("Politics not ticked: drawing+laws off, original pie");
     }
     if army && templates::package_metadata(&directory, &mods) {
-        const UNIVERSAL_RVAS: [u32; 12] = [
+        const UNIVERSAL_RVAS: [u32; 14] = [
             0x5A38F0, 0x5C4410, 0x5E3D60, 0x5EFE20, 0x246620, 0x5A6A6D, 0xA08A70, 0x8453FC,
-            0x1BAB1C, 0x1BA89E, 0x5E4490, 0xA3C1DC,
+            0x1BAB1C, 0x1BA89E, 0x5E4490, 0xA3C1DC, 0x5EFEF0, 0x5EFEB0,
         ];
         if !templates::army_universal() || require_signatures(&UNIVERSAL_RVAS) {
             const FILTER_RVAS: [u32; 7] = [

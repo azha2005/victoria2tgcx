@@ -1,5 +1,63 @@
 # SUBAGENTS.md — The project, in cards
 
+2026-10-24, session 80: user confirms **0.11.12 alignment/title fixes worked**
+and explicitly notes testing remains. Current run: 206 runtime guards OK,
+no custom faults or profile error-log entries; Conform/Replace preview read.
+No replacement queue/resume/march/merge/detach outcomes in this run. Logs
+preserved under work/tpl12-01112/check-1024. **Visual short pass only;
+functional/reload/other-base/MP validation open.**
+report-tpl-12-visual-check-1024.md; next instructions-tpl-12-check.md steps 6-8.
+
+
+2026-10-24, session 79: live 0.11.11 screenshot proves our border 1px too
+high; user also reports Hus title wrapping over count. Rust **0.11.12**
+restores native Y and fits Conform titles to one line with actual loaded
+font metrics/ellipsis. 26 Rust tests/Clippy and GUI/Army/installer/plugin
+checks pass; installed in same test copy. 48 payload hashes verified,
+25,466 protected files/eight settings unchanged, 58-file 0.11.11 rollback.
+**New alignment/title behavior not tested in game.**
+report-tpl-12-title-alignment-1024.md; instructions-tpl-12-check.md step 4.
+
+
+2026-10-24, session 78: **TPL-12 0.11.11** matches native 21px pitch (2px
+painted gap), follows native Disband depleted visibility, and lifts both
+controls 1px. Rust build/23 tests/Clippy, GUI/Army/installer/plugin checks
+pass; installed in the same test copy with 0.11.9/interim 0.11.10 rollbacks.
+48 payload hashes pass; 25,466 protected files/eight settings unchanged.
+**New appearance/transitions not tested in game.** report-tpl-12-spacing-1024.md.
+
+
+2026-10-24, session 77: user accepts 0.11.8 short check, requests native-sized
+buttons **beside** the native header actions, same row. Rust 0.11.9 uses
+20x20 sprites at TGC (168,32)/(191,32), anchored to native Disband. Built,
+tested and installed in the same own-loader TGC copy; new placement awaits
+game check. 48 payload hashes pass; 25,466 protected files/eight settings
+unchanged, 58-file 0.11.8 rollback retained. report-tpl-12-beside-1024.md.
+
+
+2026-10-24, session 76: **TPL-12 0.11.8 installed and verified** in
+work/Victoria-II-TGC252-own-loader, on the user's explicit request and
+clear process gates. 48 payload hashes pass; 25,466 protected files and
+eight settings unchanged; 59-file 0.11.7 rollback in
+work/tpl12-0118/before-0118. **Not tested in game.** No game launch.
+report-tpl-12-install-1024.md; instructions-tpl-12-check.md step 4 next.
+
+
+2026-10-24, session 75: **TPL-12 option A built in Rust 0.11.8**: two
+16px army-header buttons, independent 332x270 Replace chooser with saved
+culture boxes, Conform footer restored. Local ZIP includes README/changelog;
+build/lint/21 Rust tests, GUI/Army/installer checks and actual Rust plugin
+probe pass. **Not installed or tested in game.** 0.11.7 remains installed
+and its short replacement/detach pass is recorded in its report section 9.
+Report: docs/report-tpl-12-header-1024.md. Next: instructions-tpl-12-check.md.
+
+No subagents used. Earlier dated entries below are historical snapshots.
+
+
+2026-10-24 TPL-12: done in Rust 0.11.7, not tested in game; candidate in
+work/tpl12-0117, installed in the test copy. No subagents used.
+report-tpl-12-replace-1024.md.
+
 2026-10-24 TPL-11: 0.11.6 passed in game (rally points; report-tpl-11-rally-1024.md).
 Earlier: done in Rust 0.11.4, not tested in game; candidate in
 work/tpl11-0114, check in instructions-tpl-11-check.md. No subagents used.

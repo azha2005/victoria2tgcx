@@ -89,6 +89,15 @@ lines with Non-core only on line 2, and Changes drops from 7 to 6 visible rows.
 Rendered by work/noncore-0113/render_previews.py from staged art (Arial); these
 are not game captures.
 
+## TPL-12 Replace depleted mockup (2026-10-24)
+
+mockups/6-conform-replace-1024.png (Conform footer: Conform 92 / Replace
+depleted 116 / Cancel 92) and 6-conform-replace-choose-1024.png (the
+separate chooser window) are accepted. 6-conform-replace-docked-1024.png was
+rejected. Drawn by work/tpl12/render_replace.py from staged art (Arial), not
+captures. Built in 0.11.7; deviations (stepped slider, list wording) in
+report-tpl-12-replace-1024.md §4.
+
 ## TPL-11 Gather at mockup (2026-10-24)
 
 mockups/5-templates-gather-1024.png and 5-templates-gather-selected-1024.png:
@@ -96,3 +105,70 @@ the 0.11.3 Templates panel with `Gather at < Best supply >` on the
 `Recruit from` line. Accepted by the user 2026-10-24; Arial, not a capture.
 The "selected" board is out of date: 0.11.5/0.11.6 replaced the map selection
 with the land rally points (report-tpl-11-rally-1024.md §4).
+
+## TPL-12 option A, current (2026-10-24)
+
+User selected A: `mockups/6-replace-button-1024.png` and
+`6-replace-button-header-1024.png` supersede the footer-button mockup.
+Two 16px header buttons, 3px gap: maroon Replace left, green Conform right;
+both above the braid. Independent 332x270 chooser at Conform's normal
+position, with its own exclusive culture boxes. Conform has its original
+two footer buttons. The previous chooser beside Conform is historical.
+
+0.11.8 actual packaged-art previews: `mockups/6-replace-whole-candidate-0118.png`,
+`6-replace-header-candidate-0118.png`, `6-replace-candidate-0118.png`.
+Rendered from generated coordinates with Arial, visually inspected; not
+game captures. Header matches A. Report: `report-tpl-12-header-1024.md`.
+Historical remote artifact not republished; live appearance remains untested.
+
+## TPL-12 native-sized buttons beside native actions, current (2026-10-24)
+
+User accepts 0.11.8 short check; asks for native Disband size and clarifies
+**not above, right beside**. Current reference is
+`mockups/6-replace-beside-20px-1024.png` and its detail variant: both 20x20,
+3px gaps, same header row, immediately left of native actions. TGC Replace
+(168,32), Conform (191,32), anchored to native disbandbutton. Native name
+width is unchanged; long names have less room. The chooser is unchanged.
+
+The unmodified 0.11.8 capture is private in `work/tpl12-0119`; these new
+references are actual 0.11.9 DDS composites, not live captures. The earlier
+above-header draft is superseded and retained, as are the 16px option A
+references. New placement awaits game check. `report-tpl-12-beside-1024.md`.
+
+## TPL-12 native spacing and adaptive slot, current (2026-10-24)
+
+The user supplies healthy/depleted 0.11.9 captures, asks for the native gap
+and a shift into the hidden Disband depleted slot, then a 1px upward move.
+Current `mockups/6-replace-spacing-aligned-states-1024.png` and aligned
+healthy/depleted variants show both final 0.11.11 states. 20px textures,
+21px pitch, 2px painted gaps; TGC y=31. Shown-depleted x=172/193; hidden
+x=193/214. Unchanged native actions and unchanged chooser.
+
+Actual-art composites, with cleaned header pixels from an earlier capture;
+not new game screenshots. Unmodified user captures remain under
+work/tpl12-01110. Pre-lift previews are retained under 6-replace-spacing-*.
+Live alignment/visibility movement pending. report-tpl-12-spacing-1024.md.
+
+## TPL-12 live alignment and Conform one-line titles, current (2026-10-24)
+
+0.11.11 live pixels supersede the y31 composite: ours at y184, native y185.
+Current 0.11.12 uses native Y (TGC y32); 21px pitch and visibility shifts
+are unchanged. `mockups/6-replace-native-y-01112.png` composites the actual
+unchanged frames at corrected coordinates. Raw capture and measurements:
+work/tpl12-01112/01111-capture.png and pixel-evidence.json.
+
+Second raw capture shows Hus/count overlap in Conform. The accepted row
+retains a one-line title above its count. Native loaded-font measurement
+and ellipsis now enforce that layout. Preview:
+`mockups/6-conform-title-single-line-01112.png`, Arial stand-in in the
+captured row; not new gameplay proof. Stored composition is unchanged.
+Current report-tpl-12-title-alignment-1024.md; player retry pending.
+
+## 0.11.12 alignment/title visual acceptance (2026-10-24)
+
+User confirms "it worked", explicitly retaining the need for more testing.
+Accept the native-Y header and single-line title correction as a short
+visual check. No new final screenshot supplied. Latest log contains no
+GUI/font fault; it cannot independently prove every alignment/visibility
+case. Functional/reload/other-base/MP checks remain open.
+report-tpl-12-visual-check-1024.md; logs under work/tpl12-01112/check-1024.

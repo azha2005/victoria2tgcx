@@ -18,7 +18,8 @@ class CatalogTests(unittest.TestCase):
         (self.game / "units").mkdir()
         (self.game / "interface").mkdir()
         (self.game / "interface/unitpanel.gui").write_text(
-            'guiTypes={windowType={name="unitpanel" iconType={name="unitattrition_icon" position={x=245 y=42}}}}')
+            'guiTypes={windowType={name="unitpanel" iconType={name="unitattrition_icon" position={x=245 y=42}}'
+            'guiButtonType={name="disbandbutton" position={x=235 y=6}}}}')
         (self.game / "mod/test/units").mkdir(parents=True)
         self.descriptor = self.game / "mod/test.mod"
         self.descriptor.write_text('name="Test"\npath="mod/test"\n')

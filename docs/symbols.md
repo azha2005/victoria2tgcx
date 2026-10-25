@@ -1217,3 +1217,51 @@ Rally points (2026-10-24, session 74, read-only Disasm; C static):
 
 ATCU use (0.11.5): Gather at "Rally point" takes the first land (`+0x20`
 == 0) rally point in the vector; read only.
+
+## TPL-12: regiment strength and pop support (2026-10-24)
+
+Reference hash 62d48c20...6648; read-only/noanalysis Ghidra (Disasm,
+DecompileAt). Gated in `check_exe.py` SIGNATURES (`REPLACE_RVAS`).
+**C static**; the strength scale is **I** until the probe lines are read in
+game.
+
+| Native symbol / role | Ghidra VA | RVA | Evidence |
+|---|---|---|---|
+| FUN_005BFF80, CRegiment slot 12: full strength | 0x005BFF80 | 0x1BFF80 | `*out = [[this+0x38]+0xB0]`, thiscall, RET 8: the unit type's full strength, the scale of `regiment+0x3C` |
+| Regiment strength / organisation | (FUN_0059AE90) | | `+0x3C` strength, `+0x40` organisation (reserve pick: `+0x40 > 999`) |
+| Regiment pop, pop size | 0x005E0C82 | 0x1E0C82 | FUN_005E0BF0 (CDisbandUndermannedCommand execute): `[regiment+0x30]` pop, `[pop+0x58]` size compared with the minimum define |
+| FUN_00965870, regiments a pop supports | 0x00965870 | 0x565870 | stdcall `(pop, flag byte)`, RET 8; 0 when `pop+0x58` is below `[[0x12586DC]+0x20]+0x10/1000`; reads only |
+| FUN_00965930, regiments a pop backs | 0x00965930 | 0x565930 | EAX = pop, pushed flag byte, RET 4; flag 0 counts its regiments and queued constructions (`pop+0x3C/+0x40` vector, `+0x64`); reads only |
+| Unit panel pop colour | 0x00794048 | 0x394048 | `supports(pop, 0)*1000` and `backs(pop, 0)*1000` (EBX = 0): red when the first is <= 0, yellow when it is below the second |
+| CDisbandRegimentCommand | vtable 0x00E034D4 | 0xA034D4 | research only (TPL-12 detaches instead): id 0x40F, 100 bytes, execute FUN_005E10A0 |
+
+ATCU use (0.11.7, `conform_native.rs` "Replace depleted (TPL-12)"; not yet
+run in game): both counts are called with flag 0 for each regiment's pop in
+the open stack; strength percent = `+0x3C * 100 / [type+0xB0]`.
+
+## TPL-12 adaptive header visibility (2026-10-24)
+
+| Native site | Ghidra VA | RVA | Contract |
+|---|---|---|---|
+| CEU3Button Show | 0x009EFEF0 | 0x5EFEF0 | Sets control+0x4F=1 unless +0x6C suppresses show; existing guard |
+| CEU3Button Hide | 0x009EFEB0 | 0x5EFEB0 | Sets control+0x4F=0, calls renderer+0xA0 slot14; new guard |
+| CEU3Button primary table slots13/14 | 0x00E08C20 | 0xA08C20 | Show/Hide pointers above; slot15 is existing packed position getter 0x5EFE20 |
+
+C static: existing read-only work/archive/2026-10-19/universal-0103-button-show.txt
+plus reference executable bytes/table, checked 2026-10-24. No new decompile
+claim. Window+0x67 must not be used to read a button's visibility. Rust
+0.11.11 reads shown depleted control+0x4F after concrete-method checks,
+anchors to it or Disband, and uses native 21px pitch with user-requested
+y-1 correction. No simulation read/write added. Runtime acceptance pending.
+
+## Conform single-line title measurement (2026-10-24)
+
+Rust 0.11.12 reuses RENAME-UI's established native font layout/ABI:
+rendered text at control+0xA0, loaded font inner+0x1BC (guard RVA0x65ED44,
+VA0x00A5ED44); font slot10 is width FUN_00A24E20 (RVA0x624E20), thiscall
+(font,bytes,length), RET8 guarded at VA0x00A24F56/RVA0x624F56. These three
+already-documented Rename sites are now also in the Army runtime table.
+C static/previous Rename fixture evidence; new Conform integration is not
+runtime-confirmed. Unknown methods/signatures refuse measurement. Widths
+fit the complete prefix plus ellipsis to128px inside the132px title field;
+this only changes displayed text, never composition/settings/game state.

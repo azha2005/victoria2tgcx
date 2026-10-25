@@ -27,9 +27,13 @@ TEXT_DELTA = 0xC00
 
 # (RVA, expected bytes, where it comes from)
 SIGNATURES = [
+    (0x624E20, "558BEC83EC108B450C535633DB578BF133FF8975F0895DF8", "Conform single-line title: native proportional font width (shared Rename evidence)"),
+    (0x624F56, "3BF87E258BC75F5E5B8BE55DC20800", "Conform title font width RET8"),
+    (0x65ED44, "8B8EBC0100008955F08B01", "Conform title rendered text loads native font at inner+0x1BC"),
     (0x5E4490, "55 8B EC 83 E4 F8 64 A1 00 00 00 00 6A FF 68 68 A7 B3 00 50 64 89 25 00", "Universal CGui subtree Show activates child controls"),
     (0xA3C1DC, "90 44 9E 00 70 40 9E 00", "Universal CFixedWindow secondary Show/Hide slots 13/14"),
     (0x5EFEF0, "56 8B F1 80 7E 6C 00 75 26 8B 8E A0 00 00 00 C6 46 4F 01 8B 01 8B 50 34", "Universal native CEU3Button Show activates render child"),
+    (0x5EFEB0, "56 8B F1 8B 8E A0 00 00 00 C6 46 4F 00 8B 01 8B 50 38 FF D2", "TPL-12 native CEU3Button Hide clears shown flag +0x4F"),
     (0x1B8500, "55 8B EC 8B 55 0C 83 EC 30 53 56 57 8B F0 85 D2 0F 84 12 03 00 00 85 F6", "Conform land route query: EAX start, four stack arguments"),
     (0x1B8830, "8B E5 5D C2 10 00", "Conform land route query RET 0x10"),
     (0xA03794, "E0 98 5B 00 70 96 5B 00 D0 9B 5B 00 D0 98 5B 00 50 AE 9D 00", "Conform VerySafe native path predicate vtable"),
@@ -253,6 +257,14 @@ SIGNATURES = [
     (0x4CF4A9, "8B88E40B00008B82CC0A0000", "TPL-11 capital province id country +0xBE4 into world +0xACC (continent trigger)"),
     (0xAAF90, "558BEC518B415C568B750850C745FC00000000E898950100", "TPL-11 province name getter FUN_004AAF90: map province +0x5C"),
     (0xC4558, "8B450805E4000000", "TPL-11 map province name string +0xE4 (FUN_004C4540)"),
+    # TPL-12 depleted regiments (docs/symbols.md "TPL-12"): reads and pure native counts only.
+    (0x1BFF80, "558BEC8B41388B88B00000008B450889085DC20800", "TPL-12 regiment max strength FUN_005BFF80: type +0x38 then +0xB0"),
+    (0x1E0C82, "8B46308B5B0885C0744C8B4858", "TPL-12 regiment +0x30 pop, pop +0x58 size (FUN_005E0BF0 disband undermanned)"),
+    (0x565878, "538B5D08568B7358578B7820B8D34D6210F76F10C1FA06", "TPL-12 pop supports FUN_00965870(pop, flag): pop +0x58 below minimum gives 0"),
+    (0x565921, "405DC20800", "TPL-12 pop supports RET 8"),
+    (0x565930, "558BEC83E4F883EC0C807D08005356578BF8744F", "TPL-12 pop regiments FUN_00965930: EAX pop, pushed flag"),
+    (0x56598A, "5F5E5B8BE55DC20400", "TPL-12 pop regiments RET 4"),
+    (0x394048, "8B55F05352E81E181D0069C0E80300008945D08B45F053E8CC181D00", "TPL-12 unit panel pop colour: supports(pop, 0) vs regiments(pop, 0)"),
 ]
 
 

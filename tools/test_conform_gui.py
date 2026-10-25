@@ -29,7 +29,7 @@ class ConformGuiTests(unittest.TestCase):
     def test_open_button_follows_effective_native_header(self):
         from tgcx_bases import Base
         game = game_root(DEFAULT_TGC)
-        self.assertEqual(gui.opening_rect(game), (222, 42, 20, 20))
+        self.assertEqual(gui.opening_rect(game), (172, 6, 41, 20))
         self.assertEqual(gui.opening_rect(DEFAULT_TGC), gui.OPEN)
         # A shifted mod header and a same-name vanilla GUI both exist. The
         # generated button must follow the effective override, not its base.
@@ -38,15 +38,17 @@ class ConformGuiTests(unittest.TestCase):
             (root/'interface').mkdir(); (root/'mod/custom/interface').mkdir(parents=True)
             vanilla = read(game/'interface/unitpanel.gui')
             (root/'interface/unitpanel.gui').write_text(vanilla, encoding='cp1252')
-            shifted = re.sub(r'(name\s*=\s*"unitattrition_icon".*?position\s*=\s*)\{[^}]+\}',
+            shifted = re.sub(r'(name\s*=\s*"disbandbutton".*?position\s*=\s*)\{[^}]+\}',
                              r'\1{ x=300 y=83 }', vanilla, count=1, flags=re.S)
+            shifted = re.sub(r'(name\s*=\s*"disbandtoosmallbutton".*?position\s*=\s*)\{[^}]+\}',
+                             r'\1{ x=279 y=83 }', shifted, count=1, flags=re.S)
             (root/'mod/custom/interface/unitpanel.gui').write_text(shifted, encoding='cp1252')
             descriptor = root/'mod/custom.mod'
             descriptor.write_text('name="Custom"\npath="mod/custom"\n')
             base = Base(root, descriptor)
-            self.assertEqual(gui.opening_rect(base.folder, base), (277, 83, 20, 20))
+            self.assertEqual(gui.opening_rect(base.folder, base), (237, 83, 41, 20))
             fragment, _ = gui.layout(game)
-            self.assertIn('name="tgcx_cf_tab" position={x=222 y=42}', fragment)
+            self.assertIn('name="tgcx_cf_tab" position={x=172 y=6}', fragment)
 
     def test_effective_base_preserved(self):
         base = read(Path(DEFAULT_TGC)/'interface/unitpanel.gui')
@@ -80,7 +82,7 @@ class ConformGuiTests(unittest.TestCase):
             self.assertTrue(x >= 0 and y >= 0 and x+w <= gui.WIDTH and y+h <= gui.HEIGHT, name)
         # The button fits the fixed stack panel, clear of its native controls.
         x, y, w, h = gui.OPEN
-        self.assertTrue(x+w <= 245 and y >= 54+17 - 4 and y+h <= 90)
+        self.assertTrue(x+w == 213 and y == 32 and y+h <= 54)
         self.assertNotIn('replace_path', fragment)
 
     def test_native_sprites_and_order(self):
@@ -119,6 +121,8 @@ class ConformGuiTests(unittest.TestCase):
             images = gui.generate(source)
             self.assertEqual(images['bg'].size, (gui.WIDTH, gui.HEIGHT))
             self.assertEqual(images['open'].size, (20, 20))
+            self.assertEqual(images['replace'].size, (20, 20))
+            self.assertEqual(images['rp_bg'].size, (332, 270))
             self.assertEqual(images['change'].size, (gui.ROW_W, gui.ROW_H))
             self.assertEqual(images['button'].size, (148, 28))
             self.assertEqual(images['blank_2'].tobytes(), images['bg'].crop((gui.SLOT_X, gui.SLOT_Y+64, gui.SLOT_X+gui.ROW_W, gui.SLOT_Y+64+gui.ROW_H)).tobytes())

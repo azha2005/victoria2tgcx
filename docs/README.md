@@ -1,6 +1,23 @@
 # Index of `docs/`
 
+- `report-tpl-12-load-1024.md`: current 0.11.14: 0.11.13 regiment did not march; false load detection (P64) fixed with a three-frame confirmation; verified install; not tested in game.
+- `report-tpl-12-reload-1024.md`: previous 0.11.13, review of 0.11.12, Replace reload fixes (merged state, orders file v2, unresumable records closed), README wording, verified install; not tested in game.
+- `report-tpl-12-visual-check-1024.md`: current 0.11.12 alignment/title visual short pass and preserved-log audit; 206 guards OK, empty error logs, no new replacement execution/resume evidence; functional checks open.
+
+- `report-tpl-12-title-alignment-1024.md`: current 0.11.12, measured native-Y alignment, loaded-font single-line title fitting, verified install; subsequent short visual pass/log audit in report-tpl-12-visual-check-1024.md.
+
+- `report-tpl-12-spacing-1024.md`: previous Rust 0.11.11, native 2px painted gap, visibility-based slot closing, 1px lift, verified test-copy installation; player check pending.
+
+- `report-tpl-12-beside-1024.md`: previous 0.11.9, native-sized buttons beside native header actions, 0.11.8 acceptance, updated ZIP and verified test-copy installation; new placement untested.
+
+- `report-tpl-12-install-1024.md`: 0.11.8 installed in the own-loader TGC test copy, backup and payload/protected-file hashes verified; player check pending.
+
+- `report-tpl-12-header-1024.md`: previous TPL-12 option A, Rust 0.11.8, independent header buttons/chooser/culture, verified local ZIP with README/changelog; installation recorded separately in report-tpl-12-install-1024.md.
+- `instructions-tpl-12-check.md`: current player checks for installed 0.11.14: stranded regiment from the 9 February save, new replacement, save during construction and after the merge.
+
 - `report-tpl-11-gather-1024.md`: TPL-11 Build Army gathering built in Rust 0.11.4; Gather at row, Best supply/Capital/Selected, ring placement, gather orders file, tests, local candidate; not tested in game.
+- `report-tpl-12-replace-1024.md`: TPL-12 Replace depleted built in Rust 0.11.7: chooser window beside Conform, depleted rule, detach after merge, replace orders file, gates, candidate and short gameplay pass (section 9); superseded interface by 0.11.8.
+- `instructions-tpl-12.md`: TPL-12 replace depleted regiments: research (disband commands, too-small pop, strength field), mockup, the user's answers.
 - `report-tpl-11-rally-1024.md`: TPL-11 0.11.5/0.11.6, Gather at uses the land rally points (0.11.6 cycles each) instead of the map selection; rally point layout; 0.11.6 passed in game.
 - `instructions-tpl-11-check.md`: in-game check of the 0.11.4 candidate.
 - `instructions-tpl-11.md`: TPL-11 gathering design (D20) and steps (done 2026-10-24; check in instructions-tpl-11-check.md).

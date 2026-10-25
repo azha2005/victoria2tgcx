@@ -197,6 +197,12 @@ pub struct CfTask {
     /// TPL-11: the Build Army click this regiment gathers for, 0 for none. Its target
     /// is that click's army, none until a regiment appears.
     pub group: u32,
+    /// TPL-12: the depleted regiment this JOIN replaces (none otherwise); detached once
+    /// `fresh`, the joining stack's regiment, is seen in the target.
+    pub replaces: CfId,
+    pub fresh: CfId,
+    /// 1-based saved replacement (replace.rs), 0 for none.
+    pub rp_record: usize,
 }
 
 impl CfTask {
@@ -222,6 +228,9 @@ impl CfTask {
         retries: 0,
         record: 0,
         group: 0,
+        replaces: CfId { kind: 0, id: 0 },
+        fresh: CfId { kind: 0, id: 0 },
+        rp_record: 0,
     };
 }
 
@@ -364,13 +373,14 @@ pub fn add(
 }
 
 /// Regiments of each type already coming to this target (planner input). A recruit is
-/// one regiment; a mobo join (MOBO-1) records how many its stack holds.
+/// one regiment; a mobo join (MOBO-1) records how many its stack holds. A replacement
+/// (TPL-12) is not counted: the regiment it replaces leaves when it arrives.
 pub fn pending(k: &Tracker, target: CfId) -> [i32; UNITS] {
     let mut pending = [0; UNITS];
     for t in k
         .task
         .iter()
-        .filter(|t| t.used && t.kind == Kind::Join && t.target == target)
+        .filter(|t| t.used && t.kind == Kind::Join && t.target == target && t.replaces.none())
     {
         if let Some(u) = valid_unit(t.unit) {
             pending[u] += t.regiments.max(1) as i32;
@@ -398,6 +408,28 @@ pub struct CfOrder {
     pub construction: CfId,
     pub unit: i32,
     pub active: bool,
+}
+
+/// A load (another world or player, the date going back, a jump) must be seen this many
+/// frames in a row before the tracker drops its tasks. One frame with a bogus date, as
+/// seen around a save during construction (TPL-12 0.11.13 log: date read before the
+/// order's own, so the resume skipped it), is not a load.
+pub const LOAD_FRAMES: u32 = 3;
+/// World dates are hours since year -5000 (snapshot.rs); anything before year 0 is not a
+/// game date and is ignored.
+pub const DATE_MIN: u32 = 5000 * 8760;
+
+pub fn confirm_load(frames: &mut u32, load: bool) -> bool {
+    if !load {
+        *frames = 0;
+        return false;
+    }
+    *frames += 1;
+    if *frames < LOAD_FRAMES {
+        return false;
+    }
+    *frames = 0;
+    true
 }
 
 pub fn order_applies(r: &CfOrder, tag: u32, date: u32) -> bool {
@@ -636,4 +668,23 @@ pub fn mobo_assign(need: &[i32], candidates: &[MoboCandidate]) -> Vec<(usize, us
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_load_needs_several_frames_in_a_row() {
+        let mut frames = 0;
+        // One bogus frame (the date dipping around a save), then normal again.
+        assert!(!confirm_load(&mut frames, true));
+        assert!(!confirm_load(&mut frames, false));
+        assert_eq!(frames, 0);
+        // A real load holds.
+        assert!(!confirm_load(&mut frames, true));
+        assert!(!confirm_load(&mut frames, true));
+        assert!(confirm_load(&mut frames, true));
+        assert_eq!(frames, 0);
+    }
 }

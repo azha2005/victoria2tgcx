@@ -1,3 +1,474 @@
+# Session80 - 0.11.12 visual short pass and log audit (2026-10-24)
+
+User: it worked, still lacks testing; asks to check logs. Preserved latest
+custom/active-profile logs. 206 runtime guards pass, error logs empty,
+Conform/Replace preview opened, no queue/resume/merge/detach outcomes.
+Record alignment/title visual acceptance only; functional checks remain.
+report-tpl-12-visual-check-1024.md. No code/install/game controls.
+
+## NEXT at the start (verbatim)
+
+# NEXT - what comes next
+
+2026-10-24 (79). **TPL-12 native Y and single-line titles, Rust 0.11.12, installed and verified
+in the own-loader TGC test copy; not tested in game.**
+`work/tpl12-01112/ATCU-0.11.12-candidate.zip` includes README and changelog.
+Build/install: `docs/report-tpl-12-title-alignment-1024.md`.
+
+## Current decisions and evidence
+
+- User: **0.11.8 works great**, but its buttons were too small. Current
+  instruction: **20x20, native Disband size, beside the native header
+  actions in the same row, not above**. Green Conform on the right,
+  maroon Replace on the left. Current correction: native 21px pitch,
+  **2px painted gaps**. Live 0.11.11 borders at y184 versus native y185
+  supersede the prior lift: **use native Y**. TGC shown-depleted positions
+  (172,32)/(193,32); hidden-depleted positions (193,32)/(214,32).
+  Follow native button visibility, closing its empty slot and moving back.
+  Long army names have less room; native name width is unchanged.
+- Conform list titles are now fitted to one line with native loaded-font
+  widths and ellipsis; counts stay below. Full compositions are unchanged.
+  This fixes the reported Hus/count collision, pending the player retry.
+- Replace opens independently where Conform opens. Each closes the other.
+  Conform returns to its Conform/Cancel footer. Replace has its own culture
+  boxes; none means all, selected box clicks clear it. Choice settings v2
+  import v1. Replacement orders keep their format.
+- **0.11.7 passed a short gameplay check**, including replacement merge and
+  old-regiment detach (report-tpl-12-replace-1024.md section 9). Strength
+  scale was confirmed. 0.11.8 then passed the user's general short check and supplied capture.
+  Neither acceptance proves the remaining reload/multiplayer cases.
+- **0.11.12 is installed** in `work/Victoria-II-TGC252-own-loader`;
+  User-tested 0.11.9 rollback: `work/tpl12-01110/before-01110`;
+  immediate 0.11.11 rollback: `work/tpl12-01112/before-01112`.
+  Each has 58 verified hashes.
+  All 48 payload files match; 25,466 protected files and eight settings
+  files unchanged. Main E: install unchanged.
+- All new DLL code is Rust (`rust/tgcx`); C++ only receives generated
+  headers. Do not build a C++ release from these GUI headers.
+- TPL-8 0.11.3 and TPL-11 0.11.6 passed their short player checks.
+  TPL-11 is committed at `4ad923d`; current TPL-12 work is uncommitted.
+- Session-start NEXT archived verbatim in `docs/archive/sessions.md`.
+
+## Next session in order
+
+| Card | Status | Instructions |
+|---|---|---|
+| TPL-12-CHECK | 0.11.12 installed/verified; alignment/title check next | `docs/instructions-tpl-12-check.md` |
+| TPL-11-CHECK | Rally selector/gather short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+1. TPL-12-CHECK: the user launches the existing test copy and follows
+   `docs/instructions-tpl-12-check.md` from step 4. Check the two header
+   buttons' native border alignment/gaps and shifting as the native depleted button
+   hides/shows, long/short one-line titles and separate counts, independent
+   chooser, culture choices and persistence,
+   replacement merge/detach and save/reload. Preserve screenshots and log.
+2. TPL-11-CHECK: when selected, finish save/reload of a rally gather.
+3. The Conform long-title issue is implemented in 0.11.12; verify it above.
+   Pale-yellow Changes shortfalls remain a deferred look fix, unselected.
+
+## Parked work
+
+- TPL-9 Autodivide: needs the user's split rule, button place and leader
+  choice before implementation.
+- TPL-10 Carpet siege: depends on TPL-9; user choices still open.
+- RUST-CHECK: full Bill/favour/remaining Conform coverage is separate;
+  `docs/instructions-rust-check.md`.
+- RENAME-026: local ZIP only, publication deferred;
+  `docs/instructions-rename-026.md`.
+
+Installation completed on explicit user instruction with clear process
+gates. No public release, commit/push or game launch/termination.
+Next pitfall remains P64.
+
+
+---
+
+# Session79 - TPL-12 live alignment and title wrapping fix (2026-10-24)
+
+Live 0.11.11 borders at y184 versus native y185 prove the lift wrong.
+User also reports Hus wrapping over the count. Rust 0.11.12 uses
+native Y and one-line titles fitted with the actual loaded font.
+Built/tested/packaged/installed with 0.11.11 rollback; player retry next.
+report-tpl-12-title-alignment-1024.md.
+
+## NEXT at the start (verbatim)
+
+# NEXT - what comes next
+
+2026-10-24 (78). **TPL-12 adaptive header, Rust 0.11.11, installed and verified
+in the own-loader TGC test copy; not tested in game.**
+`work/tpl12-01111/ATCU-0.11.11-candidate.zip` includes README and changelog.
+Build/install: `docs/report-tpl-12-spacing-1024.md`.
+
+## Current decisions and evidence
+
+- User: **0.11.8 works great**, but its buttons were too small. Current
+  instruction: **20x20, native Disband size, beside the native header
+  actions in the same row, not above**. Green Conform on the right,
+  maroon Replace on the left. Current correction: native 21px pitch,
+  **2px painted gaps**, and **up 1px**. TGC shown-depleted positions
+  (172,31)/(193,31); hidden-depleted positions (193,31)/(214,31).
+  Follow native button visibility, closing its empty slot and moving back.
+  Long army names have less room; native name width is unchanged.
+- Replace opens independently where Conform opens. Each closes the other.
+  Conform returns to its Conform/Cancel footer. Replace has its own culture
+  boxes; none means all, selected box clicks clear it. Choice settings v2
+  import v1. Replacement orders keep their format.
+- **0.11.7 passed a short gameplay check**, including replacement merge and
+  old-regiment detach (report-tpl-12-replace-1024.md section 9). Strength
+  scale was confirmed. 0.11.8 then passed the user's general short check and supplied capture.
+  Neither acceptance proves the remaining reload/multiplayer cases.
+- **0.11.11 is installed** in `work/Victoria-II-TGC252-own-loader`;
+  User-tested 0.11.9 rollback: `work/tpl12-01110/before-01110`;
+  immediate 0.11.10 rollback: `work/tpl12-01111/before-01111`.
+  Each has 58 verified hashes.
+  All 48 payload files match; 25,466 protected files and eight settings
+  files unchanged. Main E: install unchanged.
+- All new DLL code is Rust (`rust/tgcx`); C++ only receives generated
+  headers. Do not build a C++ release from these GUI headers.
+- TPL-8 0.11.3 and TPL-11 0.11.6 passed their short player checks.
+  TPL-11 is committed at `4ad923d`; current TPL-12 work is uncommitted.
+- Session-start NEXT archived verbatim in `docs/archive/sessions.md`.
+
+## Next session in order
+
+| Card | Status | Instructions |
+|---|---|---|
+| TPL-12-CHECK | 0.11.11 installed/verified; spacing/shift/lift check next | `docs/instructions-tpl-12-check.md` |
+| TPL-11-CHECK | Rally selector/gather short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+1. TPL-12-CHECK: the user launches the existing test copy and follows
+   `docs/instructions-tpl-12-check.md` from step 4. Check the two header
+   buttons' native gaps/1px lift and shifting as the native depleted button
+   hides/shows, independent chooser, culture choices and persistence,
+   replacement merge/detach and save/reload. Preserve screenshots and log.
+2. TPL-11-CHECK: when selected, finish save/reload of a rally gather.
+3. Preserve the two deferred small look fixes: long template names can
+   wrap over the regiment-count line; Changes shortfalls are pale yellow.
+   No implementation selected for them in this session.
+
+## Parked work
+
+- TPL-9 Autodivide: needs the user's split rule, button place and leader
+  choice before implementation.
+- TPL-10 Carpet siege: depends on TPL-9; user choices still open.
+- RUST-CHECK: full Bill/favour/remaining Conform coverage is separate;
+  `docs/instructions-rust-check.md`.
+- RENAME-026: local ZIP only, publication deferred;
+  `docs/instructions-rename-026.md`.
+
+Installation completed on explicit user instruction with clear process
+gates. No public release, commit/push or game launch/termination.
+Next pitfall remains P64.
+
+
+---
+
+# Session78 - TPL-12 native gap, adaptive slot and 1px lift (2026-10-24)
+
+0.11.9 captures expose excess gap and unused native depleted slot. User
+requests native spacing, following native visibility, then a 1px lift.
+Rust 0.11.11 built/tested/packaged/installed with 0.11.9 and interim
+0.11.10 rollbacks. New appearance/transitions await player verification.
+report-tpl-12-spacing-1024.md.
+
+## NEXT at the start (verbatim)
+
+# NEXT - what comes next
+
+2026-10-24 (77). **TPL-12 larger header buttons, Rust 0.11.9, installed and verified
+in the own-loader TGC test copy; not tested in game.**
+`work/tpl12-0119/ATCU-0.11.9-candidate.zip` includes README and changelog.
+Build/install: `docs/report-tpl-12-beside-1024.md`.
+
+## Current decisions and evidence
+
+- User: **0.11.8 works great**, but its buttons were too small. Current
+  instruction: **20x20, native Disband size, beside the native header
+  actions in the same row, not above**. Green Conform on the right,
+  maroon Replace on the left, 3px gaps. TGC positions (168,32)/(191,32).
+  Long army names have less room; native name width is unchanged.
+- Replace opens independently where Conform opens. Each closes the other.
+  Conform returns to its Conform/Cancel footer. Replace has its own culture
+  boxes; none means all, selected box clicks clear it. Choice settings v2
+  import v1. Replacement orders keep their format.
+- **0.11.7 passed a short gameplay check**, including replacement merge and
+  old-regiment detach (report-tpl-12-replace-1024.md section 9). Strength
+  scale was confirmed. 0.11.8 then passed the user's general short check and supplied capture.
+  Neither acceptance proves the remaining reload/multiplayer cases.
+- **0.11.9 is installed** in `work/Victoria-II-TGC252-own-loader`;
+  0.11.8 rollback: `work/tpl12-0119/before-0119` (58 verified hashes).
+  All 48 payload files match; 25,466 protected files and eight settings
+  files unchanged. Main E: install unchanged.
+- All new DLL code is Rust (`rust/tgcx`); C++ only receives generated
+  headers. Do not build a C++ release from these GUI headers.
+- TPL-8 0.11.3 and TPL-11 0.11.6 passed their short player checks.
+  TPL-11 is committed at `4ad923d`; current TPL-12 work is uncommitted.
+- Session-start NEXT archived verbatim in `docs/archive/sessions.md`.
+
+## Next session in order
+
+| Card | Status | Instructions |
+|---|---|---|
+| TPL-12-CHECK | 0.11.9 installed/verified; new placement check next | `docs/instructions-tpl-12-check.md` |
+| TPL-11-CHECK | Rally selector/gather short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+1. TPL-12-CHECK: the user launches the existing test copy and follows
+   `docs/instructions-tpl-12-check.md` from step 4. Check the two header
+   buttons beside the native actions, independent chooser, culture choices and persistence,
+   replacement merge/detach and save/reload. Preserve screenshots and log.
+2. TPL-11-CHECK: when selected, finish save/reload of a rally gather.
+3. Preserve the two deferred small look fixes: long template names can
+   wrap over the regiment-count line; Changes shortfalls are pale yellow.
+   No implementation selected for them in this session.
+
+## Parked work
+
+- TPL-9 Autodivide: needs the user's split rule, button place and leader
+  choice before implementation.
+- TPL-10 Carpet siege: depends on TPL-9; user choices still open.
+- RUST-CHECK: full Bill/favour/remaining Conform coverage is separate;
+  `docs/instructions-rust-check.md`.
+- RENAME-026: local ZIP only, publication deferred;
+  `docs/instructions-rename-026.md`.
+
+Installation completed on explicit user instruction with clear process
+gates. No public release, commit/push or game launch/termination.
+Next pitfall remains P64.
+
+
+---
+
+# Session77 - TPL-12 0.11.9 native-sized buttons beside header actions (2026-10-24)
+
+User accepts 0.11.8 short check and requests larger buttons at the top;
+clarifies same row beside the native actions, not above. Rust 0.11.9
+built/tested/packaged/installed in the existing test copy. 0.11.8 rollback
+retained; new placement awaits player check. report-tpl-12-beside-1024.md.
+
+## NEXT at the start (verbatim)
+
+# NEXT - what comes next
+
+2026-10-24 (76). **TPL-12 option A, Rust 0.11.8, installed and verified
+in the own-loader TGC test copy; not tested in game.**
+`work/tpl12-0118/ATCU-0.11.8-candidate.zip` includes README and changelog.
+Build: `docs/report-tpl-12-header-1024.md`.
+Install: `docs/report-tpl-12-install-1024.md`.
+
+## Current decisions and evidence
+
+- The user chose **A**: both army-header buttons 16x16, 3px gap, clear of
+  the braid; green Conform on the right, maroon Replace on the left.
+- Replace opens independently where Conform opens. Each closes the other.
+  Conform returns to its Conform/Cancel footer. Replace has its own culture
+  boxes; none means all, selected box clicks clear it. Choice settings v2
+  import v1. Replacement orders keep their format.
+- **0.11.7 passed a short gameplay check**, including replacement merge and
+  old-regiment detach (report-tpl-12-replace-1024.md section 9). Strength
+  scale was confirmed. This does not validate the new 0.11.8 GUI or reload.
+- **0.11.8 is installed** in `work/Victoria-II-TGC252-own-loader`;
+  0.11.7 rollback: `work/tpl12-0118/before-0118` (59 verified hashes).
+  All 48 payload files match; 25,466 protected files and eight settings
+  files unchanged. Main E: install unchanged.
+- All new DLL code is Rust (`rust/tgcx`); C++ only receives generated
+  headers. Do not build a C++ release from these GUI headers.
+- TPL-8 0.11.3 and TPL-11 0.11.6 passed their short player checks.
+  TPL-11 is committed at `4ad923d`; current TPL-12 work is uncommitted.
+- Session-start NEXT archived verbatim in `docs/archive/sessions.md`.
+
+## Next session in order
+
+| Card | Status | Instructions |
+|---|---|---|
+| TPL-12-CHECK | 0.11.8 installed/verified; player check next | `docs/instructions-tpl-12-check.md` |
+| TPL-11-CHECK | Rally selector/gather short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+1. TPL-12-CHECK: the user launches the existing test copy and follows
+   `docs/instructions-tpl-12-check.md` from step 4. Check the two header
+   buttons, independent chooser, culture choices and persistence,
+   replacement merge/detach and save/reload. Preserve screenshots and log.
+2. TPL-11-CHECK: when selected, finish save/reload of a rally gather.
+3. Preserve the two deferred small look fixes: long template names can
+   wrap over the regiment-count line; Changes shortfalls are pale yellow.
+   No implementation selected for them in this session.
+
+## Parked work
+
+- TPL-9 Autodivide: needs the user's split rule, button place and leader
+  choice before implementation.
+- TPL-10 Carpet siege: depends on TPL-9; user choices still open.
+- RUST-CHECK: full Bill/favour/remaining Conform coverage is separate;
+  `docs/instructions-rust-check.md`.
+- RENAME-026: local ZIP only, publication deferred;
+  `docs/instructions-rename-026.md`.
+
+Installation completed on explicit user instruction with clear process
+gates. No public release, commit/push or game launch/termination.
+Next pitfall remains P64.
+
+
+---
+
+# Session76 - TPL-12 0.11.8 installed (2026-10-24)
+
+User explicitly selected the own-loader TGC test copy for installation.
+Process and executable gates passed; 59-file rollback verified, 48 payload
+hashes matched, 25,466 protected files and eight settings files unchanged.
+No game launch. Player check next; report-tpl-12-install-1024.md.
+
+## NEXT at the start (verbatim)
+
+# NEXT - what comes next
+
+2026-10-24 (75). **TPL-12 option A finished in Rust 0.11.8; local ZIP ready,
+not installed or tested in game.**
+`work/tpl12-0118/ATCU-0.11.8-candidate.zip` includes README and changelog.
+Report: `docs/report-tpl-12-header-1024.md`.
+
+## Current decisions and evidence
+
+- The user chose **A**: both army-header buttons 16x16, 3px gap, clear of
+  the braid; green Conform on the right, maroon Replace on the left.
+- Replace opens independently where Conform opens. Each closes the other.
+  Conform returns to its Conform/Cancel footer. Replace has its own culture
+  boxes; none means all, selected box clicks clear it. Choice settings v2
+  import v1. Replacement orders keep their format.
+- **0.11.7 passed a short gameplay check**, including replacement merge and
+  old-regiment detach (report-tpl-12-replace-1024.md section 9). Strength
+  scale was confirmed. This does not validate the new 0.11.8 GUI or reload.
+- **0.11.7 remains installed** in `work/Victoria-II-TGC252-own-loader`;
+  its rollback is `work/tpl12-0117/before-0117`. Main E: install unchanged.
+- All new DLL code is Rust (`rust/tgcx`); C++ only receives generated
+  headers. Do not build a C++ release from these GUI headers.
+- TPL-8 0.11.3 and TPL-11 0.11.6 passed their short player checks.
+  TPL-11 is committed at `4ad923d`; current TPL-12 work is uncommitted.
+- Session-start NEXT archived verbatim in `docs/archive/sessions.md`.
+
+## Next session in order
+
+| Card | Status | Instructions |
+|---|---|---|
+| TPL-12-CHECK | 0.11.8 built/packaged; install and player check next | `docs/instructions-tpl-12-check.md` |
+| TPL-11-CHECK | Rally selector/gather short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+1. TPL-12-CHECK: after the user's normal-exit confirmation, back up and
+   install only in the existing isolated own-loader TGC test copy. Verify
+   payload hashes. The user launches and checks the two header buttons,
+   independent chooser, culture choices and their persistence, replacement
+   merge/detach and save/reload. Record screenshots and log.
+2. TPL-11-CHECK: when selected, finish save/reload of a rally gather.
+3. Preserve the two deferred small look fixes: long template names can
+   wrap over the regiment-count line; Changes shortfalls are pale yellow.
+   No implementation selected for them in this session.
+
+## Parked work
+
+- TPL-9 Autodivide: needs the user's split rule, button place and leader
+  choice before implementation.
+- TPL-10 Carpet siege: depends on TPL-9; user choices still open.
+- RUST-CHECK: full Bill/favour/remaining Conform coverage is separate;
+  `docs/instructions-rust-check.md`.
+- RENAME-026: local ZIP only, publication deferred;
+  `docs/instructions-rename-026.md`.
+
+No public release, commit/push, game launch/termination or installation
+was performed. Next pitfall remains P64.
+
+
+---
+
+# Session75 - TPL-12 option A finished, 0.11.8 local ZIP (2026-10-24)
+
+Resumed the unfinished independent header-button layout after usage ended.
+Option A implemented in Rust: two 16px buttons, restored Conform footer,
+independent 332x270 Replace chooser and saved culture settings v2 (v1 import).
+Built/tested/package-verified; README and changelog in local ZIP.
+Not installed or tested in game. report-tpl-12-header-1024.md.
+
+## NEXT at the start (verbatim)
+
+# NEXT - what comes next
+
+2026-10-24 (74). **TPL-12 Replace depleted built in Rust; 0.11.7 installed
+in `work/Victoria-II-TGC252-own-loader` (backup `work/tpl12-0117/before-0117/`),
+not tested in game** (`docs/report-tpl-12-replace-1024.md` §6-8; check in §7). TPL-11 is committed (`4ad923d`).
+Before it:
+2026-10-24 (74). **TPL-11 0.11.6 passed in game** (user: "done. wonderful"):
+Gather at cycles every land rally point
+(candidate `work/tpl11-0116/`, installed in the test copy, backup
+`work/tpl11-0116/before-0116/`; `docs/report-tpl-11-rally-1024.md` §8).
+Before it: **TPL-11 0.11.5: Gather at's third option is the land
+rally point** (`docs/report-tpl-11-rally-1024.md`), candidate
+`work/tpl11-0115/`, installed in `work/Victoria-II-TGC252-own-loader`
+(backup `work/tpl11-0115/before-0115/`), not tested in game. 0.11.4 worked in game for Best
+supply, Capital and armies beside a taken target.
+Before it: **TPL-11 Build Army gathering built in Rust; 0.11.4
+candidate installed in `work/Victoria-II-TGC252-own-loader` (backup
+`work/tpl11-0114/before-0114/`), not tested in game**
+(`docs/report-tpl-11-gather-1024.md`, check `docs/instructions-tpl-11-check.md`).
+Before it: **TPL-8 Non-core only built in Rust; 0.11.3 candidate ready.**
+Installed in `work/Victoria-II-TGC252-own-loader` (backup
+`work/noncore-0113/before-0113/`). **Passed in game** (user): Non-core
+recruit, Conform detach/build, resume after load and merge; v2 untouched.
+Not committed. Session 73 NEXT
+archived verbatim in docs/archive/sessions.md.
+
+## Current scope and evidence
+
+- **All new DLL code is Rust** (user, 2026-10-24): `rust/tgcx/`, in
+  fedacking's style. The C++ DLL is not extended; only its generated headers
+  follow. These headers now describe the 0.11.3 GUI. Do not rebuild the C++
+  DLL from them for a release: its Non-core box would do nothing.
+- TPL-8 (D19): third exclusive box in Templates and Conform; Conform uses two
+  lines and shows 6 Changes rows (was 7), with overflow in the summary. Settings
+  in `tgcx_templates_v3.txt`; v2/v1 are imported, never rewritten.
+  `docs/report-tpl-8-noncore-1024.md`.
+- Candidate `work/noncore-0113/ATCU-noncore-0.11.3-test.zip` (`9801d0b1...`):
+  the **first packaged Rust logic DLL** (`4960aa2f...`), with the accepted C++
+  loader. Previews: `mockups/5-templates-noncore-1024.png`,
+  `6-conform-noncore-1024.png` (Arial, not captures).
+- PR #3 mobo stacks merged at `abc6806`. Player crash report on a low-pop
+  Recruit is not reproduced; reporter's `tgcx.log`, ATCU version and mod list
+  are still awaited.
+- The release is still C++ v0.0.2. The Rust DLL is not deployed or released.
+
+## Next session in order
+
+1. **Small look fixes seen during TPL-8 (pre-existing):** long template names
+   wrap over their "N regiments" line in Conform's list; the left-out
+   Changes title is pale yellow on parchment.
+2. **TPL-11** passed in game on 0.11.6. Open: save/reload of a rally
+   gather; commit when the user asks. `docs/instructions-tpl-11-check.md`.
+   Built 2026-10-24 (D20). Install only after a normal-exit confirmation.
+3. **TPL-9 Autodivide.** Base: Conform's detach (Create + Transfers together,
+   P51). Open [user]: the rule (single regiments, N equal stacks, template
+   copies), the button's place, who keeps the leader.
+4. **TPL-10 Carpet siege.** Needs TPL-9 plus one safe-path Move per stack.
+   Open [user]: which provinces, regiments per province, one-off click or a
+   running order that re-targets.
+5. **TPL-12 Replace depleted regiments.** Built 2026-10-24 (0.11.7,
+   D21): Conform's Replace depleted opens a chooser (low strength below a
+   10-90% slider, pop too small red or yellow); replacements built first,
+   the old regiment detached once its replacement merged. Installed in
+   the test copy; next: the check in `docs/report-tpl-12-replace-1024.md` §7.
+
+Every Army card is Rust, needs its mockup (R10) and its [user] questions
+answered (R9) before code. Full card text: docs/archive/sessions.md,
+"Next up after 0.0.2".
+
+Alongside, when selected:
+
+- **RUST-CHECK:** `docs/instructions-rust-check.md` (Bill, favours, the
+  rest of Conform; the TPL-8 check covers part of it).
+- **RENAME-026:** `docs/instructions-rename-026.md` (C++, packaged; optional
+  final 2px look check). No publication implied.
+
+Next pitfall remains P64.
+
+
+---
+
 # Session74 - TPL-8 Non-core only built in Rust, 0.11.3 candidate (2026-10-24)
 
 Implemented D19 in Rust: culture mode 3 (neither primary nor accepted) in the

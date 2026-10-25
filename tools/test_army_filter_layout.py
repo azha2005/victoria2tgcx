@@ -17,12 +17,34 @@ def root_size(fragment, name):
 
 
 class FilterLayoutTests(unittest.TestCase):
+    def test_replace_is_independent_and_buttons_sit_beside_native_actions(self):
+        fragment, _ = cf.layout(universal=True)
+        roots = {dict(v)['name']: v for k, v in parse('guiTypes={'+fragment+'}')[0][1]}
+        direct = lambda name: {dict(v).get('name') for k, v in roots[name] if isinstance(v, list)}
+        self.assertTrue({'tgcx_cf_open', 'tgcx_cf_replace'} <= direct('tgcx_cf_tab'))
+        self.assertNotIn('tgcx_cf_replace', direct('tgcx_cf_window'))
+        self.assertEqual(root_size(fragment, 'tgcx_cf_rp_window'), (332, 270))
+        controls = {n: (x,y,w,h) for n,_,x,y,w,h in cf.buttons()}
+        self.assertEqual(controls['open'], (21,0,20,20))
+        self.assertEqual(controls['replace'], (0,0,20,20))
+        # TGC: native Disband y=32; our pair shares that row, ending before
+        # the first native action (red disband-too-small at x=214).
+        for name in ('open', 'replace'):
+            self.assertEqual(cf.OPEN[1],32)
+            self.assertLessEqual(cf.OPEN[0]+controls[name][0]+controls[name][2],213)
+        self.assertEqual(controls['conform'],(12,558,148,28))
+        self.assertEqual(controls['cancel'],(172,558,148,28))
+        for name in ('accepted','primary','noncore'):
+            self.assertIn(f'tgcx_cf_rp_culture_{name}',direct('tgcx_cf_rp_window'))
+            x,y,w,h=controls[f'rp_culture_{name}']
+            self.assertTrue(97 <= y and y+h <= 151)
+
     def test_old_logic_cannot_ship_with_new_filter_gui(self):
         with tempfile.TemporaryDirectory() as temp:
             folder = Path(temp)
             dll = folder / 'old.dll'
             dll.write_bytes(b'TGCX MOD-6 0.10.4 tgcx.dll')
-            with self.assertRaisesRegex(ValueError, 'matching 0.11.6'):
+            with self.assertRaisesRegex(ValueError, 'matching 0.11.14'):
                 package.build(folder / 'output', folder / 'art', dll, folder / 'loader')
             self.assertFalse((folder / 'output').exists())
 

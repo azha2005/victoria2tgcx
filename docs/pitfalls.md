@@ -1046,3 +1046,24 @@ only the fixture executable. Corrected/guarded ABI now passes; P31 applies.
 Do not equate sprite size/origin with visible pixels, or fixture-only error
 with a game crash. See report-province-rename-readability-1021.md.0.2.5
 player check remains pending.
+
+### P64 - A single odd frame looks like a game load
+
+**Cause.** The Conform tracker treated any frame whose world, player or date
+differed from the last one (date going back, or a jump) as a load: it
+dropped every task and resumed only the saved orders that applied to the
+date read on that frame. Around a save during construction the world date
+read once as earlier than the order's own creation (inferred: the
+0.11.13 run continued Jan 1 to June 1 with no load in game.log), so the
+resume skipped the order and the next normal frame did not count as a load
+again.
+
+**Symptom.** "N pending orders forgotten (another game or a load)" with no
+"saved orders resumed" line, right after a Replace, Conform or Build Army
+click; the new regiment stays where it was built. Seen in TPL-12 0.11.13
+and earlier in TPL-11 0.11.5 (`tpl11-0115/before-0115/Logs/tgcx.log`).
+
+**Fix (0.11.14).** A load must hold for three frames in a row
+(`conform::confirm_load`); dates before year 0 are ignored; the log
+records what changed. A stranded order still resumes from a save taken
+during construction. See report-tpl-12-load-1024.md.

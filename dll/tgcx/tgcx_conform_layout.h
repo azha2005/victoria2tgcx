@@ -2,6 +2,9 @@
 #pragma once
 constexpr unsigned tgcx_cf_slots=4,tgcx_cf_changes=6,tgcx_cf_minis=4;
 constexpr int tgcx_cf_width=332,tgcx_cf_height=594;
+constexpr int tgcx_cf_entry_size=20,tgcx_cf_entry_pitch=21,tgcx_cf_entry_width=41;
+constexpr int tgcx_cf_slot_name_width=132;
+constexpr int tgcx_cf_rp_width=332,tgcx_cf_rp_height=270,tgcx_cf_rp_steps=9;
 enum tgcx_CfButtonId {
     TGCX_CF_B_OPEN,
     TGCX_CF_B_CLOSE,
@@ -17,6 +20,25 @@ enum tgcx_CfButtonId {
     TGCX_CF_B_CULTURE_PRIMARY,
     TGCX_CF_B_CULTURE_NONCORE,
     TGCX_CF_B_MOBO,
+    TGCX_CF_B_REPLACE,
+    TGCX_CF_B_RP_STRENGTH,
+    TGCX_CF_B_RP_POP,
+    TGCX_CF_B_RP_CULTURE_ACCEPTED,
+    TGCX_CF_B_RP_CULTURE_PRIMARY,
+    TGCX_CF_B_RP_CULTURE_NONCORE,
+    TGCX_CF_B_RP_DOWN,
+    TGCX_CF_B_RP_UP,
+    TGCX_CF_B_RP_STEP_0,
+    TGCX_CF_B_RP_STEP_1,
+    TGCX_CF_B_RP_STEP_2,
+    TGCX_CF_B_RP_STEP_3,
+    TGCX_CF_B_RP_STEP_4,
+    TGCX_CF_B_RP_STEP_5,
+    TGCX_CF_B_RP_STEP_6,
+    TGCX_CF_B_RP_STEP_7,
+    TGCX_CF_B_RP_STEP_8,
+    TGCX_CF_B_RP_REPLACE,
+    TGCX_CF_B_RP_CANCEL,
     TGCX_CF_BUTTONS
 };
 static constexpr const char* tgcx_cf_button_names[]={
@@ -34,6 +56,25 @@ static constexpr const char* tgcx_cf_button_names[]={
     "tgcx_cf_culture_primary",
     "tgcx_cf_culture_noncore",
     "tgcx_cf_mobo",
+    "tgcx_cf_replace",
+    "tgcx_cf_rp_strength",
+    "tgcx_cf_rp_pop",
+    "tgcx_cf_rp_culture_accepted",
+    "tgcx_cf_rp_culture_primary",
+    "tgcx_cf_rp_culture_noncore",
+    "tgcx_cf_rp_down",
+    "tgcx_cf_rp_up",
+    "tgcx_cf_rp_step_0",
+    "tgcx_cf_rp_step_1",
+    "tgcx_cf_rp_step_2",
+    "tgcx_cf_rp_step_3",
+    "tgcx_cf_rp_step_4",
+    "tgcx_cf_rp_step_5",
+    "tgcx_cf_rp_step_6",
+    "tgcx_cf_rp_step_7",
+    "tgcx_cf_rp_step_8",
+    "tgcx_cf_rp_replace",
+    "tgcx_cf_rp_cancel",
 };
 enum tgcx_CfTextId {
     TGCX_CF_T_TITLE,
@@ -84,6 +125,19 @@ enum tgcx_CfTextId {
     TGCX_CF_T_CULTURE_PRIMARY,
     TGCX_CF_T_CULTURE_NONCORE,
     TGCX_CF_T_MOBO,
+    TGCX_CF_T_RP_TITLE,
+    TGCX_CF_T_RP_STRENGTH,
+    TGCX_CF_T_RP_VALUE,
+    TGCX_CF_T_RP_POP,
+    TGCX_CF_T_RP_SUMMARY,
+    TGCX_CF_T_RP_LIST,
+    TGCX_CF_T_RP_STATUS,
+    TGCX_CF_T_RP_CULTURE,
+    TGCX_CF_T_RP_CULTURE_ACCEPTED,
+    TGCX_CF_T_RP_CULTURE_PRIMARY,
+    TGCX_CF_T_RP_CULTURE_NONCORE,
+    TGCX_CF_T_RP_REPLACE,
+    TGCX_CF_T_RP_CANCEL,
     TGCX_CF_TEXTS
 };
 static constexpr const char* tgcx_cf_text_names[]={
@@ -135,5 +189,18 @@ static constexpr const char* tgcx_cf_text_names[]={
     "tgcx_cf_text_culture_primary",
     "tgcx_cf_text_culture_noncore",
     "tgcx_cf_text_mobo",
+    "tgcx_cf_text_rp_title",
+    "tgcx_cf_text_rp_strength",
+    "tgcx_cf_text_rp_value",
+    "tgcx_cf_text_rp_pop",
+    "tgcx_cf_text_rp_summary",
+    "tgcx_cf_text_rp_list",
+    "tgcx_cf_text_rp_status",
+    "tgcx_cf_text_rp_culture",
+    "tgcx_cf_text_rp_culture_accepted",
+    "tgcx_cf_text_rp_culture_primary",
+    "tgcx_cf_text_rp_culture_noncore",
+    "tgcx_cf_text_rp_replace",
+    "tgcx_cf_text_rp_cancel",
 };
-#define TGCX_CF_THUNKS(M) M(0) M(1) M(2) M(3) M(4) M(5) M(6) M(7) M(8) M(9) M(10) M(11) M(12) M(13)
+#define TGCX_CF_THUNKS(M) M(0) M(1) M(2) M(3) M(4) M(5) M(6) M(7) M(8) M(9) M(10) M(11) M(12) M(13) M(14) M(15) M(16) M(17) M(18) M(19) M(20) M(21) M(22) M(23) M(24) M(25) M(26) M(27) M(28) M(29) M(30) M(31) M(32)

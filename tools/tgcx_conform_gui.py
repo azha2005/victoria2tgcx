@@ -33,16 +33,38 @@ CHECKS = {"accepted": (60, 203), "primary": (200, 203), "noncore": (60, 227)}
 # MOBO-1: the "Mobo stack" box, in the title's green band between the title and
 # the close button; its label follows.
 MOBO = (172, 6)
-# The fixed 400x80 stack panel has no room for the board's wide bottom
-# button: the free cell between the location and the attrition icon. OPEN
-# retains the accepted TGC reference; other bases use opening_rect().
-OPEN = (222, 68, 20, 20)
+# User, 2026-10-24: native Disband-sized buttons beside the header actions.
+# Native frames paint 19px of their 20px texture. A 21px pitch gives the
+# same 2px visible gap as Disband depleted / Disband. Universal placement
+# follows the leftmost shown native action, closing its hidden slot.
+ENTRY_SIZE, ENTRY_PITCH = 20, 21
+ENTRY_WIDTH = ENTRY_SIZE + ENTRY_PITCH
+OPEN = (172, 32, ENTRY_WIDTH, ENTRY_SIZE)
+SLOT_NAME_WIDTH = 132
+# TPL-12: two 20px header buttons, Replace then Conform, native spacing.
+# Replace opens independently at Conform's usual position. Its slider uses nine fixed
+# steps (10%..90%), each a transparent button over the track, and one handle
+# per step that the DLL shows.
+RP_WIDTH, RP_HEIGHT = 332, 270
+RP_STEPS = 9
+RP_TRACK_X, RP_TRACK_Y, RP_TRACK_W = 174, 45, 132
+RP_CHECKS = {"rp_strength": (14, 43), "rp_pop": (14, 67),
+             "rp_culture_accepted": (60, 103), "rp_culture_primary": (200, 103),
+             "rp_culture_noncore": (60, 127)}
+
+
+def rp_step_x(i):
+    return RP_TRACK_X + round(i * RP_TRACK_W / RP_STEPS)
+
+
+def rp_handle_x(i):
+    return RP_TRACK_X + round((RP_TRACK_W - 24) * i / (RP_STEPS - 1))
 
 
 def opening_rect(tgc=DEFAULT_TGC, profile=None):
-    # Vanilla's header is 26px higher than TGC's. Follow its attrition icon,
-    # leaving the same 3px gap; fixed TGC coordinates fall under vanilla's
-    # statistics row, which covers the button and intercepts its clicks.
+    # Vanilla's header is 26px higher than TGC's. Follow the native Disband
+    # button rather than a fixed screen position. Use the same row as the
+    # native actions, leaving the location row clear on both bases.
     base = profile or profile_for(tgc)
     path = base.find('interface/unitpanel.gui')
     if not path:
@@ -52,24 +74,44 @@ def opening_rect(tgc=DEFAULT_TGC, profile=None):
               and dict(v).get('name', '').strip('"') == 'unitpanel']
     if len(panels) != 1:
         raise ValueError('require one native unitpanel for the Conform button')
-    anchors = [dict(v) for k, v in panels[0] if k == 'iconType' and isinstance(v, list)
-               and dict(v).get('name', '').strip('"') == 'unitattrition_icon']
+    anchors = [dict(v) for k, v in panels[0] if k == 'guiButtonType' and isinstance(v, list)
+               and dict(v).get('name', '').strip('"') == 'disbandbutton']
     if len(anchors) != 1:
-        raise ValueError('require one native unitattrition_icon for the Conform button')
+        raise ValueError('require one native disbandbutton for the Conform button')
     position = dict(anchors[0].get('position', []))
-    x, y = int(position['x']) - 23, int(position['y'])
-    if x < 0 or y < 0:
+    bx, by = int(position['x']), int(position['y'])
+    depleted = [dict(v) for k, v in panels[0] if k == 'guiButtonType' and isinstance(v, list)
+                and dict(v).get('name', '').strip('"') == 'disbandtoosmallbutton']
+    if len(depleted) > 1:
+        raise ValueError('require at most one native disbandtoosmallbutton')
+    if depleted:
+        pos = dict(depleted[0].get('position', []))
+        if int(pos['x']) < bx and int(pos['y']) == by:
+            bx = int(pos['x'])
+    x, y = bx - 2*ENTRY_PITCH, by
+    if x < 0 or not -32768 <= y <= 32767:
         raise ValueError('invalid native header position for the Conform button')
-    return x, y, 20, 20
+    return x, y, ENTRY_WIDTH, ENTRY_SIZE
 
 
 def buttons():
-    result = [("open", "open", 0, 0, 20, 20), ("close", "GFX_unit_close", 303, 7, 20, 20)]
+    result = [("open", "open", ENTRY_PITCH, 0, ENTRY_SIZE, ENTRY_SIZE), ("close", "GFX_unit_close", 303, 7, 20, 20)]
     result += [(f"slot_{i}", "slot", SLOT_X, SLOT_Y+i*32, ROW_W, ROW_H) for i in range(SLOTS)]
     result += [("list_prev", "left", 228, 172, 24, 24), ("list_next", "right", 300, 172, 24, 24),
                ("conform", "button", 12, 558, 148, 28), ("cancel", "button", 172, 558, 148, 28)]
     result += [(f"culture_{k}", "check", x, y, 20, 20) for k, (x, y) in CHECKS.items()]
-    result += [("mobo", "check", *MOBO, 20, 20)]
+    result += [("mobo", "check", *MOBO, 20, 20), ("replace", "replace", 0, 0, 20, 20)]
+    return result + chooser_buttons()
+
+
+def chooser_buttons():
+    """The chooser window's buttons (prefix rp_), in its own coordinates."""
+    result = [(k, "check", x, y, 20, 20) for k, (x, y) in RP_CHECKS.items()]
+    result += [("rp_down", "rp_left", RP_TRACK_X-16, RP_TRACK_Y, 16, 16),
+               ("rp_up", "rp_right", RP_TRACK_X+RP_TRACK_W, RP_TRACK_Y, 16, 16)]
+    result += [(f"rp_step_{i}", "rp_step", rp_step_x(i), RP_TRACK_Y, rp_step_x(i+1)-rp_step_x(i), 16)
+               for i in range(RP_STEPS)]
+    result += [("rp_replace", "button", 12, 236, 148, 28), ("rp_cancel", "button", 172, 236, 148, 28)]
     return result
 
 
@@ -77,7 +119,7 @@ def texts():
     result = [("title", "Conform to template", 12, 9, 156, 22, "Arial14", "left")]
     for i in range(SLOTS):
         x, y = SLOT_X, SLOT_Y+i*32
-        result += [(f"slot_{i}", "", x+40, y+2, 132, 14, "Arial12_bold_black", "left"),
+        result += [(f"slot_{i}", "", x+40, y+2, SLOT_NAME_WIDTH, 14, "Arial12_bold_black", "left"),
                    (f"detail_{i}", "", x+40, y+16, 132, 14, "Arial12_black", "left")]
         result += [(f"mini_{i}_{k}", "", x+195+k*35, y+9, 18, 14, "Arial12_bold", "left") for k in range(MINIS)]
     result += [("list_page", "", 252, 176, 48, 16, "Arial12_black", "centre"),
@@ -95,7 +137,23 @@ def texts():
                ("culture_primary", "Primary only", CHECKS["primary"][0]+24, 206, 98, 18, "Arial12_black", "left"),
                ("culture_noncore", "Non-core only", CHECKS["noncore"][0]+24, 230, 114, 18, "Arial12_black", "left")]
     result += [("mobo", "Mobo stack", MOBO[0]+24, 9, 104, 22, "Arial14", "left")]
-    return result
+    return result + chooser_texts()
+
+
+def chooser_texts():
+    return [("rp_title", "Replace depleted", 12, 9, 300, 22, "Arial14", "left"),
+            ("rp_strength", "Low strength, below", 38, 46, 118, 18, "Arial12_black", "left"),
+            ("rp_value", "50%", 158, 63, 164, 16, "Arial12_bold_black", "centre"),
+            ("rp_pop", "Pop too small", 38, 70, 118, 18, "Arial12_black", "left"),
+            ("rp_summary", "", 10, 156, 312, 16, "Arial12_bold_black", "left"),
+            ("rp_list", "", 10, 172, 312, 28, "Arial12_black", "left"),
+            ("rp_status", "", 10, 200, 312, 30, "Arial12_black", "left"),
+            ("rp_culture", "Culture", 14, 106, 44, 18, "Arial12_bold_black", "left"),
+            ("rp_culture_accepted", "Primary + accepted", 84, 106, 114, 18, "Arial12_black", "left"),
+            ("rp_culture_primary", "Primary only", 224, 106, 98, 18, "Arial12_black", "left"),
+            ("rp_culture_noncore", "Non-core only", 84, 130, 114, 18, "Arial12_black", "left"),
+            ("rp_replace", "Replace", 12, 243, 148, 18, "Arial12_bold_black", "centre"),
+            ("rp_cancel", "Cancel", 172, 243, 148, 18, "Arial12_bold_black", "centre")]
 
 
 def _window(name, x, y, w, h, inner):
@@ -111,7 +169,7 @@ def layout(tgc=DEFAULT_TGC, profile=None, universal=False):
     rows = [("unit", "", "", 1, 1)] if universal else units(tgc, profile)
     order = [row[0] for row in rows]
     icons = {key: icon for key, _, _, _, icon in rows}
-    x, y, w, h = (30000, 30000, 20, 20) if universal else opening_rect(tgc, profile)
+    x, y, w, h = (30000, 30000, ENTRY_WIDTH, ENTRY_SIZE) if universal else opening_rect(tgc, profile)
     # Fleets share the panel: the button sits in a window the DLL can hide.
     # A button lookup searches only its own window's children, so an
     # off-screen marker at the panel's level is the DLL's silent probe for our
@@ -119,7 +177,8 @@ def layout(tgc=DEFAULT_TGC, profile=None, universal=False):
     # nested open button and never found it).
     parts = ['guiButtonType={name="tgcx_cf_marker" quadTextureSprite="tgcx_cf_open" position={x=30000 y=30000}}',
              *_window("tgcx_cf_tab", x, y, w, h,
-                      ['guiButtonType={name="tgcx_cf_open" quadTextureSprite="tgcx_cf_open" position={x=0 y=0} clicksound=click}']),
+                      ['guiButtonType={name="tgcx_cf_replace" quadTextureSprite="tgcx_cf_replace" position={x=0 y=0} clicksound=click}',
+                       f'guiButtonType={{name="tgcx_cf_open" quadTextureSprite="tgcx_cf_open" position={{x={ENTRY_PITCH} y=0}} clicksound=click}}']),
              f'windowType={{name="tgcx_cf_window" position={{x=30000 y=30000}} size={{x={WIDTH} y={HEIGHT}}} backGround="" moveable=0 fullScreen=no orientation="UPPER_LEFT"',
              # A background button, not an icon: clicks on the window must not
              # fall through to the map and deselect the army.
@@ -136,6 +195,8 @@ def layout(tgc=DEFAULT_TGC, profile=None, universal=False):
     parts += _window("tgcx_cf_check_on_mobo", *MOBO, 20, 20,
                      ['iconType={name="tgcx_cf_check_on_icon_mobo" spriteType="tgcx_cf_check_on" position={x=0 y=0}}'])
     for name, art, bx, by, _, _ in buttons()[1:]:
+        if name.startswith("rp_") or name == "replace":
+            continue
         sprite_name = art if art.startswith("GFX_") else f"tgcx_cf_{art}"
         parts.append(f'guiButtonType={{name="tgcx_cf_{name}" quadTextureSprite="{sprite_name}" position={{x={bx} y={by}}} clicksound=click}}')
     # Native buttons cannot be hidden by the DLL's verified window methods:
@@ -164,10 +225,30 @@ def layout(tgc=DEFAULT_TGC, profile=None, universal=False):
             parts += _window(f"tgcx_cf_change_icon_{row}_{u}", CHANGE_X+1, CHANGE_Y+row*32-2, 36, 36,
                              [_strip(f"tgcx_cf_change_sprite_{row}_{u}", 0, 0, icons[u])])
     loc = {}
-    for name, text, tx, ty, tw, th, font, fmt in texts():
-        key = f"tgcx_cf_text_{name}"
-        loc[key] = text
-        parts.append(f'instantTextBoxType={{name="{key}" position={{x={tx} y={ty}}} font="{font}" text="{key}" maxWidth={tw} maxHeight={th} format={fmt} allwaystransparent=yes}}')
+
+    def boxes(chooser):
+        for name, text, tx, ty, tw, th, font, fmt in texts():
+            if name.startswith("rp_") != chooser:
+                continue
+            key = f"tgcx_cf_text_{name}"
+            loc[key] = text
+            parts.append(f'instantTextBoxType={{name="{key}" position={{x={tx} y={ty}}} font="{font}" text="{key}" maxWidth={tw} maxHeight={th} format={fmt} allwaystransparent=yes}}')
+    boxes(False)
+    parts.append('}')
+    # TPL-12: the chooser, a separate window the DLL places beside Conform.
+    parts += [f'windowType={{name="tgcx_cf_rp_window" position={{x=30000 y=30000}} size={{x={RP_WIDTH} y={RP_HEIGHT}}} backGround="" moveable=0 fullScreen=no orientation="UPPER_LEFT"',
+              'guiButtonType={name="tgcx_cf_rp_bg" quadTextureSprite="tgcx_cf_rp_bg" position={x=0 y=0}}',
+              'iconType={name="tgcx_cf_rp_bg_icon" spriteType="tgcx_cf_rp_bg" position={x=0 y=0}}']
+    for k, (bx, by) in RP_CHECKS.items():
+        parts += _window(f"tgcx_cf_check_on_{k}", bx, by, 20, 20,
+                         [f'iconType={{name="tgcx_cf_check_on_icon_{k}" spriteType="tgcx_cf_check_on" position={{x=0 y=0}}}}'])
+    # Each step's handle lies beneath the transparent step buttons; one is shown.
+    for i in range(RP_STEPS):
+        parts += _window(f"tgcx_cf_rp_handle_{i}", rp_handle_x(i), RP_TRACK_Y, 24, 16,
+                         [f'iconType={{name="tgcx_cf_rp_handle_icon_{i}" spriteType="tgcx_cf_rp_handle" position={{x=0 y=0}}}}'])
+    for name, art, bx, by, _, _ in chooser_buttons():
+        parts.append(f'guiButtonType={{name="tgcx_cf_{name}" quadTextureSprite="tgcx_cf_{art}" position={{x={bx} y={by}}} clicksound=click}}')
+    boxes(True)
     parts.append('}')
     return "\n".join(parts)+"\n", loc
 
@@ -189,6 +270,9 @@ def header():
     lines = ['// Generated by tools/tgcx_conform_gui.py --header; do not edit.', '#pragma once',
              f'constexpr unsigned tgcx_cf_slots={SLOTS},tgcx_cf_changes={CHANGES},tgcx_cf_minis={MINIS};',
              f'constexpr int tgcx_cf_width={WIDTH},tgcx_cf_height={HEIGHT};',
+             f'constexpr int tgcx_cf_entry_size={ENTRY_SIZE},tgcx_cf_entry_pitch={ENTRY_PITCH},tgcx_cf_entry_width={ENTRY_WIDTH};',
+             f'constexpr int tgcx_cf_slot_name_width={SLOT_NAME_WIDTH};',
+             f'constexpr int tgcx_cf_rp_width={RP_WIDTH},tgcx_cf_rp_height={RP_HEIGHT},tgcx_cf_rp_steps={RP_STEPS};',
              'enum tgcx_CfButtonId {']
     lines += [f'    TGCX_CF_B_{name.upper()},' for name, *_ in buttons()]
     lines += ['    TGCX_CF_BUTTONS', '};', 'static constexpr const char* tgcx_cf_button_names[]={']
@@ -249,6 +333,7 @@ def generate(output, tgc=DEFAULT_TGC, profile=None):
     band.paste(row.crop((0, 10, ROW_W, 20)).resize((ROW_W, BAND_H-20)), (0, 10))
     band.paste(row.crop((0, 20, ROW_W, ROW_H)), (0, BAND_H-10))
     bg.alpha_composite(band, (SLOT_X, BAND_Y))
+    culture_band = band
     off, on, shared = filter_checkbox(tgc, profile)
     for x, y in (*CHECKS.values(), MOBO):
         bg.alpha_composite(off, (x, y))
@@ -266,19 +351,29 @@ def generate(output, tgc=DEFAULT_TGC, profile=None):
         images[key] = native(name).resize((24, 24))
     # Native unit-panel footer button (148x28 steel/gold bevelled button).
     images['button'] = native('GFX_unit_gunboat_diplo_button')
-    # The panel's own 20x20 button frame (disband), its centre cleared, with
-    # the infantry figure of the unit strip: "this stack, by template".
+    # Native Disband-sized frames (20px), green Conform and maroon Replace;
+    # retain the chosen infantry/low-strength art at the larger size.
     frame = native('GFX_unit_disband')
     if frame.size != (20, 20):
         raise ValueError("Army requires native 20x20 unit panel buttons")
-    fill = frame.getpixel((4, 4))
-    ImageDraw.Draw(frame).rectangle((3, 3, 16, 16), fill=fill)
     strip = texture(tgc, table['GFX_unit_strip'], profile)
     w = strip.width//unit_frames(tgc, profile)
-    frame.alpha_composite(strip.crop((0, 0, w, strip.height)).resize((16, 16)), (2, 2))
-    images['open'] = frame
+    figure = strip.crop((0, 0, w, strip.height))
+    def button_frame(fill):
+        out = frame.copy()
+        ImageDraw.Draw(out).rectangle((3, 3, 16, 16), fill=fill)
+        return out
+    images['open'] = button_frame(frame.getpixel((4, 4)))
+    images['open'].alpha_composite(figure.resize((16, 16), Image.Resampling.LANCZOS), (2, 2))
+    images['replace'] = button_frame((88, 22, 20, 255))
+    images['replace'].alpha_composite(figure.resize((14, 14), Image.Resampling.LANCZOS), (2, 3))
+    strength = texture(tgc, table['GFX_tooltip_strength'], profile)
+    bw = strength.width // 11
+    low = strength.crop((2*bw, 0, 3*bw, strength.height)).resize((4, 14), Image.Resampling.LANCZOS)
+    images['replace'].alpha_composite(low, (13, 3))
     # Match the army's regiment rows for both templates and changes.
     images['change'] = images['slot'].copy()
+    images.update(chooser_art(native, body, top, culture_band, off))
     declarations = []
     for key, image in images.items():
         filename = f'tgcx_cf_{key}.dds'
@@ -289,6 +384,33 @@ def generate(output, tgc=DEFAULT_TGC, profile=None):
     rows += [k+';'+v+';'*13+'x' for k, v in loc.items()]
     (output/'TGCX/localisation/tgcx_conform.csv').write_bytes(('\n'.join(rows)+'\n').encode('cp1252'))
     return images
+
+
+def chooser_art(native, body, top, band, off):
+    """The chooser: Conform's own braid, parchment, two-line band and footer tray,
+    with the native budget slider (yearslider_*, GFX_bg_horizontal_slider_220wide)."""
+    art = {}
+    bg = Image.new('RGBA', (RP_WIDTH, RP_HEIGHT))
+    parchment = body.crop((0, 80, RP_WIDTH, 360))
+    bg.paste(parchment.crop((0, 0, RP_WIDTH, RP_HEIGHT-65)), (0, 30))
+    bg.paste(body.crop((0, 373, RP_WIDTH, 408)), (0, RP_HEIGHT-35))
+    bg.alpha_composite(top.crop((0, 0, RP_WIDTH, 27)), (0, 0))
+    bg.alpha_composite(top.crop((51, 5, 324, 27)).resize((317, 22)), (7, 5))
+    bg.alpha_composite(top.crop((0, 58, RP_WIDTH, 64)), (0, 27))
+    bg.alpha_composite(band, (SLOT_X, 37))
+    bg.alpha_composite(band, (SLOT_X, 97))
+    for x, y in RP_CHECKS.values():
+        bg.alpha_composite(off, (x, y))
+    track = native('GFX_bg_horizontal_slider_220wide')
+    w = RP_TRACK_W
+    bg.alpha_composite(track.crop((0, 0, w-8, 16)), (RP_TRACK_X, RP_TRACK_Y))
+    bg.alpha_composite(track.crop((track.width-8, 0, track.width, 16)), (RP_TRACK_X+w-8, RP_TRACK_Y))
+    art['rp_bg'] = bg
+    art['rp_left'] = native('yearslider_leftbutton', frames=4)
+    art['rp_right'] = native('yearslider_rightbutton', frames=4)
+    art['rp_handle'] = native('yearslider_slider')
+    art['rp_step'] = Image.new('RGBA', (16, 16))
+    return art
 
 
 def main():

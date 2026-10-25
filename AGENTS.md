@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P64**).
+number (**the next one is P65**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -473,6 +473,7 @@ number (**the next one is P64**).
 - **P61** Verify concrete size and text-origin fields: live window width is runtime+0x4A0, not definition+0xA0 (X). Native text Draw also applies local+0x188/+0x18C beyond the graphical owner matrix. Fixtures must preserve the live distinction and execute an independent native consumer.
 - **P62** Native edit border insets feed both text texture rasterization and entity positioning. Center once: zero texture padding during refresh, then shared text/caret origin. Test actual refresh/setter/position and repeated parent placement, not only inset writes.
 - **P63** A native caret sprite's visible ink differs from its container. Compensate the native cursor's transparent margins and measured3px gap through caret-only fields, leaving shared text centering intact. Check visible bounds and actual caret update RET4 ABI.
+- **P64** One odd frame (bogus date around a save) looked like a load: tasks were dropped and the resume skipped them, so new regiments stayed put. A load must now hold three frames in a row (0.11.14).
 
 
 ## 9. Decisions
@@ -498,6 +499,7 @@ number (**the next one is P64**).
 | **D18** | Province Rename scope and UI | Separate Universal additive free-text V2DLL mod for reference3.04. Native white/green/gold/parchment editor, black centered Garamond input, aligned caret,24px ABC right of name. User accepts0.2.5;0.2.6 final ABC placement installed, local ZIP ready. Latest explicit scope: do not release yet, just give ZIP. MP untested. | **closed** (user, 2026-10-20/21); docs/report-province-rename-package-1021.md |
 | **D19** | ATCU non-core culture filter | Third Non-core only checkbox in both Templates and Conform; mutually exclusive with existing choices, none=All, click selected=clear. Narrow Conform may use two lines. Hold lifted 2026-10-24 (all new DLL code Rust); built in Rust 0.11.3, Conform 6 Changes rows, settings v3. | **closed**; passed in game (2026-10-24); docs/report-tpl-8-noncore-1024.md |
 | **D20** | TPL-11 Build Army gathering | Each Build Army click makes **one template army**: its regiments march by safe land path and **merge** into one stack. Default target: the owned province with the highest supply limit that every source can reach by land; a footer selector "Gather at" (Best supply / Capital / land rally point, session only like the continent; the map-selected province of 0.11.4 was replaced by the rally point, user 2026-10-24, because the Military screen closes the province window) overrides it. If an army of ours already stands at the target, or the player recruits more than one template army, each further army gathers in the next adjacent owned, reachable province by supply. A regiment whose source has no land route to its target is not built (reported left out) | **closed** (user, 2026-10-24, corrected the same day); docs/instructions-tpl-11.md |
+| **D21** | TPL-12 Replace depleted | Independent army-header button beside Conform; both **20x20** (native Disband size), native 21px pitch (2px painted gap), native Y (live evidence supersedes the earlier 1px lift), green Conform / maroon Replace (infantry + low bar), beside the native header actions (not above); move right when native Disband depleted is hidden and back when shown. Conform retains its two-button footer. Replace opens a separate 332x270 chooser at Conform's position, closing the other window. Low strength slider 10%-90% by 10 (default 50%) and/or Pop too small (red and yellow); independent exclusive culture boxes, none=All. Build first within land reach; detach old regiment only after replacement merges, never disband. | **closed** (user, 2026-10-24); docs/instructions-tpl-12.md, docs/report-tpl-12-title-alignment-1024.md |
 | **D10** | Language | **English for everything**: code, comments, docs, file names, commit messages, in-game text and chat. Nothing is written in Spanish. All existing files were translated on 2026-10-12 | **closed** (user, 2026-10-12) |
 
 ---

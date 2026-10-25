@@ -10,9 +10,9 @@ from PIL import Image
 import tgcx_templates_gui as tpl
 import tgcx_conform_gui as cf
 
-VERSION = '0.11.6'
-# TPL-11: the Gather at row needs the Rust DLL that handles it.
-MARKER = b'TGCX TPL-11 0.11.6 tgcx.dll'
+VERSION = '0.11.14'
+# TPL-12: the Replace depleted chooser needs the Rust DLL that handles it.
+MARKER = b'TGCX TPL-12 0.11.14 tgcx.dll'
 
 
 def build(output, art, dll, loader):
@@ -20,7 +20,7 @@ def build(output, art, dll, loader):
     if output.exists() or Path(str(output)+'.zip').exists():
         raise ValueError('output folder/ZIP must be new')
     if MARKER not in dll.read_bytes():
-        raise ValueError('filter package requires the matching 0.11.6 DLL and GUI')
+        raise ValueError('filter package requires the matching 0.11.14 DLL and GUI')
     package = output/'mod/tgcx_army_universal'
     (package/'interface').mkdir(parents=True)
     (package/'gfx/interface').mkdir(parents=True)
@@ -49,7 +49,7 @@ def build(output, art, dll, loader):
     shutil.copy2(loader, output/'lua51.dll')
     (output/'README.txt').write_text(
         'ATCU - Army Template and Conform Universal\n'
-        'Build Army gathering test candidate, internal version 0.11.6\n\n'
+        'Replace depleted adaptive header, internal version 0.11.14, local candidate\n\n'
         'The SAME mod folder/descriptor and DLL work with the active supported 3.04 base.\n'
         'No installer, scripts, per-base preparation or original GUI overrides.\n'
         'Close the game normally before copying. Keep backups of existing files.\n'
@@ -82,12 +82,35 @@ def build(output, art, dll, loader):
         'highest supply. Pops with no land route to the target are left out.\n'
         'Needs at least one army of yours to plan the routes. Session-only choice.\n'
         'Orders are kept in tgcx_gather_orders.txt and resumed after a load.\n\n'
+        'CONFORM LIST: long template names are shortened with an ellipsis to fit\n'
+        'one line; composition and the regiment count are unchanged.\n\n'
         'CONFORM ORDERS: regiments being built for a Conform are also listed in\n'
         'tgcx_conform_orders.txt in the same settings folder (country tag, date,\n'
         'stack and construction ids). Loading a save of the same country dated\n'
         'within an order resumes it: the regiment still joins its conformed\n'
         'stack, even from a rally point. Not part of the save; deleting the file\n'
         'only stops resuming after a load.\n\n'
+        'REPLACE DEPLETED: the maroon button, left of the green Conform button\n'
+        'in the army header, opens its own chooser. Both are 20x20 (native\n'
+        'Disband size), in the same row as the native army-header actions, with\n'
+        'the native 21px pitch (2px painted gap). Opening either closes the other.\n'
+        'The pair shifts right when native Disband depleted is hidden, closing\n'
+        'the empty slot, and moves back when it is shown. No native actions are\n'
+        'moved or hidden. Conform retains its two original footer buttons.\n'
+        'Tick Low strength (below the slider, 10% to 90%) and/or Pop too small\n'
+        '(the unit panel shows the pop red or yellow). Replace builds one\n'
+        'regiment of the same type for each depleted one, within land reach and\n'
+        'with the chooser\'s own Culture boxes: Primary + accepted, Primary only,\n'
+        'Non-core only, or any culture (no box ticked, the default). Clicking a\n'
+        'selected box clears it. No selected template is required. It marches like a\n'
+        'Conform build. When it has merged, the old regiment is detached into its\n'
+        'own stack beside the army; nothing is disbanded (use the native button).\n'
+        'The choice is kept in tgcx_replace_settings.txt (v2, imports v1); rolling\n'
+        'back to 0.11.7 resets its choice unless you restore that settings backup.\n'
+        'Replacements are kept in tgcx_replace_orders.txt (v2, imports v1) and\n'
+        'resumed after a load, including one saved after its merge but before\n'
+        'the old regiment left: the old regiment is detached again. A record\n'
+        'that can no longer be resumed is closed at that load.\n\n'
         'MOBO STACK: the box in the Conform window header marks the open stack with\n'
         'the infantry its selected template asks for; Conform then keeps infantry out\n'
         'of that stack. When the country mobilizes, each new all-infantry stack that\n'
@@ -103,11 +126,68 @@ def build(output, art, dll, loader):
         'the mod TXT files are not parsed on each click.\n'
         'ROLLBACK: restore the previous complete ATCU folder and descriptor.\n'
         'The old build reads its retained v2 or v1 file; edits made in this\n'
-        'candidate remain in v3 and will not appear in the old build. Keep all files.\n\n'
-        'TEST CANDIDATE: automated checks pass; gathering gameplay and visuals\n'
-        'still need player verification. Check Gather at choices, the army forming\n'
-        'and merging, a second army beside the first, left-out pops, save/reload.\n'
+        'candidate remain in v3 and will not appear in the old build. Keep all files.\n'
+        '0.11.12 and older refuse a v2 tgcx_replace_orders.txt (left untouched):\n'
+        'replacements then do not resume after a load in the old build.\n\n'
+        'TEST CANDIDATE: automated checks pass; Replace depleted gameplay and\n'
+        'visuals still need player verification. Check the chooser and slider,\n'
+        'the preview, replacements merging, old regiments detached, save/reload.\n'
         'Preserve Logs/tgcx.log. This ZIP is for local testing, not publication.\n', encoding='utf-8')
+    (output/'CHANGELOG.txt').write_text(
+        'ATCU 0.11.14 - 2026-10-24 (local candidate)\n\n'
+        '- Fix: a regiment built by Replace, Conform or Build Army could stay\n'
+        '  where it was built instead of marching to its army. One odd frame\n'
+        '  (seen around a save during construction) was taken for a load, the\n'
+        '  order was dropped and not resumed. A load must now be seen on three\n'
+        '  frames in a row, and dates before year 0 are ignored.\n'
+        '- The log now records what a detected load changed (world, player, date).\n'
+        '- A regiment already left behind this way resumes when you load a save\n'
+        '  taken while it was being built.\n'
+        '- No visual, GUI, texture, chooser or settings change from 0.11.13.\n\n'
+        'ATCU 0.11.13 - 2026-10-24 (local candidate)\n\n'
+        '- Replace: a save taken after a replacement merged but before the old\n'
+        '  regiment left now detaches the old regiment again after loading.\n'
+        '  Its record stays open until the old regiment has left the army.\n'
+        '- Replace: saved records that a load cannot resume are closed instead\n'
+        '  of staying open and being retried on every load.\n'
+        '- tgcx_replace_orders.txt is now v2 (adds merged=0/1); v1 is imported.\n'
+        '  0.11.12 and older leave a v2 file untouched and do not resume from it.\n'
+        '- README: Replace button described in its current header position.\n'
+        '- No visual, GUI, texture, chooser or settings change from 0.11.12.\n'
+        '- The new reload paths still need a player check.\n\n'
+        'ATCU 0.11.12 - 2026-10-24 (local candidate)\n\n'
+        '- Header controls match native 21px pitch (2px gap between painted frames).\n'
+        '- Use the native header Y directly: live borders proved the 1px lift wrong.\n'
+        '- Long Conform template names fit on one line, using native font widths\n'
+        '  and an ellipsis; the regiment count stays on its own line.\n'
+        '- Replace and Conform shift right one slot when native Disband depleted\n'
+        '  is hidden; move back when shown, following its actual visibility.\n'
+        '- Button visibility uses CEU3Button +0x4F with Show/Hide signature guards.\n'
+        '- Textures, chooser, culture, orders and settings formats unchanged.\n'
+        '- Both visibility transitions still need a player check.\n\n'
+        'ATCU 0.11.9 - 2026-10-24 (local candidate)\n\n'
+        '- Conform and Replace now match native Disband size (20x20), retaining\n'
+        '  the green/maroon infantry and low-strength art.\n'
+        '- The pair sits beside the native header actions, 3px apart, aligned from the\n'
+        '  native Disband button. The location row is clear of our controls.\n'
+        '- Long army names have less room in the header and may run under the\n'
+        '  new controls, as long location names did with the previous position.\n'
+        '- 0.11.8 passed the user\'s short check; chooser, filters, orders and\n'
+        '  replacement/detach behavior are unchanged. Settings formats unchanged.\n'
+        '- New placement still needs a player appearance/hit-testing check.\n\n'
+        'ATCU 0.11.8 - 2026-10-24 (local candidate)\n\n'
+        '- Replace depleted opens from its own army-header button.\n'
+        '- Option A: two 16px buttons above the braid, 3px apart; green Conform,\n'
+        '  maroon Replace with infantry and low-strength bar.\n'
+        '- Conform restored to its Conform / Cancel footer.\n'
+        '- Independent 332x270 Replace chooser with saved, exclusive Culture boxes.\n'
+        '- Low-strength slider, red/yellow pop detection and detach-after-merge\n'
+        '  behavior retained from 0.11.7; no regiment is disbanded.\n'
+        '- Settings v2 imports v1 with unrestricted culture; order format unchanged.\n'
+        '- 0.11.7 replacement/detach passed a short player check. 0.11.8 visuals,\n'
+        '  culture selection and reload still require a player check.\n'
+        '- Long location names may still extend beneath the header buttons.\n'
+        '- No public release, multiplayer certification or installation implied.\n', encoding='utf-8')
     manifest={p.relative_to(output).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
               for p in sorted(output.rglob('*')) if p.is_file()}
     Path(str(output)+'.SHA256.json').write_text(json.dumps(manifest,indent=2))

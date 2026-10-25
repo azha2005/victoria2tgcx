@@ -43,6 +43,79 @@
 
 ## 1. Status by stage (as of 2026-10-24)
 
+2026-10-24, session 81 (later): user ran 0.11.13: **GUI fine, new regiment
+did not go to the stack**. Log: a false load right after the click dropped
+the order and the resume skipped it; game.log shows no load (P64). Rust
+**0.11.14** requires a load on three frames in a row, ignores pre-year-0
+dates, logs load values. 30 tests/gates pass; installed, 58-file rollback.
+**Not tested in game.** report-tpl-12-load-1024.md.
+
+2026-10-24, session 81: review of 0.11.12 found two Replace reload defects
+(old regiment kept after a save between merge and detach; unresumable
+records never closed) and stale README wording. Rust **0.11.13** fixes
+both (orders file v2, `merged`), 29 tests/Clippy/Python gates pass; only
+the DLLs, package version, README and changelog differ from 0.11.12.
+Installed in the test copy, 48 payload hashes, 58-file rollback.
+**Not tested in game.** report-tpl-12-reload-1024.md.
+
+2026-10-24, session 80: user confirms **0.11.12 alignment/title fixes worked**
+and explicitly notes testing remains. Current run: 206 runtime guards OK,
+no custom faults or profile error-log entries; Conform/Replace preview read.
+No replacement queue/resume/march/merge/detach outcomes in this run. Logs
+preserved under work/tpl12-01112/check-1024. **Visual short pass only;
+functional/reload/other-base/MP validation open.**
+report-tpl-12-visual-check-1024.md; next instructions-tpl-12-check.md steps 6-8.
+
+
+2026-10-24, session 79: live 0.11.11 screenshot proves our border 1px too
+high; user also reports Hus title wrapping over count. Rust **0.11.12**
+restores native Y and fits Conform titles to one line with actual loaded
+font metrics/ellipsis. 26 Rust tests/Clippy and GUI/Army/installer/plugin
+checks pass; installed in same test copy. 48 payload hashes verified,
+25,466 protected files/eight settings unchanged, 58-file 0.11.11 rollback.
+**New alignment/title behavior not tested in game.**
+report-tpl-12-title-alignment-1024.md; instructions-tpl-12-check.md step 4.
+
+
+2026-10-24, session 78: **TPL-12 0.11.11** matches native 21px pitch (2px
+painted gap), follows native Disband depleted visibility, and lifts both
+controls 1px. Rust build/23 tests/Clippy, GUI/Army/installer/plugin checks
+pass; installed in the same test copy with 0.11.9/interim 0.11.10 rollbacks.
+48 payload hashes pass; 25,466 protected files/eight settings unchanged.
+**New appearance/transitions not tested in game.** report-tpl-12-spacing-1024.md.
+
+
+2026-10-24, session 77: user accepts 0.11.8 short check, requests native-sized
+buttons **beside** the native header actions, same row. Rust 0.11.9 uses
+20x20 sprites at TGC (168,32)/(191,32), anchored to native Disband. Built,
+tested and installed in the same own-loader TGC copy; new placement awaits
+game check. 48 payload hashes pass; 25,466 protected files/eight settings
+unchanged, 58-file 0.11.8 rollback retained. report-tpl-12-beside-1024.md.
+
+
+2026-10-24, session 76: **TPL-12 0.11.8 installed and verified** in
+work/Victoria-II-TGC252-own-loader, on the user's explicit request and
+clear process gates. 48 payload hashes pass; 25,466 protected files and
+eight settings unchanged; 59-file 0.11.7 rollback in
+work/tpl12-0118/before-0118. **Not tested in game.** No game launch.
+report-tpl-12-install-1024.md; instructions-tpl-12-check.md step 4 next.
+
+
+2026-10-24, session 75: **TPL-12 option A built in Rust 0.11.8**: two
+16px army-header buttons, independent 332x270 Replace chooser with saved
+culture boxes, Conform footer restored. Local ZIP includes README/changelog;
+build/lint/21 Rust tests, GUI/Army/installer checks and actual Rust plugin
+probe pass. **Not installed or tested in game.** 0.11.7 remains installed
+and its short replacement/detach pass is recorded in its report section 9.
+Report: docs/report-tpl-12-header-1024.md. Next: instructions-tpl-12-check.md.
+
+
+2026-10-24, TPL-12 Replace depleted built in Rust (0.11.7, D21): a chooser
+beside Conform picks low strength (10-90% slider) and/or pop too small;
+one regiment built per depleted one, the old one detached after the
+merge; resumed after a load. Installed in the test copy, **not tested in game**.
+report-tpl-12-replace-1024.md.
+
 2026-10-24, TPL-11 0.11.6 **passed in game** (user): both rally points
 listed, armies gathered at Raab and Triest, a third beside Triest at Görz.
 report-tpl-11-rally-1024.md §9.
@@ -281,6 +354,9 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 
 | Separate candidate | Staged | Installed | Game acceptance |
 |---|---|---|---|
+| ATCU 0.11.14 (TPL-12 false-load fix, Rust) | work/tpl12-01114/ATCU-0.11.14-candidate.zip | Own-loader TGC copy; 0.11.13 rollback retained | Not tested in game |
+| ATCU 0.11.13 (TPL-12 Replace reload fixes, Rust) | work/tpl12-01113/ATCU-0.11.13-candidate.zip | Superseded by 0.11.14 | GUI fine (user); new regiment did not march (P64) |
+| ATCU 0.11.12 (TPL-12 native Y/single-line titles, Rust) | work/tpl12-01112/ATCU-0.11.12-candidate.zip | Superseded in the test copy by 0.11.13 | Alignment/title visual short pass, clean short-run logs; functional/reload/MP open |
 | Province Rename0.2.6 Universal, V2DLL API1 | work/releases/province-rename/0.2.6/Province-Rename-Universal-0.2.6.zip | Dedicated copy0.2.6,11payload/25,388protected hashes verified |0.2.5 accepted, final ABC2px check pending; ZIP only, publication deferred |
 
 2026-10-19 filter candidate: user authorized culture/continent filters and session-only continent default Any, then confirmed normal exit and selected isolated TGC. Implemented0.11.0,223guards/179runtime header, Win32/native real-D3D9,109full-suite Python cases plus added package-mismatch guard and packaged loader/plugin probes pass.39/39mod files installed with0.10.4rollback; main0.0.1 and accepted ZIP unchanged. Current screenshots retained, local layout previews generated; player verification next. report-army-filters-implementation-1019.md.
@@ -395,6 +471,10 @@ mod; the stable version's `.mod` is called **"TGC v 2.5.2 (stable)"**.
 ---
 
 ## 7. Session close (required)
+
+2026-10-24: session 75 finished TPL-12 option A in Rust 0.11.8; local
+ZIP with README/changelog verified, session-start NEXT archived and current
+player-check instructions written. Not installed or tested in game.
 
 When closing, in this order:
 

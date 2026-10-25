@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL, VK_MENU};
 
 use crate::bill::{bind_observer, find, find_named, set_text_native};
+use crate::conform_layout::CF_ENTRY_PITCH;
 use crate::conform_native;
 use crate::gather;
 use crate::sys::{
@@ -107,7 +108,7 @@ pub fn univ_context(root: usize) -> usize {
     context
 }
 
-fn univ_make(root: usize, key: &str) -> usize {
+pub fn univ_make(root: usize, key: &str) -> usize {
     let context = univ_context(root);
     if context == 0 {
         return 0;
@@ -307,29 +308,77 @@ fn univ_tpl_tab(root: usize, tab: usize, promote: bool) -> bool {
     univ_entry(root, tab, x as i32 + tx, y as i32 + ty, promote)
 }
 
+/// Put our pair immediately before the first native action shown in this row.
+/// Native 20px textures paint 19px, so the 21px pitch leaves a 2px visible gap.
+fn cf_tab_cell(disband: (i32, i32), depleted: Option<(i32, i32)>) -> (i32, i32) {
+    let (x, y) = depleted
+        .filter(|&(x, y)| x < disband.0 && y == disband.1)
+        .unwrap_or(disband);
+    // Live 0.11.11 pixels put our border at y=184 and native borders at
+    // y=185. Use the native Y directly; the preview's lift was misleading.
+    (x - 2 * CF_ENTRY_PITCH, y)
+}
+
 pub fn univ_cf_tab(root: usize, tab: usize) -> bool {
-    let icon = find_named(root, 17, 0x5E4D40, "unitattrition_icon");
-    if icon == 0 {
-        return placement_refused(root, "Conform attrition icon lookup");
+    let button = find_named(root, 13, 0x5E4C80, "disbandbutton");
+    if button == 0 {
+        return placement_refused(root, "Conform disband button lookup");
     }
-    // CIcon slot 15 copies its packed definition position from +0xBC.
-    if slot(icon, 15) != base() + 0x246620 {
-        return placement_refused(root, "Conform attrition position getter");
+    // Reuse the verified native button position getter used by Templates.
+    let Some((bx, by)) = univ_button_position(button) else {
+        return placement_refused(root, "Conform disband position getter");
+    };
+    let depleted = find_named(root, 13, 0x5E4C80, "disbandtoosmallbutton");
+    let mut left = None;
+    if depleted != 0 {
+        // CEU3Button Show/Hide write +0x4F; +0x67 belongs to windows.
+        // Both methods and the position getter are guarded, including the
+        // concrete object's slots, before reading the control's shown flag.
+        if slot(depleted, 13) != base() + 0x5EFEF0 || slot(depleted, 14) != base() + 0x5EFEB0 {
+            return placement_refused(root, "Conform depleted visibility methods");
+        }
+        if rd8(depleted + 0x4F) != 0 {
+            let Some(position) = univ_button_position(depleted) else {
+                return placement_refused(root, "Conform depleted position getter");
+            };
+            left = Some(position);
+        }
     }
-    let mut packed = 0u32;
-    type Get = unsafe extern "fastcall" fn(usize, usize, *mut u32);
-    // SAFETY: CIcon's packed position getter (signature RVA 0x246620).
-    unsafe { std::mem::transmute::<usize, Get>(slot(icon, 15))(icon, 0, &mut packed) };
+    let (tx, ty) = cf_tab_cell((bx, by), left);
     let Some((x, y)) = univ_root_position(root) else {
         return placement_refused(root, "Conform root screen chain");
     };
-    univ_entry(
-        root,
-        tab,
-        x as i32 + i32::from(packed as i16) - 23,
-        y as i32 + i32::from((packed >> 16) as i16),
-        false,
-    )
+    univ_entry(root, tab, x as i32 + tx, y as i32 + ty, false)
+}
+
+#[cfg(test)]
+mod header_tests {
+    use super::cf_tab_cell;
+
+    #[test]
+    fn depleted_visibility_closes_and_reopens_the_native_slot() {
+        let disband = (235, 32);
+        let shown = cf_tab_cell(disband, Some((214, 32)));
+        let hidden = cf_tab_cell(disband, None);
+        assert_eq!(shown, (172, 32));
+        assert_eq!(hidden, (193, 32));
+        assert_eq!(hidden.0 - shown.0, 21);
+        assert_eq!(cf_tab_cell(disband, Some((214, 32))), shown);
+        // The right button's 19px painted frame leaves exactly two blank
+        // pixels before the leftmost native painted frame in either state.
+        assert_eq!(214 - (shown.0 + 21 + 19), 2);
+        assert_eq!(235 - (hidden.0 + 21 + 19), 2);
+    }
+
+    #[test]
+    fn native_row_offsets_and_missing_depleted_control_are_respected() {
+        assert_eq!(cf_tab_cell((235, 6), Some((214, 6))), (172, 6));
+        assert_eq!(cf_tab_cell((300, 83), Some((279, 83))), (237, 83));
+        assert_eq!(cf_tab_cell((300, 83), None), (258, 83));
+        // A control on another row or to the right cannot anchor this row.
+        assert_eq!(cf_tab_cell((300, 83), Some((279, 84))), (258, 83));
+        assert_eq!(cf_tab_cell((300, 83), Some((321, 83))), (258, 83));
+    }
 }
 
 pub fn univ_icon(parent: usize, window_name: &[u8], sprite_name: &[u8], kind: usize, show: bool) {

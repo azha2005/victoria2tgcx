@@ -9,13 +9,17 @@ use crate::conform_layout::*;
 use crate::conform_native::{
     self as native, CfGlobals, CfStack, CfView, VIEW_VT_RVA, VIEWS, VIEWS_STATE,
 };
-use crate::sys::{CpuScope, Global, Text, base, guard, rd8, rd32, rdi, rdp, slot, thread_id};
+use crate::replace::Why;
+use crate::sys::{
+    CpuScope, Global, Text, base, guard, rd8, rd32, rdi, rdp, require_signatures, slot, thread_id,
+};
 use crate::templates::{
     self, ArmyFilter, CULTURE_ACCEPTED, CULTURE_ALL, CULTURE_NONCORE, CULTURE_PRIMARY, POPS,
     TplCountry, TplPlan, TplPop, UNITS, catalogue,
 };
 use crate::templates_gui::{
-    minis, place_window, root_screen, univ_cf_tab, univ_icon, univ_pair, univ_release, visible,
+    minis, place_window, root_screen, univ_cf_tab, univ_icon, univ_make, univ_pair, univ_release,
+    visible,
 };
 use crate::{log, text};
 
@@ -157,7 +161,18 @@ pub struct CfPanel {
     status: Text<192>,
     text_set: [bool; CF_TEXTS],
     shown: [u8; SHOWN],
+    /// TPL-12: independent Replace depleted chooser at Conform's usual position.
+    chooser: usize,
+    rp_open: bool,
+    rp_shown: [u8; RP_SHOWN],
+    rp_summary: Text<192>,
+    rp_list: Text<192>,
+    rp_status: Text<192>,
+    title_font_checked: bool,
+    title_font_ready: bool,
 }
+
+const RP_SHOWN: usize = 5 + CF_RP_STEPS as usize;
 
 static PANELS: Global<[CfPanel; VIEWS]> = Global::new(unsafe { std::mem::zeroed() });
 
@@ -175,11 +190,88 @@ fn text(p: &mut CfPanel, id: usize, args: std::fmt::Arguments) {
     }
     p.text[id] = t;
     p.text_set[id] = true;
+    let host = if CF_TEXT_NAMES[id].starts_with("tgcx_cf_text_rp_") {
+        p.chooser
+    } else {
+        p.window
+    };
+    if host == 0 {
+        return;
+    }
     set_text_native(
-        p.window,
+        host,
         Text::<128>::from_latin1(CF_TEXT_NAMES[id]).with_nul(),
         t.with_nul(),
     );
+}
+
+/// One CP1252 display line, measured as a whole prefix plus ellipsis so
+/// proportional glyphs and kerning cannot turn it into a second line.
+fn fit_line(source: &[u8], limit: i32, mut measure: impl FnMut(&[u8]) -> Option<i32>) -> Text<192> {
+    if source.is_empty() {
+        return Text::new();
+    }
+    let end = source
+        .iter()
+        .position(|&b| matches!(b, b'\r' | b'\n'))
+        .unwrap_or(source.len());
+    let line = &source[..end];
+    if end == source.len() && measure(line).is_some_and(|width| width >= 0 && width <= limit) {
+        return Text::from_bytes(line);
+    }
+    for end in (0..=line.len()).rev() {
+        let mut end = end;
+        while end > 0 && line[end - 1].is_ascii_whitespace() {
+            end -= 1;
+        }
+        let mut out = Text::from_bytes(&line[..end]);
+        out.push_bytes(b"...");
+        if measure(out.bytes()).is_some_and(|width| width >= 0 && width <= limit) {
+            return out;
+        }
+    }
+    Text::new()
+}
+
+fn title_label(p: &mut CfPanel, id: usize, name: &Text<160>) {
+    if name.is_empty() {
+        text(p, id, format_args!(""));
+        return;
+    }
+    if !p.title_font_checked {
+        p.title_font_ready = require_signatures(&[0x624E20, 0x624F56, 0x65ED44]);
+        p.title_font_checked = true;
+        if !p.title_font_ready {
+            log!("Conform title measurement unavailable: font guards; long labels suppressed");
+        }
+    }
+    let key = Text::<128>::from_latin1(CF_TEXT_NAMES[id]);
+    let control = find(p.window, 15, 0x5E4D00, key.with_nul());
+    let inner = if control != 0 { rdp(control + 0xA0) } else { 0 };
+    let font = if inner != 0 && slot(inner, 10) == base() + 0x65EB00 {
+        rdp(inner + 0x1BC)
+    } else {
+        0
+    };
+    let shown = if p.title_font_ready && font != 0 && slot(font, 10) == base() + 0x624E20 {
+        fit_line(name.bytes(), CF_SLOT_NAME_WIDTH - 4, |bytes| {
+            type Width = unsafe extern "fastcall" fn(usize, usize, *const u8, i32) -> i32;
+            // Native CEU3BitmapFont::width: ECX font, two stack arguments,
+            // RET8. Existing Rename evidence covers the same text/font path.
+            guard(|| unsafe {
+                std::mem::transmute::<usize, Width>(base() + 0x624E20)(
+                    font,
+                    0,
+                    bytes.as_ptr(),
+                    bytes.len() as i32,
+                )
+            })
+            .filter(|&width| (0..=4096).contains(&width))
+        })
+    } else {
+        Text::from_latin1("...")
+    };
+    text(p, id, format_args!("{shown}"));
 }
 
 fn status(p: &mut CfPanel, s: &str) {
@@ -212,12 +304,24 @@ fn close(p: &mut CfPanel) {
     if p.window != 0 {
         visible(p.window, false);
     }
+    rp_close(p);
 }
 
 /// Beside the unit panel (its Select button ends at x=435), inside the screen. The
 /// owner chain and the native setters are TPL-0's (P37, P40).
-fn place(p: &CfPanel, promote: bool) -> bool {
-    if slot(p.window, 11) != base() + 0x5E2FC0 || slot(p.window, 6) != base() + 0x5E3BA0 {
+fn place(p: &mut CfPanel, promote: bool) -> bool {
+    place_panel(p, p.window, CF_WIDTH, CF_HEIGHT, promote)
+}
+
+fn place_panel(
+    p: &CfPanel,
+    window: usize,
+    panel_width: i32,
+    panel_height: i32,
+    promote: bool,
+) -> bool {
+    if window == 0 || slot(window, 11) != base() + 0x5E2FC0 || slot(window, 6) != base() + 0x5E3BA0
+    {
         return false;
     }
     let inner = rdp(p.root + 0x494);
@@ -229,7 +333,7 @@ fn place(p: &CfPanel, promote: bool) -> bool {
         return false;
     };
     let (width, height) = (rdi(renderer + 0x6B9BC), rdi(renderer + 0x6B9C0));
-    if width < CF_WIDTH || height < CF_HEIGHT {
+    if width < panel_width || height < panel_height {
         return false;
     }
     if promote {
@@ -239,15 +343,15 @@ fn place(p: &CfPanel, promote: bool) -> bool {
     }
     x += 331.0;
     y += 26.0;
-    if x + CF_WIDTH as f32 > width as f32 {
-        x = (width - CF_WIDTH) as f32;
+    if x + panel_width as f32 > width as f32 {
+        x = (width - panel_width) as f32;
     }
-    if y + CF_HEIGHT as f32 > height as f32 {
-        y = (height - CF_HEIGHT) as f32;
+    if y + panel_height as f32 > height as f32 {
+        y = (height - panel_height) as f32;
     }
     x = x.max(0.0);
     y = y.max(0.0);
-    place_window(p.window, x, y, promote);
+    place_window(window, x, y, promote);
     true
 }
 
@@ -429,7 +533,7 @@ fn labels(p: &mut CfPanel) {
         } else {
             Text::new()
         };
-        text(p, t, format_args!("{name}"));
+        title_label(p, t, &name);
         let c = &library.item[if used { s } else { 0 }];
         let total = templates::total(c);
         if used {
@@ -643,6 +747,7 @@ fn labels(p: &mut CfPanel) {
 }
 
 fn open(p: &mut CfPanel, stack: usize) {
+    rp_close(p);
     templates::load_library();
     p.stack = native::stack_id(stack);
     p.vtable = rdp(stack);
@@ -788,19 +893,294 @@ fn mobo_click(p: &mut CfPanel) {
     preview(p);
 }
 
+// ---------------------------------------------------------------- Replace depleted (TPL-12)
+
+// Board 6-replace-button-1024: Replace's header button opens an independent chooser.
+// Its culture boxes and nine-step slider choose the recruits and depletion rule (saved
+// in tgcx_replace_settings.txt); Replace builds one regiment for each depleted one and
+// conform_native detaches the old one once its replacement has merged.
+
+fn rp_close(p: &mut CfPanel) {
+    p.rp_open = false;
+    if p.chooser != 0 {
+        visible(p.chooser, false);
+    }
+}
+
+fn rp_place(p: &mut CfPanel, promote: bool) -> bool {
+    place_panel(p, p.chooser, CF_RP_WIDTH, CF_RP_HEIGHT, promote)
+}
+
+fn rp_show(p: &mut CfPanel, id: usize, key: &[u8], on: bool) {
+    let want = if on { 1 } else { 2 };
+    if p.rp_shown[id] == want {
+        return;
+    }
+    let window = find(p.chooser, 27, 0x5E4A20, key);
+    if window == 0 {
+        return;
+    }
+    visible(window, on);
+    p.rp_shown[id] = want;
+}
+
+static RP_COUNTRY: Global<TplCountry> = Global::new(TplCountry::ZERO);
+static RP_FOUND: Global<Vec<(crate::replace::Health, Why)>> = Global::new(Vec::new());
+
+/// What Replace would do now under the saved choice.
+fn rp_preview(p: &mut CfPanel) {
+    p.rp_summary.clear();
+    p.rp_list.clear();
+    let g = native::live_globals();
+    p.preview_date = if g.world != 0 {
+        rd32(g.world + 0xB0C)
+    } else {
+        0
+    };
+    let country = RP_COUNTRY.get();
+    let stack = target(&g, p);
+    if stack == 0 || !templates::scan(&templates::live_globals(), country) {
+        p.rp_summary = Text::from_latin1("This army can no longer be read: select it again.");
+        return;
+    }
+    want(p, country); // the unit -> catalogue map the labels use
+    let choice = native::replace_choice();
+    let found = RP_FOUND.get();
+    if !native::depleted_of(&g, stack, &country.unit, &choice, found) {
+        p.rp_summary = Text::from_latin1("This army can no longer be read: select it again.");
+        return;
+    }
+    if !choice.strength && !choice.pop {
+        p.rp_summary = Text::from_latin1("Tick what counts as depleted.");
+        return;
+    }
+    match found.len() {
+        0 => p.rp_summary = Text::from_latin1("No depleted regiment under this choice."),
+        1 => p.rp_summary = Text::from_latin1("1 regiment to replace"),
+        n => p.rp_summary = text!(192, "{n} regiments to replace"),
+    }
+    let units = &catalogue().units;
+    let mut list = String::new();
+    for (i, (h, why)) in found.iter().enumerate() {
+        let k = p.kind[h.unit as usize];
+        let label = if k >= 0 {
+            units[k as usize].label.to_string()
+        } else {
+            "Regiment".to_string()
+        };
+        let item = match why {
+            Why::Strength => format!("{label} ({}%)", h.strength),
+            Why::Pop => format!("{label} (pop)"),
+        };
+        if list.len() + item.len() + 2 > 100 {
+            list.push_str(&format!(" and {} more", found.len() - i));
+            break;
+        }
+        if !list.is_empty() {
+            list.push_str(", ");
+        }
+        list.push_str(&item);
+    }
+    if !list.is_empty() {
+        list.push('.');
+    }
+    p.rp_list = Text::from_latin1(&list);
+}
+
+fn rp_labels(p: &mut CfPanel) {
+    let choice = native::replace_choice();
+    rp_show(p, 0, b"tgcx_cf_check_on_rp_strength\0", choice.strength);
+    rp_show(p, 1, b"tgcx_cf_check_on_rp_pop\0", choice.pop);
+    for (i, name, mode) in [
+        (
+            2,
+            b"tgcx_cf_check_on_rp_culture_accepted\0".as_slice(),
+            CULTURE_ACCEPTED,
+        ),
+        (
+            3,
+            b"tgcx_cf_check_on_rp_culture_primary\0".as_slice(),
+            CULTURE_PRIMARY,
+        ),
+        (
+            4,
+            b"tgcx_cf_check_on_rp_culture_noncore\0".as_slice(),
+            CULTURE_NONCORE,
+        ),
+    ] {
+        rp_show(p, i, name, choice.culture == mode);
+    }
+    for i in 0..CF_RP_STEPS as usize {
+        let key = text!(64, "tgcx_cf_rp_handle_{i}");
+        rp_show(p, 5 + i, key.with_nul(), i as u32 == choice.step());
+    }
+    text(p, CF_T_RP_TITLE, format_args!("Replace depleted"));
+    text(p, CF_T_RP_STRENGTH, format_args!("Low strength, below"));
+    text(p, CF_T_RP_VALUE, format_args!("{}%", choice.below));
+    text(p, CF_T_RP_POP, format_args!("Pop too small"));
+    text(p, CF_T_RP_CULTURE, format_args!("Culture"));
+    text(
+        p,
+        CF_T_RP_CULTURE_ACCEPTED,
+        format_args!("Primary + accepted"),
+    );
+    text(p, CF_T_RP_CULTURE_PRIMARY, format_args!("Primary only"));
+    text(p, CF_T_RP_CULTURE_NONCORE, format_args!("Non-core only"));
+    let (summary, list) = (p.rp_summary, p.rp_list);
+    text(p, CF_T_RP_SUMMARY, format_args!("{summary}"));
+    text(p, CF_T_RP_LIST, format_args!("{list}"));
+    let status = p.rp_status;
+    if status.is_empty() {
+        text(
+            p,
+            CF_T_RP_STATUS,
+            format_args!("Built first within land reach; old ones are detached as they merge."),
+        );
+    } else {
+        text(p, CF_T_RP_STATUS, format_args!("{status}"));
+    }
+    text(p, CF_T_RP_REPLACE, format_args!("Replace"));
+    text(p, CF_T_RP_CANCEL, format_args!("Cancel"));
+}
+
+fn rp_open(p: &mut CfPanel) {
+    templates::load_library();
+    if !native::replace_enabled() {
+        status(
+            p,
+            "Replace depleted is unavailable: the executable was not recognised.",
+        );
+        return;
+    }
+    if p.chooser == 0 {
+        status(
+            p,
+            "The Replace depleted window could not be created: see the log.",
+        );
+        return;
+    }
+    if !rp_place(p, true) {
+        log!("Replace depleted window does not fit beside the unit panel");
+        return;
+    }
+    close(p);
+    p.rp_open = true;
+    p.rp_status.clear();
+    visible(p.chooser, true);
+    // Showing a window re-shows its whole subtree (P42).
+    p.rp_shown = [0; RP_SHOWN];
+    for id in CF_T_RP_TITLE..=CF_T_RP_CANCEL {
+        p.text_set[id] = false;
+    }
+    rp_preview(p);
+    rp_labels(p);
+}
+
+fn rp_replace(p: &mut CfPanel) {
+    let g = native::live_globals();
+    let stack = target(&g, p);
+    let country = RP_COUNTRY.get();
+    if stack == 0 || !templates::scan(&templates::live_globals(), country) {
+        p.rp_status = Text::from_latin1("Cannot read this army now.");
+        return;
+    }
+    if !templates::catalogue_fits(country) {
+        p.rp_status = Text::from_latin1("Unit catalogue changed; regenerate Army for this base.");
+        return;
+    }
+    let choice = native::replace_choice();
+    let culture = choice.culture;
+    let filter = ArmyFilter {
+        culture,
+        continent: 0,
+    };
+    let count = country.pop_count;
+    if !templates::army_apply(country.country, &mut country.pops[..count], &filter) {
+        p.rp_status = Text::from_latin1("Culture eligibility unavailable; nothing sent.");
+        return;
+    }
+    let r = native::replace_with(&g, stack, &country.unit, &choice, culture);
+    p.rp_status = if !r.read {
+        Text::from_latin1("Cannot read this army now.")
+    } else if r.found == 0 {
+        Text::from_latin1("Nothing to replace under this choice.")
+    } else {
+        let refused = if r.failed != 0 {
+            " (some refused: see the log)"
+        } else {
+            ""
+        };
+        text!(
+            192,
+            "{} replacements queued, {} left out{refused}. Unpause to process them.",
+            r.queued,
+            r.missing
+        )
+    };
+    rp_preview(p);
+}
+
+fn rp_click(p: &mut CfPanel, action: usize) {
+    if !p.rp_open {
+        return;
+    }
+    let mut choice = native::replace_choice();
+    match action {
+        CF_B_RP_CANCEL => {
+            rp_close(p);
+            return;
+        }
+        CF_B_RP_REPLACE => {
+            rp_replace(p);
+            return;
+        }
+        CF_B_RP_STRENGTH => choice.strength = !choice.strength,
+        CF_B_RP_POP => choice.pop = !choice.pop,
+        CF_B_RP_CULTURE_ACCEPTED => choice.toggle_culture(CULTURE_ACCEPTED),
+        CF_B_RP_CULTURE_PRIMARY => choice.toggle_culture(CULTURE_PRIMARY),
+        CF_B_RP_CULTURE_NONCORE => choice.toggle_culture(CULTURE_NONCORE),
+        CF_B_RP_DOWN => choice.nudge(false),
+        CF_B_RP_UP => choice.nudge(true),
+        CF_B_RP_STEP_0..=CF_B_RP_STEP_8 => choice.set_step((action - CF_B_RP_STEP_0) as u32),
+        _ => return,
+    }
+    p.rp_status = if native::set_replace_choice(choice) {
+        Text::new()
+    } else {
+        Text::from_latin1("Could not save this choice; it holds for this session.")
+    };
+    rp_preview(p);
+}
+
 fn click_inner(p: &mut CfPanel, action: usize) {
     if p.disabled || !panel_live(p) {
         return;
     }
-    if action == CF_B_OPEN {
+    if action == CF_B_OPEN || action == CF_B_REPLACE {
         let stack = shown_stack(&native::live_globals(), rdp(p.view + 0x28));
-        if p.open && stack != 0 && native::stack_id(stack) == p.stack {
+        let active = if action == CF_B_OPEN {
+            p.open
+        } else {
+            p.rp_open
+        };
+        if active && stack != 0 && native::stack_id(stack) == p.stack {
             close(p);
             return;
         }
         if stack != 0 && p.land {
-            open(p, stack);
+            if action == CF_B_OPEN {
+                open(p, stack);
+            } else {
+                p.stack = native::stack_id(stack);
+                p.vtable = rdp(stack);
+                rp_open(p);
+            }
         }
+        return;
+    }
+    if (CF_B_RP_STRENGTH..=CF_B_RP_CANCEL).contains(&action) {
+        rp_click(p, action);
+        p.tick = 0;
         return;
     }
     if !p.open {
@@ -902,7 +1282,13 @@ fn bind(p: &mut CfPanel, action: usize) {
         return;
     }
     // Lookups are flat: the open button lives in the tab window.
-    let host = if action == CF_B_OPEN { p.tab } else { p.window };
+    let host = if action == CF_B_OPEN || action == CF_B_REPLACE {
+        p.tab
+    } else if CF_BUTTON_NAMES[action].starts_with("tgcx_cf_rp_") {
+        p.chooser
+    } else {
+        p.window
+    };
     if host == 0 {
         return;
     }
@@ -921,6 +1307,10 @@ fn bind(p: &mut CfPanel, action: usize) {
 }
 
 fn reset(p: &mut CfPanel) {
+    univ_release(&mut p.chooser);
+    p.chooser = 0;
+    p.rp_open = false;
+    p.rp_shown = [0; RP_SHOWN];
     univ_release(&mut p.window);
     univ_release(&mut p.tab);
     p.root = 0;
@@ -934,6 +1324,8 @@ fn reset(p: &mut CfPanel) {
     p.bound = [false; CF_BUTTONS];
     p.text_set = [false; CF_TEXTS];
     p.shown = [0; SHOWN];
+    p.title_font_checked = false;
+    p.title_font_ready = false;
     // Observer memory stays valid until native GUI destruction.
 }
 
@@ -949,9 +1341,13 @@ fn root_changed(p: &mut CfPanel, root: usize) {
 pub fn panel_release(view: usize) {
     for p in PANELS.get().iter_mut().filter(|p| p.view == view) {
         let window = p.window;
+        let chooser = p.chooser;
         let _ = guard(|| {
             if window != 0 {
                 visible(window, false);
+            }
+            if chooser != 0 {
+                visible(chooser, false);
             }
         });
         reset(p);
@@ -990,7 +1386,7 @@ fn panel_tick_inner(p: &mut CfPanel) {
     set_step("visibility");
     let universal = templates::army_universal();
     if !panel_live(p) {
-        if p.open {
+        if p.open || p.rp_open {
             close(p);
         }
         // Universal's entry is a separate scene root: hiding its host does not hide
@@ -1019,6 +1415,7 @@ fn panel_tick_inner(p: &mut CfPanel) {
             }
             p.window = window;
             p.tab = tab;
+            p.chooser = univ_make(p.root, "tgcx_cf_rp_window");
         } else {
             set_step("marker/window/tab lookup");
             // Without our GUI fragment there is nothing to bind: the button lookup is
@@ -1032,7 +1429,11 @@ fn panel_tick_inner(p: &mut CfPanel) {
                 return;
             }
             p.tab = find_named(p.root, 27, 0x5E4A20, "tgcx_cf_tab");
+            p.chooser = find_named(p.root, 27, 0x5E4A20, "tgcx_cf_rp_window");
             visible(p.window, false);
+            if p.chooser != 0 {
+                visible(p.chooser, false);
+            }
             log!(
                 "Conform native window found view={:08X} root={:08X} tab={}",
                 p.view,
@@ -1047,7 +1448,7 @@ fn panel_tick_inner(p: &mut CfPanel) {
     p.seen = shown;
     p.land = stack != 0 && rdi(stack + 0xC4) == native::player(&g) && native::land(stack);
     // Another army selected: the window belonged to the previous one.
-    if p.open && (stack == 0 || native::stack_id(stack) != p.stack) {
+    if (p.open || p.rp_open) && (stack == 0 || native::stack_id(stack) != p.stack) {
         close(p);
     }
     // Fleets and foreign stacks have no Conform. Re-applied every tick: showing the
@@ -1059,9 +1460,13 @@ fn panel_tick_inner(p: &mut CfPanel) {
     for b in 0..CF_BUTTONS {
         bind(p, b);
     }
-    if p.open {
+    if p.open || p.rp_open {
         set_step("place");
-        if !place(p, false) {
+        if !(if p.rp_open {
+            rp_place(p, false)
+        } else {
+            place(p, false)
+        }) {
             close(p);
             return;
         }
@@ -1070,12 +1475,21 @@ fn panel_tick_inner(p: &mut CfPanel) {
         let g = native::live_globals();
         if g.world != 0
             && (rd32(g.world + 0xB0C) != p.preview_date
-                || p.filter_revision != templates::STORE.get().revision)
+                || (p.open && p.filter_revision != templates::STORE.get().revision))
         {
-            preview(p);
+            if p.rp_open {
+                rp_preview(p);
+            } else {
+                preview(p);
+            }
         }
         set_step("labels");
-        labels(p);
+        if p.rp_open {
+            set_step("chooser");
+            rp_labels(p);
+        } else {
+            labels(p);
+        }
     }
 }
 
@@ -1083,10 +1497,14 @@ fn panel_tick(p: &mut CfPanel) {
     set_step("view/root");
     if guard(|| panel_tick_inner(p)).is_none() {
         p.open = false;
-        let window = p.window;
+        p.rp_open = false;
+        let (window, chooser) = (p.window, p.chooser);
         let _ = guard(|| {
             if window != 0 {
                 visible(window, false);
+            }
+            if chooser != 0 {
+                visible(chooser, false);
             }
         });
         if !p.disabled {
@@ -1144,5 +1562,51 @@ pub fn panels_tick() {
         if let Some(p) = panel_for(&v) {
             panel_tick(p);
         }
+    }
+}
+
+#[cfg(test)]
+mod title_tests {
+    use super::fit_line;
+
+    #[test]
+    fn long_composition_cannot_wrap_over_the_regiment_count() {
+        let name = b"5 Inf / 4 Art / 1 Eng / 1 Hus";
+        let measure = |s: &[u8]| Some(s.len() as i32 * 6);
+        let shown = fit_line(name, 128, measure);
+        assert!(shown.bytes().ends_with(b"..."));
+        assert!(measure(shown.bytes()).unwrap() <= 128);
+        assert!(!shown.bytes().contains(&b'\n'));
+        assert_eq!(
+            fit_line(b"1 Inf / 1 Art / 1 Hus", 128, measure).bytes(),
+            b"1 Inf / 1 Art / 1 Hus"
+        );
+    }
+
+    #[test]
+    fn proportional_widths_and_cp1252_are_measured_not_character_counted() {
+        let measure = |s: &[u8]| {
+            Some(
+                s.iter()
+                    .map(|&c| match c {
+                        b'W' => 10,
+                        b'i' => 2,
+                        b'.' => 1,
+                        _ => 6,
+                    })
+                    .sum(),
+            )
+        };
+        assert_eq!(fit_line(b"iiiiiiii", 16, measure).bytes(), b"iiiiiiii");
+        assert_eq!(fit_line(b"WWWW", 16, measure).bytes(), b"W...");
+        assert_eq!(fit_line(b"\xC9lite", 40, measure).bytes(), b"\xC9lite");
+    }
+
+    #[test]
+    fn failed_measurement_and_embedded_line_breaks_cannot_leak_overflow() {
+        assert!(fit_line(b"Any title", 128, |_| None).is_empty());
+        assert!(fit_line(b"Any title", 1, |_| Some(99)).is_empty());
+        let shown = fit_line(b"Infantry\nHussar", 128, |s| Some(s.len() as i32));
+        assert_eq!(shown.bytes(), b"Infantry...");
     }
 }

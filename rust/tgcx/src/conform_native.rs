@@ -27,6 +27,7 @@ use crate::conform::{
 };
 use crate::conform_gui;
 use crate::gather::{self, GtOrder, Site};
+use crate::replace::{self, Choice, Health, Load, RpOrder, Why};
 use crate::snapshot::{COUNTRY_MANAGER_RVA, WORLD_RVA};
 use crate::sys::{
     Bytes, Global, Tag, Text, at, base, guard, in_image, keep_last_error, rd8, rd32, rdi, rdp,
@@ -584,6 +585,8 @@ pub struct Session {
     date: u32,
     step: u32,
     player: i32,
+    /// Consecutive frames a load has been seen (conform::confirm_load).
+    load_frames: u32,
     /// One step per game day for every task. The class of land stacks, remembered from
     /// the stack the player conformed (or one resumed).
     stack_vtable: usize,
@@ -622,6 +625,7 @@ static SESSION: Global<Session> = Global::new(Session {
     date: 0,
     step: 0,
     player: -1,
+    load_frames: 0,
     stack_vtable: 0,
     orders: Vec::new(),
     orders_loaded: false,
@@ -846,6 +850,11 @@ fn forget(why: &str) {
         r.active = false;
     }
     s.groups.clear();
+    let r = REPLACING.get();
+    r.retire.clear();
+    for o in r.orders.iter_mut() {
+        o.active = false;
+    }
     if n != 0 {
         log!("Conform: {n} pending orders forgotten ({why})");
     }
@@ -922,7 +931,7 @@ fn resume(g: &CfGlobals, date: u32) {
 
 /// Records whose task ended are finished from today: a save made from now on does not
 /// resume them.
-fn orders_close(date: u32) {
+fn orders_close(g: &CfGlobals, date: u32) {
     let s = SESSION.get();
     for i in 0..s.orders.len() {
         if !s.orders[i].active {
@@ -941,6 +950,7 @@ fn orders_close(date: u32) {
     }
     orders_save();
     gathers_close(date);
+    replace_close(g, date);
 }
 
 /// A changed target location/access can strand an earlier reinforcement. Release only
@@ -1413,12 +1423,33 @@ fn daily(g: &CfGlobals) {
         return;
     }
     let date = rd32(g.world + 0xB0C);
+    if date < conform::DATE_MIN {
+        return;
+    }
     let player = player(g);
     let s = SESSION.get();
     // A load: another world or country, the date going back, or a jump no game speed
-    // makes between two frames (45 times the smallest day step).
+    // makes between two frames (45 times the smallest day step), seen on several
+    // frames in a row; until then nothing steps.
     let jump = date > s.date && s.step != 0 && date - s.date > s.step * 45;
-    if g.world != s.world || player != s.player || date < s.date || jump {
+    let load = g.world != s.world || player != s.player || date < s.date || jump;
+    let confirmed = conform::confirm_load(&mut s.load_frames, load);
+    if load && !confirmed {
+        return;
+    }
+    if confirmed {
+        if s.world != 0 {
+            log!(
+                "Conform: load seen: world {:08X}->{:08X} player {}->{} date {}->{} step {}",
+                s.world,
+                g.world,
+                s.player,
+                player,
+                s.date,
+                date,
+                s.step
+            );
+        }
         forget("another game or a load");
         let s = SESSION.get();
         s.world = g.world;
@@ -1427,6 +1458,7 @@ fn daily(g: &CfGlobals) {
         s.date = date;
         mobo_reset();
         resume(g, date);
+        replace_resume(g, date);
         gathers_resume(g, date);
         mobo_resume(g, date);
         return;
@@ -1440,7 +1472,11 @@ fn daily(g: &CfGlobals) {
     s.date = date;
     // TPL-11: regiments resumed for a Build Army click need the class of land stacks,
     // known only from one of the player's armies when no Conform ran this session.
-    if s.stack_vtable == 0 && TRACKER.get().task.iter().any(|t| t.used && t.group != 0) {
+    // TPL-12: so do old regiments sent out again after a load.
+    if s.stack_vtable == 0
+        && (TRACKER.get().task.iter().any(|t| t.used && t.group != 0)
+            || !REPLACING.get().retire.is_empty())
+    {
         s.stack_vtable = player_armies(g).first().map_or(0, |&a| rdp(a));
     }
     let vtable = s.stack_vtable;
@@ -1479,6 +1515,13 @@ fn daily(g: &CfGlobals) {
         }
         let mut destination = -1;
         let t = &mut TRACKER.get().task[i];
+        // TPL-12: the replacement's own regiment, so its merge can be confirmed.
+        if !t.replaces.none() && stack != 0 {
+            let first = rdp(rdp(stack + 0x38));
+            if first != 0 {
+                t.fresh = entry_id(first);
+            }
+        }
         let action = conform::step(t, &seen, date, &mut destination);
         let t = TRACKER.get().task[i];
         match action {
@@ -1597,13 +1640,15 @@ fn daily(g: &CfGlobals) {
                     t.stack.id
                 )
             }
+            Action::Done if !t.replaces.none() => replace_done(g, &t, target),
             Action::Wait | Action::Done => {}
         }
     }
+    replace_retire(g, date);
     if guard(|| mobo_daily(g, date)).is_none() {
         log!("Mobo driver fault; nothing sent today");
     }
-    orders_close(date);
+    orders_close(g, date);
 }
 
 // ---------------------------------------------------------------- Build Army gathering (TPL-11, D20)
@@ -2315,6 +2360,127 @@ pub fn leaving(target: CfId) -> bool {
         .any(|t| t.used && t.kind == Kind::Fill && t.target == target)
 }
 
+/// One Create, immediately followed by a Transfer for each regiment still in `stack`,
+/// in the same command queue submission (P51), tracked as a FILL task the daily driver
+/// verifies. Returns (transfers queued, failures).
+fn queue_detach(
+    g: &CfGlobals,
+    stack: usize,
+    target_id: CfId,
+    ids: &[CfId],
+    date: u32,
+    what: &str,
+) -> (u32, u32) {
+    let (mut detached, mut failed) = (0, 0);
+    let id = new_id(g);
+    match conform::add(
+        TRACKER.get(),
+        Kind::Fill,
+        target_id,
+        id,
+        CfId::default(),
+        -1,
+        date,
+    ) {
+        None => {
+            failed += 1;
+            log!("Conform: tracker full; no Create queued");
+        }
+        Some(t) if !send(make_create(stack, id), g.vt_create) => {
+            TRACKER.get().task[t].used = false;
+            failed += 1;
+            log!("Conform: Create not queued; nothing detached");
+        }
+        Some(t) => {
+            // Waiting a game day left the destination empty and unselected.
+            // Transfer stores the existing regiment's reference; the new
+            // destination id is resolved later, when the command executes. Keep
+            // Create first, then all Transfers, in the engine queue.
+            for (i, regiment) in ids.iter().enumerate().take(REGIMENTS) {
+                let task = &mut TRACKER.get().task[t];
+                task.regiment[task.regiments] = *regiment;
+                task.regiments += 1;
+                let entry = lookup(g, *regiment);
+                if i == 0 && entry != 0 {
+                    let kind = rdp(entry + 0x38);
+                    log!(
+                        "Conform: first {what} {} unit flags +40 {} +42 {}",
+                        regiment.id,
+                        rd8(kind + 0x40),
+                        rd8(kind + 0x42)
+                    );
+                }
+                if entry != 0
+                    && stack_has(stack, entry)
+                    && send(make_transfer(id, entry), g.vt_transfer)
+                {
+                    detached += 1;
+                } else {
+                    failed += 1;
+                }
+            }
+            let task = &mut TRACKER.get().task[t];
+            task.transfer_sent = true;
+            task.transfer_date = date;
+            log!(
+                "Conform: Create then {detached} of {} {what} transfers queued together for stack {}/{}",
+                task.regiments,
+                id.kind,
+                id.id
+            );
+        }
+    }
+    (detached, failed)
+}
+
+/// A regiment Conform (or Replace) had built: tracked to march and merge into the
+/// target, and kept as a TPL-7 order so a reload resumes it. The task's index.
+fn track_build(
+    target_id: CfId,
+    tag: u32,
+    date: u32,
+    unit: usize,
+    province: i32,
+    construction: [u32; 2],
+    stack: [u32; 2],
+) -> Option<usize> {
+    let s = CfId {
+        kind: stack[0],
+        id: stack[1],
+    };
+    let k = CfId {
+        kind: construction[0],
+        id: construction[1],
+    };
+    let Some(task) = conform::add(
+        TRACKER.get(),
+        Kind::Join,
+        target_id,
+        s,
+        k,
+        unit as i32,
+        date,
+    ) else {
+        log!("Conform: tracker full; regiment from province {province} will not march by itself");
+        return None;
+    };
+    TRACKER.get().task[task].origin = province;
+    if !k.none() && !s.none() {
+        let order = CfOrder {
+            tag,
+            created: date,
+            done: 0,
+            target: target_id,
+            stack: s,
+            construction: k,
+            unit: unit as i32,
+            active: false,
+        };
+        order_new(task, order);
+    }
+    Some(task)
+}
+
 static CONFORM_TARGET: Global<CfStack> = Global::new(CfStack::EMPTY);
 
 fn conform_inner(
@@ -2347,65 +2513,10 @@ fn conform_inner(
             target_id.id
         );
     } else if !plan.detach.is_empty() {
-        let id = new_id(g);
-        match conform::add(
-            TRACKER.get(),
-            Kind::Fill,
-            target_id,
-            id,
-            CfId::default(),
-            -1,
-            date,
-        ) {
-            None => {
-                r.failed += 1;
-                log!("Conform: tracker full; no Create queued");
-            }
-            Some(t) if !send(make_create(stack, id), g.vt_create) => {
-                TRACKER.get().task[t].used = false;
-                r.failed += 1;
-                log!("Conform: Create not queued; nothing detached");
-            }
-            Some(t) => {
-                // Waiting a game day left the destination empty and unselected.
-                // Transfer stores the existing regiment's reference; the new
-                // destination id is resolved later, when the command executes. Keep
-                // Create first, then all Transfers, in the engine queue.
-                for (i, extra) in plan.detach.iter().enumerate() {
-                    let task = &mut TRACKER.get().task[t];
-                    task.regiment[task.regiments] = extra.id;
-                    task.regiments += 1;
-                    let entry = lookup(g, extra.id);
-                    if i == 0 && entry != 0 {
-                        let kind = rdp(entry + 0x38);
-                        log!(
-                            "Conform: first extra {} unit flags +40 {} +42 {}",
-                            extra.id.id,
-                            rd8(kind + 0x40),
-                            rd8(kind + 0x42)
-                        );
-                    }
-                    if entry != 0
-                        && stack_has(stack, entry)
-                        && send(make_transfer(id, entry), g.vt_transfer)
-                    {
-                        r.detached += 1;
-                    } else {
-                        r.failed += 1;
-                    }
-                }
-                let task = &mut TRACKER.get().task[t];
-                task.transfer_sent = true;
-                task.transfer_date = date;
-                log!(
-                    "Conform: Create then {} of {} extra transfers queued together for stack {}/{}",
-                    r.detached,
-                    task.regiments,
-                    id.kind,
-                    id.id
-                );
-            }
-        }
+        let ids: Vec<CfId> = plan.detach.iter().map(|d| d.id).collect();
+        let (detached, failed) = queue_detach(g, stack, target_id, &ids, date, "extra");
+        r.detached += detached;
+        r.failed += failed;
     }
     for idle in &plan.gather {
         if conform::add(
@@ -2426,48 +2537,10 @@ fn conform_inner(
     }
     if plan.build_total != 0 {
         let tag = rd32(stack + 0xC0);
-        let mut on_queued = |unit: usize,
-                             province: i32,
-                             construction: [u32; 2],
-                             stack: [u32; 2]| {
-            let s = CfId {
-                kind: stack[0],
-                id: stack[1],
+        let mut on_queued =
+            |unit: usize, province: i32, construction: [u32; 2], stack: [u32; 2]| {
+                track_build(target_id, tag, date, unit, province, construction, stack);
             };
-            let k = CfId {
-                kind: construction[0],
-                id: construction[1],
-            };
-            match conform::add(
-                TRACKER.get(),
-                Kind::Join,
-                target_id,
-                s,
-                k,
-                unit as i32,
-                date,
-            ) {
-                Some(task) => {
-                    TRACKER.get().task[task].origin = province;
-                    if !k.none() && !s.none() {
-                        let order = CfOrder {
-                            tag,
-                            created: date,
-                            done: 0,
-                            target: target_id,
-                            stack: s,
-                            construction: k,
-                            unit: unit as i32,
-                            active: false,
-                        };
-                        order_new(task, order);
-                    }
-                }
-                None => log!(
-                    "Conform: tracker full; regiment from province {province} will not march by itself"
-                ),
-            }
-        };
         let built = recruit(stack, &plan.build, &mut on_queued, culture);
         r.queued = built.queued;
         r.missing = built.missing;
@@ -2503,6 +2576,516 @@ pub fn conform_with(
         log!("Conform rejected: guarded native read fault");
     }
     r
+}
+
+// ---------------------------------------------------------------- Replace depleted (TPL-12)
+
+// The chooser (conform_gui) asks which regiments of the open stack are depleted, then
+// has each replaced: a new regiment of its type is built by Conform's recruit and
+// tracked as a JOIN that carries the old regiment's id. Once the new one has merged,
+// the old one leaves into its own stack by the same Create + Transfers as Conform's
+// extras. Reads only (docs/symbols.md "TPL-12"): strength +0x3C against the type's
+// +0xB0 (FUN_005BFF80), the pop +0x30, and the pop's two native counts the unit panel
+// colours with. The only commands are Conform's (R5).
+pub const REPLACE_RVAS: [u32; 7] = [
+    0x1BFF80, 0x1E0C82, 0x565878, 0x565921, 0x565930, 0x56598A, 0x394048,
+];
+const REPLACE_TEXT: usize = 131072;
+
+struct Replacing {
+    enabled: bool,
+    supports_fn: usize,
+    has_fn: usize,
+    choice: Choice,
+    choice_loaded: bool,
+    logged: u32,
+    orders: Vec<RpOrder>,
+    loaded: bool,
+    ok: bool,
+    dirty: bool,
+    failed: bool,
+    path: Vec<u16>,
+    /// (target, old regiment): replacements merged, the old regiment still to leave.
+    retire: Vec<(CfId, CfId)>,
+}
+
+static REPLACING: Global<Replacing> = Global::new(Replacing {
+    enabled: false,
+    supports_fn: 0,
+    has_fn: 0,
+    choice: Choice::DEFAULT,
+    choice_loaded: false,
+    logged: 0,
+    orders: Vec::new(),
+    loaded: false,
+    ok: false,
+    dirty: false,
+    failed: false,
+    path: Vec::new(),
+    retire: Vec::new(),
+});
+
+pub fn replace_enabled() -> bool {
+    REPLACING.get().enabled
+}
+
+/// The chooser's last choice, from tgcx_replace_settings.txt (defaults when absent or
+/// invalid; an invalid file is left as is until the player changes the choice).
+pub fn replace_choice() -> Choice {
+    let r = REPLACING.get();
+    if !r.choice_loaded {
+        r.choice_loaded = true;
+        if let Some(path) = settings_path("tgcx_replace_settings.txt") {
+            match read_settings(&path, 256) {
+                Stored::Text(text) => match replace::settings_parse(&text) {
+                    Some(c) => r.choice = c,
+                    None => log!("Replace settings file invalid: defaults used"),
+                },
+                Stored::Absent => {}
+                _ => log!("Replace settings file unreadable: defaults used"),
+            }
+        }
+    }
+    r.choice
+}
+
+pub fn set_replace_choice(c: Choice) -> bool {
+    replace_choice();
+    REPLACING.get().choice = c;
+    settings_path("tgcx_replace_settings.txt")
+        .is_some_and(|path| write_settings(&path, Some(replace::settings_write(&c))))
+}
+
+/// FUN_00965870(pop, 0), stdcall RET 8: the regiments the pop can support (0 below the
+/// minimum size); FUN_00965930, EAX the pop and a pushed 0, RET 4: the regiments (and
+/// queued constructions) it backs. The unit panel's red/yellow (RVA 0x394048).
+fn pop_counts(pop: usize) -> (i32, i32) {
+    let r = REPLACING.get();
+    type Supports = unsafe extern "system" fn(usize, u32) -> i32;
+    // SAFETY: the native count, guarded by REPLACE_RVAS; reads only.
+    let supports = unsafe { std::mem::transmute::<usize, Supports>(r.supports_fn)(pop, 0) };
+    let has: i32;
+    // SAFETY: the native count with its EAX argument, as the unit panel calls it.
+    unsafe {
+        std::arch::asm!(
+            "push 0",
+            "call {f}",
+            f = in(reg) r.has_fn,
+            inlateout("eax") pop => has,
+            clobber_abi("C"),
+        );
+    }
+    (supports, has)
+}
+
+fn health(entry: usize, unit: i32) -> Health {
+    let kind = rdp(entry + 0x38);
+    let strength = rdi(entry + 0x3C);
+    let full = if kind != 0 { rdi(kind + 0xB0) } else { 0 };
+    let percent = if full > 0 && strength >= 0 {
+        (i64::from(strength) * 100 / i64::from(full)) as i32
+    } else {
+        -1
+    };
+    let pop = rdp(entry + 0x30);
+    let (supports, has) = if pop != 0 { pop_counts(pop) } else { (1, 0) };
+    let r = REPLACING.get();
+    if r.logged < 8 {
+        r.logged += 1;
+        log!(
+            "Replace probe: regiment {} strength +3C {strength} of type +B0 {full} = {percent}%, pop {pop:08X} size {} supports {supports} has {has}",
+            rd32(entry + 0xC),
+            if pop != 0 { rdi(pop + 0x58) } else { -1 }
+        );
+    }
+    Health {
+        id: entry_id(entry),
+        unit,
+        strength: percent,
+        pop,
+        supports,
+        has,
+    }
+}
+
+/// Old regiments already being replaced or leaving: never chosen twice.
+fn replacing() -> Vec<CfId> {
+    let mut busy: Vec<CfId> = TRACKER
+        .get()
+        .task
+        .iter()
+        .filter(|t| t.used && !t.replaces.none())
+        .map(|t| t.replaces)
+        .collect();
+    busy.extend(REPLACING.get().retire.iter().map(|&(_, old)| old));
+    // Already queued to leave (Conform's extras or a replaced regiment).
+    for t in TRACKER
+        .get()
+        .task
+        .iter()
+        .filter(|t| t.used && t.kind == Kind::Fill)
+    {
+        busy.extend_from_slice(&t.regiment[..t.regiments]);
+    }
+    busy
+}
+
+static REPLACE_STACK: Global<CfStack> = Global::new(CfStack::EMPTY);
+
+/// The open stack's depleted regiments under `choice`, in stack order. False when it is
+/// not a readable land stack of the player's. Not guarded: callers are.
+pub fn depleted_of(
+    g: &CfGlobals,
+    stack: usize,
+    units: &[usize; UNITS],
+    choice: &Choice,
+    out: &mut Vec<(Health, Why)>,
+) -> bool {
+    out.clear();
+    let target = REPLACE_STACK.get();
+    if !replace_enabled()
+        || g.world == 0
+        || stack == 0
+        || rdi(stack + 0xC4) != player(g)
+        || !land(stack)
+        || !read_stack(stack, Some(units), target)
+    {
+        return false;
+    }
+    let regs: Vec<Health> = (0..target.regiment.len())
+        .map(|i| health(target.entry[i], target.regiment[i].unit))
+        .collect();
+    for (i, why) in replace::depleted(&regs, choice, &replacing()) {
+        out.push((regs[i], why));
+    }
+    true
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct RpResult {
+    pub read: bool,
+    pub found: u32,
+    pub queued: u32,
+    pub missing: u32,
+    pub failed: u32,
+}
+
+static REPLACE_FOUND: Global<Vec<(Health, Why)>> = Global::new(Vec::new());
+
+fn replace_inner(
+    g: &CfGlobals,
+    stack: usize,
+    units: &[usize; UNITS],
+    choice: &Choice,
+    culture: u32,
+    r: &mut RpResult,
+) {
+    let found = REPLACE_FOUND.get();
+    if !depleted_of(g, stack, units, choice, found) {
+        log!("Replace refused: not a readable land stack of the player");
+        return;
+    }
+    r.read = true;
+    r.found = found.len() as u32;
+    if found.is_empty() {
+        return;
+    }
+    SESSION.get().stack_vtable = rdp(stack);
+    let date = rd32(g.world + 0xB0C);
+    let tag = rd32(stack + 0xC0);
+    let target_id = stack_id(stack);
+    let mut counts = [0i32; UNITS];
+    for (h, _) in found.iter() {
+        counts[h.unit as usize] += 1;
+    }
+    // Recruit queues in unit order; each one takes the first old regiment of its type.
+    let mut olds: Vec<(usize, CfId)> = found.iter().map(|(h, _)| (h.unit as usize, h.id)).collect();
+    let mut on_queued = |unit: usize, province: i32, construction: [u32; 2], new: [u32; 2]| {
+        let Some(i) = olds.iter().position(|&(u, _)| u == unit) else {
+            return;
+        };
+        let (_, old) = olds.remove(i);
+        if let Some(task) = track_build(target_id, tag, date, unit, province, construction, new) {
+            TRACKER.get().task[task].replaces = old;
+            let stack = TRACKER.get().task[task].stack;
+            if !stack.none() {
+                replace_order_new(
+                    task,
+                    RpOrder {
+                        tag,
+                        created: date,
+                        done: 0,
+                        target: target_id,
+                        stack,
+                        old,
+                        merged: false,
+                        active: false,
+                    },
+                );
+            }
+        }
+    };
+    let built = recruit(stack, &counts, &mut on_queued, culture);
+    r.queued = built.queued;
+    r.missing = built.missing;
+    r.failed = built.failed;
+    orders_save();
+    replace_save();
+    log!(
+        "Replace stack {}: {} depleted, {} replacements built, {} left out, {} failed",
+        target_id.id,
+        r.found,
+        r.queued,
+        r.missing,
+        r.failed
+    );
+}
+
+/// Builds one regiment for each depleted regiment of the stack (Conform's recruit: the
+/// template's culture, land reach); the old ones leave as their replacements merge.
+pub fn replace_with(
+    g: &CfGlobals,
+    stack: usize,
+    units: &[usize; UNITS],
+    choice: &Choice,
+    culture: u32,
+) -> RpResult {
+    let mut r = RpResult::default();
+    if guard(|| replace_inner(g, stack, units, choice, culture, &mut r)).is_none() {
+        log!("Replace rejected: guarded native read fault");
+    }
+    r
+}
+
+fn replace_load() {
+    let r = REPLACING.get();
+    if r.loaded {
+        return;
+    }
+    r.loaded = true;
+    r.orders.clear();
+    r.ok = false;
+    let Some(path) = settings_path("tgcx_replace_orders.txt") else {
+        return;
+    };
+    r.path = path.clone();
+    match read_settings(&path, REPLACE_TEXT) {
+        Stored::Absent => r.ok = true,
+        Stored::Text(text) => match replace::parse(&text) {
+            Some(orders) => {
+                r.orders = orders;
+                r.ok = true;
+            }
+            None => log!("Replace orders file invalid: kept as is, not resumed or overwritten"),
+        },
+        _ => log!(
+            "Replace orders file unreadable or too big: replacements are not resumed after a load"
+        ),
+    }
+}
+
+fn replace_save() {
+    let r = REPLACING.get();
+    if !r.dirty || !r.ok || r.path.is_empty() {
+        return;
+    }
+    if !write_settings(&r.path, replace::write(&r.orders, REPLACE_TEXT)) {
+        if !r.failed {
+            log!(
+                "Replace orders file not saved; this session's replacements will not resume after a load"
+            );
+        }
+        r.failed = true;
+        return;
+    }
+    r.dirty = false;
+}
+
+/// A dropped (oldest) record moves the later ones down: keep the tasks' links.
+fn replace_order_new(task: usize, order: RpOrder) {
+    replace_load();
+    let r = REPLACING.get();
+    if !r.ok {
+        return;
+    }
+    let (index, dropped) = replace::add(&mut r.orders, order);
+    if let Some(dropped) = dropped {
+        for t in TRACKER
+            .get()
+            .task
+            .iter_mut()
+            .filter(|t| t.used && t.rp_record != 0)
+        {
+            if t.rp_record == dropped + 1 {
+                t.rp_record = 0;
+            } else if t.rp_record > dropped + 1 {
+                t.rp_record -= 1;
+            }
+        }
+    }
+    TRACKER.get().task[task].rp_record = index + 1;
+    r.orders[index].active = true;
+    r.dirty = true;
+}
+
+/// The record's old regiment is still in its target stack (read by id only, so it works
+/// before any stack class is known after a load).
+fn old_in_target(g: &CfGlobals, o: &RpOrder) -> bool {
+    let target = lookup(g, o.target);
+    let old = lookup(g, o.old);
+    target != 0 && old != 0 && stack_has(target - 8, old)
+}
+
+/// After a load (and the Conform orders' resume): the JOINs resumed for a replacement
+/// carry their old regiment again; a replacement saved after its merge sends the old
+/// regiment out again; one nothing can resume is finished from the save's date.
+fn replace_resume(g: &CfGlobals, date: u32) {
+    let r = REPLACING.get();
+    r.retire.clear();
+    if !r.enabled {
+        return;
+    }
+    replace_load();
+    if !r.ok || r.orders.is_empty() {
+        return;
+    }
+    let (mut resumed, mut retired, mut closed) = (0, 0, 0);
+    for i in 0..r.orders.len() {
+        let o = r.orders[i];
+        r.orders[i].active = false;
+        let entry = lookup(g, o.target);
+        let applies = entry != 0 && replace::applies(&o, rd32(entry - 8 + 0xC0), date);
+        let joining = TRACKER.get().task.iter().position(|t| {
+            t.used
+                && t.kind == Kind::Join
+                && t.group == 0
+                && t.stack == o.stack
+                && t.target == o.target
+        });
+        match replace::on_load(&o, applies, joining.is_some(), old_in_target(g, &o)) {
+            Load::Skip => {}
+            Load::Resume => {
+                let t = &mut TRACKER.get().task[joining.unwrap_or_default()];
+                t.replaces = o.old;
+                t.rp_record = i + 1;
+                r.orders[i].active = true;
+                resumed += 1;
+            }
+            Load::Retire => {
+                r.retire.push((o.target, o.old));
+                r.orders[i].active = true;
+                retired += 1;
+            }
+            Load::Close => {
+                r.orders[i].done = date;
+                r.dirty = true;
+                closed += 1;
+            }
+        }
+    }
+    if resumed + retired + closed != 0 {
+        log!(
+            "Replace: after a load {resumed} replacements resumed, {retired} old regiments to detach again, {closed} records finished"
+        );
+    }
+    replace_save();
+}
+
+/// Records whose task ended are finished from today; a merged one only once its old
+/// regiment has left the target.
+fn replace_close(g: &CfGlobals, date: u32) {
+    let r = REPLACING.get();
+    for i in 0..r.orders.len() {
+        let o = r.orders[i];
+        if !o.active {
+            continue;
+        }
+        let joining = TRACKER
+            .get()
+            .task
+            .iter()
+            .any(|t| t.used && t.rp_record == i + 1);
+        if replace::finished(&o, joining, o.merged && old_in_target(g, &o)) {
+            r.orders[i].active = false;
+            r.orders[i].done = date;
+            r.dirty = true;
+        }
+    }
+    replace_save();
+}
+
+/// A replacement's JOIN ended: if its regiment is now in the target, the old one leaves.
+/// Its record is marked merged so a save taken before the old one leaves still sends it.
+fn replace_done(g: &CfGlobals, t: &conform::CfTask, target: usize) {
+    let fresh = lookup(g, t.fresh);
+    if target == 0 || t.fresh.none() || fresh == 0 || !stack_has(target, fresh) {
+        log!(
+            "Replace: replacement {} did not join {}; regiment {} stays",
+            t.stack.id,
+            t.target.id,
+            t.replaces.id
+        );
+        return;
+    }
+    let r = REPLACING.get();
+    if let Some(o) = t.rp_record.checked_sub(1).and_then(|i| r.orders.get_mut(i)) {
+        o.merged = true;
+        r.dirty = true;
+    }
+    r.retire.push((t.target, t.replaces));
+}
+
+/// Old regiments whose replacement merged leave their target, one Create per target
+/// and day, never while that target's extras are still leaving.
+fn replace_retire(g: &CfGlobals, date: u32) {
+    if REPLACING.get().retire.is_empty() {
+        return;
+    }
+    let vtable = SESSION.get().stack_vtable;
+    let mut targets: Vec<CfId> = Vec::new();
+    for &(target, _) in REPLACING.get().retire.iter() {
+        if !targets.contains(&target) {
+            targets.push(target);
+        }
+    }
+    for target_id in targets {
+        if leaving(target_id) {
+            continue;
+        }
+        let r = REPLACING.get();
+        let olds: Vec<CfId> = r
+            .retire
+            .iter()
+            .filter(|&&(t, _)| t == target_id)
+            .map(|&(_, old)| old)
+            .collect();
+        r.retire.retain(|&(t, _)| t != target_id);
+        let target = stack_of(g, target_id, vtable);
+        if target == 0 {
+            log!(
+                "Replace: stack {} is gone; {} old regiments not detached",
+                target_id.id,
+                olds.len()
+            );
+            continue;
+        }
+        let here: Vec<CfId> = olds
+            .iter()
+            .copied()
+            .filter(|&old| {
+                let entry = lookup(g, old);
+                entry != 0 && stack_has(target, entry)
+            })
+            .collect();
+        if here.is_empty() {
+            continue;
+        }
+        let (detached, failed) = queue_detach(g, target, target_id, &here, date, "replaced");
+        log!(
+            "Replace: {detached} replaced regiments leave stack {} ({failed} failed); disband them there if you wish",
+            target_id.id
+        );
+    }
 }
 
 // ---------------------------------------------------------------- CUnitView capture
@@ -2760,6 +3343,15 @@ pub fn install() {
         log!("Mobo stacks enabled");
     } else {
         log!("Mobo stacks rejected: guards; no stack can be marked");
+    }
+    if sys::require_signatures(&REPLACE_RVAS) {
+        let r = REPLACING.get();
+        r.supports_fn = at(0x565870);
+        r.has_fn = at(0x565930);
+        r.enabled = true;
+        log!("Replace depleted enabled: strength and pop support read only");
+    } else {
+        log!("Replace depleted rejected: guards; the chooser stays closed");
     }
     // TPL-11 needs the unit list the mobo guards cover.
     if mobo_enabled() && sys::require_signatures(&GATHER_RVAS) {

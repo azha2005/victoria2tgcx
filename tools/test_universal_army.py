@@ -11,7 +11,7 @@ class UniversalGuiTests(unittest.TestCase):
         t,_=templates(universal=True);c,_=conform(universal=True)
         roots=parse('guiTypes={'+t+c+'}')[0][1]
         self.assertEqual([dict(v)['name'] for k,v in roots],
-                         ['tgcx_tpl_tab','tgcx_tpl_window','tgcx_cf_tab','tgcx_cf_window'])
+                         ['tgcx_tpl_tab','tgcx_tpl_window','tgcx_cf_tab','tgcx_cf_window','tgcx_cf_rp_window'])
         self.assertIn('quadTextureSprite="tgcx_tpl_compact"',t)
         self.assertNotIn('name="tgcx_tpl_tabsel"',t)
         self.assertNotIn('tgcx_tpl_marker',t)
