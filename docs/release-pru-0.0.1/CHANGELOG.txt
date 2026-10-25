@@ -1,0 +1,24 @@
+PRU - PROVINCE RENAME UNIVERSAL: CHANGELOG
+
+0.0.1 (2026-10-25) - first public release, internal build 0.2.8
+- Rename any province you own with free text from its province panel:
+  click the ABC button beside the name, type, click Rename.
+- Uses the engine's native rename command: the header and map label
+  update and the name is kept in the save.
+- Native-style editor: green/gold title, parchment body, braided input,
+  centered Garamond text, native caret, Cancel/Rename buttons.
+- 20x20 ABC button placed from the rendered province name, so it follows
+  the base mod's layout. One package for vanilla and ordinary 3.04 mods.
+- Names of 1-80 Windows-1252 characters; quotes, backslashes and control
+  characters are refused. Foreign and sea provinces cannot be renamed.
+- Requires V2DLL with per-active-mod plugin loading (tested with 5.98).
+
+Development builds before the first release (not published):
+- 0.2.6-0.2.8: ABC button size and position tuned in game (24px to
+  20px, level with the name).
+- 0.2.4-0.2.5: centered typing without flicker, aligned caret, readable
+  Garamond 16 bold input.
+- 0.2.0-0.2.3: universal placement from the live province name and the
+  native redesign.
+- 0.1.0-0.1.3: first separate V2DLL plugin; construction crash and button
+  type fixes.

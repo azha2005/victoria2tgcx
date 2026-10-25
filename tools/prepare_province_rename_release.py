@@ -6,6 +6,7 @@ to the supplied candidate ZIP; only README.txt changes.
 """
 import argparse
 import hashlib
+import shutil
 import json
 from pathlib import Path, PurePosixPath
 import subprocess
@@ -15,14 +16,16 @@ import prepare_province_rename as package
 from tgcx_pe import PE
 
 ROOT = Path(__file__).resolve().parents[1]
-DOCS = ROOT / f'docs/release-province-rename-{package.VERSION}'
+# Public PRU version; package.VERSION stays the internal build (like ATCU).
+RELEASE = '0.0.1'
+DOCS = ROOT / f'docs/release-pru-{RELEASE}'
 
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def build(candidate, output):
+def build(candidate, output, images=()):
     candidate, output = Path(candidate).resolve(), Path(output).resolve()
     if output.exists():
         raise ValueError('release output directory must be new')
@@ -49,10 +52,11 @@ def build(candidate, output):
     dll = ROOT / 'dll/province_rename/Release/tgcx_province_rename.dll'
     if PE(dll).machine != 0x14C or files[prefix + 'v2dll_mod.dll'] != dll.read_bytes():
         raise ValueError('candidate does not contain current Win32 build')
-    files['README.txt'] = DOCS.joinpath('README.txt').read_text(encoding='ascii').replace(
-        '\r\n', '\n').replace('\n', '\r\n').encode('ascii')
+    for name in ('README.txt', 'CHANGELOG.txt'):
+        files[name] = DOCS.joinpath(name).read_text(encoding='ascii').replace(
+            '\r\n', '\n').replace('\n', '\r\n').encode('ascii')
     output.mkdir(parents=True)
-    archive = output / f'Province-Rename-Universal-{package.VERSION}.zip'
+    archive = output / f'PRU-{RELEASE}.zip'
     with zipfile.ZipFile(archive, 'x', zipfile.ZIP_DEFLATED) as dest:
         for name, data in sorted(files.items()):
             entry = zipfile.ZipInfo(name, (2026, 10, 21, 0, 0, 0))
@@ -66,7 +70,7 @@ def build(candidate, output):
     hashes = {name: sha(data) for name, data in files.items()}
     (output / 'SHA256.json').write_text(json.dumps(hashes, indent=2) + '\n')
     provenance = {
-        'entry': ['GFX_bp_button_rename: native28x28 resized24x24'],
+        'entry': ['GFX_bp_button_rename: native28x28 resized20x20'],
         'button': ['GFX_button_standard_144: native144x34'],
         'primary': ['GFX_button_standard_144: native144x34'],
         'field': ['GFX_bp_textedit_bg: top/bottom braid crops, nine-slice296x30'],
@@ -85,16 +89,24 @@ def build(candidate, output):
     sources += sorted((ROOT / 'dll/province_rename').glob('*.cpp'))
     sources += sorted((ROOT / 'dll/province_rename').glob('*.h'))
     identity = {
-        'version': package.VERSION, 'zip': str(archive), 'sha256': digest,
+        'version': RELEASE, 'build': package.VERSION, 'zip': str(archive), 'sha256': digest,
         'bytes': archive.stat().st_size, 'files': len(files),
         'candidate_sha256': sha(candidate.read_bytes()),
-        'payload_identical_to_candidate': True, 'changed_members': ['README.txt'],
+        'payload_identical_to_candidate': True, 'changed_members': ['README.txt', 'CHANGELOG.txt'],
         'checkout_head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
         'source_hashes': {p.relative_to(ROOT).as_posix(): sha(p.read_bytes()) for p in sources},
         'source_commit': None, 'publication_destination': None, 'published': False,
-        'gameplay': 'TGC2.5.2/V2DLL5.98 short0.2.5 accepted; final ABC tweak unconfirmed',
+        'gameplay': 'TGC2.5.2/V2DLL5.98 short0.2.5 accepted; 0.2.8 ABC placement confirmed in game 2026-10-25',
         'multiplayer': 'untested', 'atcu_coexistence': 'untested',
     }
+    # Release-page assets beside the ZIP: notes, readme, changelog and the
+    # player's screenshots, copied unchanged.
+    for name in ('RELEASE_NOTES.md', 'README.txt', 'CHANGELOG.txt'):
+        shutil.copyfile(DOCS / name, output / name)
+    for image in images:
+        shutil.copyfile(image, output / Path(image).name)
+    identity['assets'] = {path.name: sha(path.read_bytes()) for path in sorted(output.iterdir())
+                          if path.name != 'RELEASE.json'}
     (output / 'RELEASE.json').write_text(json.dumps(identity, indent=2) + '\n')
     return identity
 
@@ -103,5 +115,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('candidate', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--image', type=Path, action='append', default=[])
     args = parser.parse_args()
-    print(json.dumps(build(args.candidate, args.output), indent=2))
+    print(json.dumps(build(args.candidate, args.output, args.image), indent=2))

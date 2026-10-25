@@ -4,14 +4,15 @@
 
 constexpr unsigned tgcx_rename_max=80;
 constexpr int tgcx_rename_panel_width=332,tgcx_rename_panel_height=224;
-constexpr int tgcx_rename_entry_width=24,tgcx_rename_entry_height=24;
+// Native Disband size (ATCU D21); 24px read as too large beside the name.
+constexpr int tgcx_rename_entry_width=20,tgcx_rename_entry_height=20;
 struct tgcx_RenamePlacement {int entry_x,entry_y,panel_x,panel_y;};
 static bool tgcx_RenameLayout(int host_x,int host_y,int host_width,int name_x,int name_y,int name_width,int name_height,
                              int screen_width,int screen_height,tgcx_RenamePlacement* out) {
     if(host_width<160 || host_width>2048 || screen_width<tgcx_rename_panel_width ||
        screen_height<tgcx_rename_panel_height || name_x<0 || name_y<0 || name_width<0 ||
        name_width>4096 || name_height<1 || name_height>128 || name_y>screen_height)return false;
-    int ex=name_x+name_width+10,ey=name_y+(name_height-tgcx_rename_entry_height)/2-2;
+    int ex=name_x+name_width+10,ey=name_y+(name_height-tgcx_rename_entry_height)/2-3;
     int right=host_x+host_width-tgcx_rename_entry_width-8;
     if(ex>right)ex=right;if(ex<name_x || ex+tgcx_rename_entry_width>screen_width)return false;
     if(ey<0)ey=0;if(ey+tgcx_rename_entry_height>screen_height)ey=screen_height-tgcx_rename_entry_height;

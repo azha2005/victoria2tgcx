@@ -16,7 +16,7 @@ from tgcx_army_art import sprites as native_sprites, sprite as native_sprite
 from tgcx_bill_gui import nine
 
 ROOT = Path(__file__).resolve().parent.parent
-VERSION = '0.2.5'
+VERSION = '0.2.8'
 FOLDER = 'tgcx_province_rename'
 STRINGS = {'title': 'Rename province', 'open': 'Rename', 'apply': 'Rename', 'cancel': 'Cancel',
            'current': '', 'current_caption': 'Current name', 'new_caption': 'New name',
@@ -54,7 +54,7 @@ def layout():
     body += text('status', 18, 145, 296, 22, 'Main_14_black', 'centre')
     body += button('cancel', 'button', 18, 178)+text('cancel_label', 18, 185, 144, 22, 'vic_18_black', 'centre', 'cancel')
     body += button('apply', 'primary', 170, 178)+text('apply_label', 170, 185, 144, 22, 'vic_18_black', 'centre', 'apply')
-    return 'guiTypes={\n'+window('entry', 24, 24, entry)+window('window', 332, 224, body)+'}\n'
+    return 'guiTypes={\n'+window('entry', 20, 20, entry)+window('window', 332, 224, body)+'}\n'
 
 
 def validate_layout(gui):
@@ -102,7 +102,7 @@ def artwork():
     if button.size!=(144,34):raise ValueError('native standard144 button dimensions changed')
     entry=native('GFX_bp_button_rename')
     if entry.size!=(28,28):raise ValueError('native ABC rename sprite must be28x28')
-    entry=entry.resize((24,24),Image.Resampling.LANCZOS)
+    entry=entry.resize((20,20),Image.Resampling.LANCZOS)
     cursor=native('cursor')
     if cursor.size!=(32,32) or cursor.getbbox()!=(7,6,8,22):
         raise ValueError('native caret ink bounds changed; revise caret offsets')
@@ -176,7 +176,7 @@ def preview(path):
     draw.rectangle((21,71,389,132),fill='#38563f')
     bitmap_label(canvas,32,72,'Buenos Aires','vic_22','#f8f1d7')
     name_width=bitmap_label(canvas,32,110,'La Plata','vic_18','#f8f1d7')
-    canvas.paste(assets['entry'],(32+name_width+8,107),assets['entry'])
+    canvas.paste(assets['entry'],(32+name_width+10,108),assets['entry'])
     bitmap_label(canvas,32,165,'Existing province controls stay in place.','Main_14_black')
     canvas.paste(editor_preview(),(415,65));canvas.save(path)
 
@@ -194,7 +194,7 @@ def mockup(path):
     body+=f'<text x="18" y="28">Province Rename Universal {VERSION} - centred input, native redesign, 2026-10-21</text>'
     body+='<rect x="15" y="65" width="380" height="260" fill="#d9d2ba" stroke="#a18e58" stroke-width="3"/>'
     body+='<text x="32" y="91" font-size="20">Buenos Aires</text><text x="32" y="127" font-size="18">La Plata</text>'
-    body+=asset('entry',110,108,24,24)
+    body+=asset('entry',112,110,20,20)
     body+='<text x="32" y="177" font-size="12">Native province controls remain below.</text>'
     body+=asset('editor_preview',415,65,332,224)
     Path(path).write_text(body+'</svg>\n',encoding='utf-8')
@@ -212,7 +212,7 @@ def build(output, dll):
     package=output/'mod'/FOLDER
     for rel in ['interface','gfx/interface','localisation']:
         (package/rel).mkdir(parents=True,exist_ok=True)
-    (output/'mod'/f'{FOLDER}.mod').write_text('name = "Province Rename (Universal)"\npath = "mod/tgcx_province_rename"\n',encoding='cp1252')
+    (output/'mod'/f'{FOLDER}.mod').write_text('name = "PRU - Province Rename Universal"\npath = "mod/tgcx_province_rename"\n',encoding='cp1252')
     (package/'tgcx_package.txt').write_text(f'package = rename\nversion = {VERSION}\n',encoding='ascii')
     (package/'interface/tgcx_province_rename.gui').write_text(gui,encoding='cp1252')
     definitions=['spriteTypes={']
@@ -226,7 +226,7 @@ def build(output, dll):
     (package/'localisation/tgcx_province_rename.csv').write_bytes(('\n'.join(loc)+'\n').encode('cp1252'))
     shutil.copy2(dll,package/'v2dll_mod.dll')
     (output/'README.txt').write_text(
-        f'Province Rename (Universal) {VERSION} - separate V2DLL mod\n\n'
+        f'PRU - Province Rename Universal {VERSION} - separate V2DLL mod\n\n'
         'REQUIREMENTS: reference Victoria II 3.04 and V2DLL with per-active-mod\n'
         'plugin loading (verified source cdad55c7, 2026-10-20). Enable\n'
         'LOAD_DLL_FROM_MOD_FOLDER=1 in V2DLL/v2dll_settings.ini.\n'
@@ -235,7 +235,7 @@ def build(output, dll):
         'plugins such as ATCU. No V2DLL binary is bundled.\n'
         'Upstream: https://github.com/artyom-kuznetsov/V2DLL_Victoria-2-Extension\n\n'
         'INSTALL: close the game normally. Copy mod/ into your game folder.\n'
-        'Select Province Rename (Universal), plus your base mod if any.\n'
+        'Select PRU - Province Rename Universal, plus your base mod if any.\n'
         'One additive package for vanilla and ordinary 3.04 mods. No TGC\n'
         'dependency, user_dir, base data or GUI replacement is included.\n'
         'Keep your V2DLL loader. No replacement lua51.dll is supplied.\n'

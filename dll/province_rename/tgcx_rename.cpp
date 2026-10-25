@@ -495,7 +495,7 @@ extern "C" __declspec(dllexport) int __cdecl V2Mod_Init(const V2ModAPI* api) {
     swprintf_s(path,L"%s\\Logs",game);CreateDirectoryW(path,nullptr);
     swprintf_s(path,L"%s\\Logs\\tgcx_province_rename.log",game);
     tgcx_rename_log=CreateFileW(path,GENERIC_WRITE,FILE_SHARE_READ,nullptr,CREATE_ALWAYS,0,nullptr);
-    tgcx_RenameLog("TGCX Province Rename 0.2.6 Universal loaded_by=V2DLL plugin API v1; engine command 0x707");
+    tgcx_RenameLog("TGCX Province Rename 0.2.8 Universal loaded_by=V2DLL plugin API v1; engine command 0x707");
     if(!tgcx_RenameHash(exe)){tgcx_RenameLog("BAD sha256; unsupported executable, no game memory read or patched");return 0;}
     tgcx_rename_base=api->gameBase;if(!tgcx_RenameGuards())return 0;
     auto* trampoline=static_cast<unsigned char*>(VirtualAlloc(nullptr,64,MEM_COMMIT|MEM_RESERVE,PAGE_EXECUTE_READWRITE));
@@ -516,7 +516,7 @@ extern "C" __declspec(dllexport) int __cdecl V2Mod_Init(const V2ModAPI* api) {
     } else tgcx_rename_edit_original=reinterpret_cast<uintptr_t>(original);
     InterlockedExchange(&tgcx_rename_initialized,2);
     tgcx_RenameLog("Rename hooks installed; GUI created after province selection on its UI thread");
-    api->Log("TGCX Province Rename 0.2.6 Universal: initialized; native command path enabled");return 1;
+    api->Log("TGCX Province Rename 0.2.8 Universal: initialized; native command path enabled");return 1;
 }
 BOOL WINAPI DllMain(HINSTANCE,DWORD,LPVOID) {return TRUE;}
 #endif

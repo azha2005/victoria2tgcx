@@ -34,6 +34,10 @@
 - `report-province-rename-package-1021.md`: accepted0.2.5, final ABC placement0.2.6 checked/installed, verified local ZIP; user explicitly defers publication.
 - `instructions-rename-026.md`: current local ZIP/final ABC check and no-publication boundary.
 - `release-province-rename-0.2.6/`: prepared README/notes, prospective only; not published.
+- `report-province-rename-027-1025.md`: 0.2.7 ABC 20x20 and 3px higher after "too low and big"; local ZIP, not tested in game.
+- `release-province-rename-0.2.7/`: 0.2.7 README/notes; not published.
+- `release-pru-0.0.1/`: PRU 0.0.1 (build 0.2.8) README, CHANGELOG and release notes; not published.
+- `report-pru-release-028-1025.md`: 0.2.8 accepted in game; renamed PRU, public 0.0.1; local release folder with screenshots.
 - `archive/province-rename-layout-025.svg`: preceding board retained verbatim.
 
 - `report-province-rename-readability-1021.md`: user0.2.4 short success, native caret bounds/offsets,24px ABC/Garamond input, corrected fixture RET4 call and checked/installed0.2.5.

@@ -51,7 +51,7 @@ class PackageTests(unittest.TestCase):
             self.assertFalse(any(p.endswith('lua51.dll') or 'ATCU' in p or 'province_interface.gui' in p for p in paths))
             mod=(dest/'mod/tgcx_province_rename.mod').read_text()
             self.assertNotIn('replace_path',mod);self.assertNotIn('user_dir',mod);self.assertNotIn('dependencies',mod)
-            self.assertIn('Province Rename (Universal)',mod)
+            self.assertIn('PRU - Province Rename Universal',mod)
             self.assertEqual((dest/'mod/tgcx_province_rename/v2dll_mod.dll').read_bytes(),DLL.read_bytes())
             gui=(dest/'mod/tgcx_province_rename/interface/tgcx_province_rename.gui').read_text()
             parsed=parse(gui)
@@ -87,11 +87,11 @@ class PackageTests(unittest.TestCase):
     def test_export_and_geometry(self):
         self.assertEqual(PE(DLL).machine,0x14C)
         self.assertIn('V2Mod_Init',PE(DLL).exports())
-        self.assertEqual(package.artwork()['entry'].size,(24,24))
+        self.assertEqual(package.artwork()['entry'].size,(20,20))
         game=ROOT/'work/Victoria-II-Province-Rename-TGC252'
         base=Base(game,game/'mod/TGC_v2.5.2.mod')
         native=package.native_sprite(game,package.native_sprites(game,base),'GFX_bp_button_rename',profile=base)
-        self.assertEqual(package.artwork()['entry'].tobytes(),native.resize((24,24),Image.Resampling.LANCZOS).tobytes())
+        self.assertEqual(package.artwork()['entry'].tobytes(),native.resize((20,20),Image.Resampling.LANCZOS).tobytes())
         self.assertEqual(package.artwork()['panel'].size,(332,224))
         self.assertIn('size={x=296 y=30}',package.layout())
         import re
