@@ -348,7 +348,174 @@ pub fn univ_cf_tab(root: usize, tab: usize) -> bool {
     let Some((x, y)) = univ_root_position(root) else {
         return placement_refused(root, "Conform root screen chain");
     };
+    namebox_register(root, left.map(|(dx, _)| x + dx as f32));
     univ_entry(root, tab, x as i32 + tx, y as i32 + ty, false)
+}
+
+// TPL-12 (user, 2026-10-24): TGC's unitname edit box (x 38, width 190) covers the left
+// 14px of disbandtoosmallbutton (x 214), so it took the click and showed "Name of Unit".
+// While that button is shown, the box's text entity hit test (FUN_009DE0A0, vtable
+// slot 20) refuses points from the button's left screen edge on.
+pub const NAMEBOX_RVAS: [u32; 5] = [0x5E4D20, 0xA398B4, 0x5DE0A0, 0x5DE23A, 0xA3BBA8];
+// The army panel registers every frame; an entry older than this is a closed panel.
+const NAMEBOX_FRESH_MS: u32 = 250;
+
+#[derive(Clone, Copy, Default)]
+struct NameBox {
+    entity: usize,
+    limit: f32,
+    stamp: u32,
+}
+
+static NAMEBOXES: Global<[NameBox; 4]> = Global::new(
+    [NameBox {
+        entity: 0,
+        limit: 0.0,
+        stamp: 0,
+    }; 4],
+);
+static NAMEBOX_ORIGINAL: AtomicUsize = AtomicUsize::new(0);
+static NAMEBOX_LOGGED: AtomicUsize = AtomicUsize::new(0);
+
+/// Record (or, with no shown button, forget) the screen x where the box stops.
+fn namebox_set(table: &mut [NameBox; 4], entity: usize, limit: Option<f32>, now: u32) {
+    let index = table.iter().position(|b| b.entity == entity);
+    let Some(limit) = limit else {
+        if let Some(i) = index {
+            table[i] = NameBox::default();
+        }
+        return;
+    };
+    let i = index.unwrap_or_else(|| {
+        (0..table.len())
+            .max_by_key(|&i| {
+                now.wrapping_sub(table[i].stamp) | u32::from(table[i].entity == 0) << 31
+            })
+            .unwrap_or(0)
+    });
+    table[i] = NameBox {
+        entity,
+        limit,
+        stamp: now,
+    };
+}
+
+fn namebox_refuses(table: &[NameBox; 4], entity: usize, x: f32, now: u32) -> bool {
+    entity != 0
+        && table.iter().any(|b| {
+            b.entity == entity && now.wrapping_sub(b.stamp) <= NAMEBOX_FRESH_MS && x >= b.limit
+        })
+}
+
+fn namebox_register(root: usize, limit: Option<f32>) {
+    if NAMEBOX_ORIGINAL.load(Ordering::Relaxed) == 0 {
+        return;
+    }
+    let edit = find_named(root, 16, 0x5E4D20, "unitname");
+    let entity = if edit != 0 && rdp(edit) == base() + 0xA39878 {
+        rdp(edit + 0x110)
+    } else {
+        0
+    };
+    if entity == 0 || rdp(entity) != base() + 0xA3BB58 {
+        if NAMEBOX_LOGGED.swap(1, Ordering::Relaxed) != 1 {
+            log!("Name box: unitname edit box or text entity not recognised; left as native");
+        }
+        return;
+    }
+    if limit.is_some() && NAMEBOX_LOGGED.swap(2, Ordering::Relaxed) != 2 {
+        log!(
+            "Name box: stops at Disband depleted x={:.0}",
+            limit.unwrap_or(0.0)
+        );
+    }
+    namebox_set(NAMEBOXES.get(), entity, limit, crate::sys::tick());
+}
+
+extern "C" fn namebox_query(entity: usize, x: f32) -> i32 {
+    let _cpu = CpuScope::new();
+    i32::from(namebox_refuses(
+        NAMEBOXES.get(),
+        entity,
+        x,
+        crate::sys::tick(),
+    ))
+}
+
+// from V2DLL: V2TechButton.cpp, register-preservation pattern. FUN_009DE0A0 is
+// thiscall (x, y, ...) with RET 0x20 and returns its hit in ST0, like the HEMI-3 bounds.
+#[unsafe(naked)]
+unsafe extern "C" fn namebox_thunk() {
+    std::arch::naked_asm!(
+        crate::save_cpu!(),
+        "push dword ptr [ebx+40]",
+        "push dword ptr [ebx+24]",
+        "call {query}",
+        "add esp, 8",
+        "test eax, eax",
+        "jz 2f",
+        crate::restore_cpu!(),
+        "fldz",
+        "ret 32",
+        "2:",
+        crate::restore_cpu!(),
+        "jmp dword ptr [{original}]",
+        query = sym namebox_query,
+        original = sym NAMEBOX_ORIGINAL,
+    )
+}
+
+fn namebox_install() {
+    if !require_signatures(&NAMEBOX_RVAS) {
+        log!("Name box narrowing off: guards");
+        return;
+    }
+    NAMEBOX_ORIGINAL.store(at(0x5DE0A0), Ordering::Relaxed);
+    if replace_pointer(
+        at(0xA3BBA8),
+        at(0x5DE0A0),
+        namebox_thunk as *const () as usize,
+    ) {
+        log!("Name box hit test hooked: text entity slot 20 (RVA A3BBA8)");
+    } else {
+        NAMEBOX_ORIGINAL.store(0, Ordering::Relaxed);
+        log!("Name box narrowing off: slot 20 not the native hit test");
+    }
+}
+
+#[cfg(test)]
+mod namebox_tests {
+    use super::{NAMEBOX_FRESH_MS, NameBox, namebox_refuses, namebox_set};
+
+    #[test]
+    fn box_stops_at_the_shown_button_and_reopens_when_hidden() {
+        let mut t = [NameBox::default(); 4];
+        // Root at screen x 600, Disband depleted at local x 214.
+        namebox_set(&mut t, 0x1000, Some(814.0), 10);
+        assert!(!namebox_refuses(&t, 0x1000, 813.0, 10));
+        assert!(namebox_refuses(&t, 0x1000, 814.0, 10));
+        assert!(namebox_refuses(&t, 0x1000, 827.0, 10));
+        // Another text entity is never touched.
+        assert!(!namebox_refuses(&t, 0x2000, 820.0, 10));
+        // Button hidden: the whole box is native again.
+        namebox_set(&mut t, 0x1000, None, 11);
+        assert!(!namebox_refuses(&t, 0x1000, 820.0, 11));
+    }
+
+    #[test]
+    fn a_closed_panel_stops_narrowing_and_slots_are_reused() {
+        let mut t = [NameBox::default(); 4];
+        namebox_set(&mut t, 0x1000, Some(814.0), 100);
+        assert!(!namebox_refuses(&t, 0x1000, 820.0, 101 + NAMEBOX_FRESH_MS));
+        for (i, e) in [0x2000, 0x3000, 0x4000, 0x5000].into_iter().enumerate() {
+            namebox_set(&mut t, e, Some(814.0), 200 + i as u32);
+        }
+        assert!(t.iter().all(|b| b.entity != 0x1000));
+        assert!(namebox_refuses(&t, 0x5000, 820.0, 203));
+        namebox_set(&mut t, 0x5000, Some(900.0), 204);
+        assert_eq!(t.iter().filter(|b| b.entity == 0x5000).count(), 1);
+        assert!(!namebox_refuses(&t, 0x5000, 820.0, 204));
+    }
 }
 
 #[cfg(test)]
@@ -1393,4 +1560,5 @@ pub fn install() {
     log!(
         "Templates GUI hooks installed: native build-view update/destructor; engine commands only"
     );
+    namebox_install();
 }

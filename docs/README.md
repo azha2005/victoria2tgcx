@@ -1,6 +1,10 @@
 # Index of `docs/`
 
-- `report-tpl-12-menu-load-1024.md`: current 0.11.15: a save loaded from the main menu was never seen as a load (P65); fixed; verified install; not tested in game.
+- `report-release-003-1025.md`: ATCU 0.0.3 release candidate (build 0.11.16): inputs, gates, what is pending.
+- `release-0.0.3/`: README.txt, CHANGELOG.txt and RELEASE_NOTES.md of ATCU 0.0.3.
+- `report-tpl-12-namebox-1024.md`: TPL-12 0.11.16, the unit name box's hit area stops at Disband depleted while it is shown; passed in game 2026-10-25.
+- `report-tpl-12-passed-1024.md`: TPL-12 0.11.15 passed in game (log evidence); TGC name box covering Disband depleted, fix options.
+- `report-tpl-12-menu-load-1024.md`: 0.11.15: a save loaded from the main menu was never seen as a load (P65); fixed; verified install; not tested in game.
 - `report-tpl-12-load-1024.md`: previous 0.11.14: 0.11.13 regiment did not march; false load detection (P64) fixed with a three-frame confirmation; verified install; not tested in game.
 - `report-tpl-12-reload-1024.md`: previous 0.11.13, review of 0.11.12, Replace reload fixes (merged state, orders file v2, unresumable records closed), README wording, verified install; not tested in game.
 - `report-tpl-12-visual-check-1024.md`: current 0.11.12 alignment/title visual short pass and preserved-log audit; 206 guards OK, empty error logs, no new replacement execution/resume evidence; functional checks open.

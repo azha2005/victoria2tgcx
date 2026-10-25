@@ -43,6 +43,20 @@
 
 ## 1. Status by stage (as of 2026-10-24)
 
+2026-10-25, session 81: **0.11.16 passed in game** (user: "worked"); ATCU 0.0.3
+release candidate prepared from it (`docs/report-release-003-1025.md`).
+
+2026-10-24, session 81: **TPL-12 0.11.16 installed**:
+the unit name box's hit test refuses points from Disband depleted's left edge
+while that button is shown (`docs/report-tpl-12-namebox-1024.md`).
+
+2026-10-24, session 81: **TPL-12 0.11.15 passed in game** (user):
+stranded regiment resumed from a menu load, joined, old regiment left;
+three new replacements; reload after merge detached old regiments again.
+Open: TGC `unitname` box (x 38, width 190) covers Disband depleted
+(x 214) and takes its clicks; fix option awaits the user.
+report-tpl-12-passed-1024.md.
+
 2026-10-24, session 81 (last): 0.11.14 committed/pushed (b9bf601). User:
 Lubny regiment still did not march. Log: only the menu's bookmark-date
 load was seen; the later save loaded forward was never a load (P65).
@@ -361,7 +375,8 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 
 | Separate candidate | Staged | Installed | Game acceptance |
 |---|---|---|---|
-| ATCU 0.11.15 (TPL-12 menu-load fix, Rust) | work/tpl12-01115/ATCU-0.11.15-candidate.zip | Own-loader TGC copy; 0.11.14 rollback retained | Not tested in game |
+| ATCU 0.11.16 (TPL-12 name box stops at Disband depleted, Rust) | work/tpl12-01116/ATCU-0.11.16-candidate.zip | Own-loader TGC copy; 0.11.15 rollback `before-01116` | **Passed in game** (user, 2026-10-25); input of ATCU 0.0.3 RC |
+| ATCU 0.11.15 (TPL-12 menu-load fix, Rust) | work/tpl12-01115/ATCU-0.11.15-candidate.zip | Superseded in the test copy by 0.11.16 | **Passed single-player check** (TGC v2.5.2); MP/other bases open |
 | ATCU 0.11.14 (TPL-12 false-load fix, Rust) | work/tpl12-01114/ATCU-0.11.14-candidate.zip | Superseded by 0.11.15 | Lubny regiment still did not march (P65) |
 | ATCU 0.11.13 (TPL-12 Replace reload fixes, Rust) | work/tpl12-01113/ATCU-0.11.13-candidate.zip | Superseded by 0.11.14 | GUI fine (user); new regiment did not march (P64) |
 | ATCU 0.11.12 (TPL-12 native Y/single-line titles, Rust) | work/tpl12-01112/ATCU-0.11.12-candidate.zip | Superseded in the test copy by 0.11.13 | Alignment/title visual short pass, clean short-run logs; functional/reload/MP open |

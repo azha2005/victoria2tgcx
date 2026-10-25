@@ -34,7 +34,8 @@ class ReleaseTests(unittest.TestCase):
 
     def test_all_staged_art_has_explicit_origin(self):
         original = ('tgcx_cf_ring.dds', 'tgcx_tpl_bg.dds', 'tgcx_tpl_blank_0.dds')
-        derived = ('tgcx_cf_bg.dds', 'tgcx_cf_open.dds', 'tgcx_tpl_compact.dds', 'tgcx_tpl_check_on.dds', 'tgcx_cf_check.dds')
+        original += ('tgcx_cf_rp_step.dds',)
+        derived = ('tgcx_cf_replace.dds', 'tgcx_cf_rp_bg.dds', 'tgcx_cf_rp_handle.dds', 'tgcx_cf_bg.dds', 'tgcx_cf_open.dds', 'tgcx_tpl_compact.dds', 'tgcx_tpl_check_on.dds', 'tgcx_cf_check.dds')
         for name in original:
             self.assertEqual(release.art_origin(name)[0], 'original drawn UI')
         for name in derived:
@@ -53,7 +54,7 @@ class ReleaseTests(unittest.TestCase):
                 release.build(source, output)
 
     def test_zip_holds_only_readme_loader_and_mod(self):
-        files = {'README.txt': b'ATCU', 'lua51.dll': b'x', 'mod/a.mod': b'x', 'INSTALL.txt': b'x'}
+        files = {'README.txt': b'ATCU', 'CHANGELOG.txt': b'x', 'lua51.dll': b'x', 'mod/a.mod': b'x', 'INSTALL.txt': b'x'}
         manifest = {name: release.sha(data) for name, data in files.items()}
         with self.assertRaisesRegex(ValueError, 'top-level'):
             release.verify_release(files, manifest, {})

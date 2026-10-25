@@ -44,7 +44,7 @@ class FilterLayoutTests(unittest.TestCase):
             folder = Path(temp)
             dll = folder / 'old.dll'
             dll.write_bytes(b'TGCX MOD-6 0.10.4 tgcx.dll')
-            with self.assertRaisesRegex(ValueError, 'matching 0.11.15'):
+            with self.assertRaisesRegex(ValueError, 'matching 0.11.16'):
                 package.build(folder / 'output', folder / 'art', dll, folder / 'loader')
             self.assertFalse((folder / 'output').exists())
 

@@ -264,6 +264,13 @@ SIGNATURES = [
     (0x565921, "405DC20800", "TPL-12 pop supports RET 8"),
     (0x565930, "558BEC83E4F883EC0C807D08005356578BF8744F", "TPL-12 pop regiments FUN_00965930: EAX pop, pushed flag"),
     (0x56598A, "5F5E5B8BE55DC20400", "TPL-12 pop regiments RET 4"),
+    # TPL-12 name box (docs/report-tpl-12-namebox-1024.md): the unit name edit box's text
+    # entity hit test refuses points from Disband depleted's left edge while it is shown.
+    (0x5E4D20, "558BEC81C1940300008B018B40045DFFE0", "TPL-12 native edit-box lookup by name (GUI slot 16)"),
+    (0xA398B4, "B05B9B00", "TPL-12 CEU3EditBox vtable slot 15 position getter FUN_009B5BB0"),
+    (0x5DE0A0, "558BEC83E4F883EC3453568BF18B068B90D4000000578D4C", "TPL-12 text entity hit test FUN_009DE0A0 (x, y)"),
+    (0x5DE23A, "C22000", "TPL-12 text entity hit test RET 0x20"),
+    (0xA3BBA8, "A0E09D00", "TPL-12 text entity vtable slot 20 hit test"),
     (0x394048, "8B55F05352E81E181D0069C0E80300008945D08B45F053E8CC181D00", "TPL-12 unit panel pop colour: supports(pop, 0) vs regiments(pop, 0)"),
 ]
 

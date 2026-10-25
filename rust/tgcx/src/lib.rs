@@ -1,5 +1,5 @@
 //! Rust port of dll/tgcx (tgcx.dll, TPL-7 0.11.2): the same hooks, gates and log as
-//! the C++ build, module by module. TPL-8 0.11.3 (Non-core only) TPL-11 (Build Army gathering) and TPL-12 0.11.15 (Replace depleted) exist only here. Nothing is installed from DllMain: a loader calls
+//! the C++ build, module by module. TPL-8 0.11.3 (Non-core only) TPL-11 (Build Army gathering) and TPL-12 0.11.16 (Replace depleted) exist only here. Nothing is installed from DllMain: a loader calls
 //! tgcx_Init (our lua51.dll) or V2Mod_Init (V2DLL's plugin API).
 
 // The loops index several parallel arrays as the C++ does.
@@ -134,6 +134,7 @@ fn drawing_signatures() -> bool {
             || STAGE_RVAS.contains(&rva)
             || templates::TPL_RVAS.contains(&rva)
             || templates_gui::TPL_GUI_RVAS.contains(&rva)
+            || templates_gui::NAMEBOX_RVAS.contains(&rva)
             || conform_native::CF_RVAS.contains(&rva)
             || check_signature(s)
     })
@@ -199,7 +200,7 @@ fn initialize(origin: &[u8]) -> bool {
     sys::set_log(log);
     sys::set_base(unsafe { GetModuleHandleW(null()) } as usize);
     log!(
-        "TGCX TPL-12 0.11.15 tgcx.dll loaded_by={} base={:08X} preferred={PREFERRED_BASE:08X} simulation_writes=engine_commands_only",
+        "TGCX TPL-12 0.11.16 tgcx.dll loaded_by={} base={:08X} preferred={PREFERRED_BASE:08X} simulation_writes=engine_commands_only",
         Bytes(origin),
         base()
     );

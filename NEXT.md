@@ -1,6 +1,13 @@
 # NEXT - what comes next
 
-2026-10-24 (81). **TPL-12 0.11.15 installed in the test copy (committed b2ed27c;
+2026-10-24 (81, end). **TPL-12 0.11.15 PASSED in game (user: "everything
+worked"; log in `docs/report-tpl-12-passed-1024.md`). 0.11.16 PASSED in game
+(user: "worked"): the unit name box stops at Disband depleted
+(`docs/report-tpl-12-namebox-1024.md`). Release candidate ATCU 0.0.3
+(build 0.11.16) prepared: `docs/release-0.0.3/`, validated; the final
+build waits for the source commit (`docs/report-release-003-1025.md`).**
+
+Earlier: TPL-12 0.11.15 installed in the test copy (committed b2ed27c;
 0.11.14 is b9bf601). User: Lubny regiment still did not march on 0.11.14.
 Cause: a save loaded from the main menu was never seen as a load (P65).
 Not tested in game.** `work/tpl12-01115/ATCU-0.11.15-candidate.zip`.
@@ -55,7 +62,9 @@ Earlier visual short pass (0.11.12): `docs/report-tpl-12-visual-check-1024.md`.
 
 | Card | Status | Instructions |
 |---|---|---|
-| TPL-12-CHECK | 0.11.15 installed; GUI passed; march/merge/detach and reload open | `docs/instructions-tpl-12-check.md` |
+| TPL-12-CHECK | **Passed** (0.11.15, single player, TGC v2.5.2) | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | **Passed** (0.11.16, user 2026-10-25) | `docs/report-tpl-12-namebox-1024.md` |
+| RELEASE-003 | RC prepared and validated; commit sources, then final build, then publish only on the user's word | `docs/report-release-003-1025.md` |
 | TPL-11-CHECK | Rally selector/gather short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
 
 1. TPL-12-CHECK: use `docs/instructions-tpl-12-check.md` steps 1-4, starting

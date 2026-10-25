@@ -1,0 +1,59 @@
+ATCU - Army Template and Conform Universal - changelog
+
+
+0.0.3 - 2026-10-25 (internal build 0.11.16)
+
+New
+- Replace depleted: a maroon button beside Conform in the army header
+  opens its own window. Pick Low strength (slider, 10% to 90%) and/or
+  Pop too small. One regiment of the same type is built for each
+  depleted one, within land reach, with its own culture choice. It
+  marches to the army and joins it; then the old regiment is detached
+  into its own stack. Nothing is disbanded.
+- Build Army gathering: one Recruit click makes one army. The regiments
+  march by safe land routes and merge at the target chosen with "Gather
+  at": Best supply, Capital, or a land rally point. A target already
+  holding one of your armies moves to the best free province beside it.
+- Non-core only: a third culture choice for templates, Conform and
+  Replace (soldier pops neither primary nor accepted).
+- Mobo stacks: mark an army in the Conform window; on mobilization, new
+  all-infantry stacks march to the nearest marked army short of
+  infantry and join it.
+
+Changed
+- Conform and Replace are two 20x20 buttons in the army header, the
+  size of the game's own Disband buttons. They shift right when Disband
+  depleted is hidden and back when it is shown.
+- Long template names in the Conform list are shortened with an
+  ellipsis to fit one line.
+- Templates are saved to tgcx_templates_v3.txt; v2 and v1 are imported
+  and left unchanged.
+- The DLL is now written in Rust. The loader (lua51.dll) is unchanged.
+
+Fixed
+- Orders for regiments being built (Conform, Replace, Build Army) are
+  resumed after a save loaded from the main menu, not only from the
+  in-game menu.
+- One odd frame around a save could look like a load and drop those
+  orders, so a new regiment stayed where it was built.
+- A save taken after a replacement joined, but before the old regiment
+  left, detaches the old regiment again after loading.
+- The unit name box no longer covers the left half of Disband depleted,
+  which could not be clicked there and showed "Name of Unit".
+
+
+0.0.2 - 2026-10-19 (internal build 0.11.2)
+
+New
+- Culture filter per template: Primary + accepted, Primary only, or any
+  culture. Build Army and Conform both use it.
+- Continent filter in Build Army, for the current recruitment only.
+- Conform orders survive a load: regiments being built for a Conform
+  still march to and join their army after a save of the same country
+  is loaded.
+
+
+0.0.1 - 2026-10-19 (internal build 0.10.4)
+
+- First beta: templates in Build Army, recruited in one click, and
+  Conform on armies in the field. Works on vanilla and base mods.

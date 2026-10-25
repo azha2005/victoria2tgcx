@@ -1,7 +1,7 @@
 """Prepare the release ZIP from the immutable, gameplay-tested Army ZIP.
 
 Maintainer tool only. Never installs, launches the game, downloads or publishes.
-The ZIP holds README.txt, the root loader and the mod folder; nothing else.
+The ZIP holds README.txt, CHANGELOG.txt, the root loader and the mod folder; nothing else.
 The hash manifest, release identity and art provenance are written beside it.
 """
 import argparse
@@ -12,20 +12,21 @@ from pathlib import Path, PurePosixPath
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.0.2'
-BUILD = '0.11.2'
+VERSION = '0.0.3'
+BUILD = '0.11.16'
 NAME = 'ATCU - Army Template and Conform Universal'
-# work/orders-0112/ATCU-orders-0.11.2-test.zip, the build installed and checked in game.
-ACCEPTED_ZIP = '42cb2b3bb07f4a8b81e2c3eb906590b0270660d3fa5ebc10c05037a1f6096fae'
-LOGIC = '7afefc61427be3c6dae12bd8004cdadba2b8c8866fd3cddb9c17dab76eb2c49e'
+# work/tpl12-01116/ATCU-0.11.16-candidate.zip, the build installed and checked in game.
+ACCEPTED_ZIP = '5ad363579e8c450eb37e8662d473d2554a24b9766036efe14de5f238795d0414'
+LOGIC = '21a2db08d4650405cacab56cd45aa368a71c55a9fd5b1c2ac630cae674960d0f'
 LOADER = 'ab8e3653a8ea697fa29e05907659b13a69af43c223d0f50116fa58865d4b36dd'
-ART_COUNT = 32
+ART_COUNT = 38
 DOCS = 'docs/release-' + VERSION
 # The DLL and package sources must be committed: the release names that commit.
-SOURCE_PATHS = ('dll', 'tools')
+SOURCE_PATHS = ('dll', 'rust', 'tools')
 PACKAGE = 'mod/tgcx_army_universal/'
 DESCRIPTOR = 'mod/tgcx_army_universal.mod'
 README = 'README.txt'
+CHANGELOG = 'CHANGELOG.txt'
 SIDECARS = ('SHA256.json', 'RELEASE.json', 'PROVENANCE.json')
 
 
@@ -77,6 +78,19 @@ def art_origin(name):
         if leaf in ('check', 'check_on'):
             return ('game/effective-base derived UI', ['gfx/interface/checkbox_default.dds'],
                     'tools/tgcx_army_art.py:filter_checkbox')
+        if leaf == 'rp_step':
+            return 'original drawn UI', ['transparent 16x16 slider step'], code + '; chooser_art'
+        if leaf == 'rp_bg':
+            sprites = ['GFX_unit_bottom_bg', 'GFX_unit_toppanel_bg', 'GFX_bg_horizontal_slider_220wide',
+                       'gfx/interface/checkbox_default.dds']
+            return 'game/effective-base derived UI', sprites, code + '; chooser_art'
+        if leaf in ('rp_left', 'rp_right', 'rp_handle'):
+            name = {'rp_left': 'yearslider_leftbutton', 'rp_right': 'yearslider_rightbutton',
+                    'rp_handle': 'yearslider_slider'}[leaf]
+            return 'game/effective-base derived UI', [name], code + '; chooser_art'
+        if leaf == 'replace':
+            return ('game/effective-base derived UI',
+                    ['GFX_unit_disband', 'GFX_unit_strip', 'GFX_tooltip_strength'], code)
         if leaf in ('slot', 'change'):
             sprites = ['GFX_unit_entry_bg']
         elif leaf == 'button':
@@ -120,8 +134,8 @@ def provenance(files, root):
                             'publication_status': ('project license undecided' if category == 'original drawn UI'
                                                    else 'redistribution permission not recorded')})
     markers = []
-    for path in sorted((root / 'dll/tgcx').rglob('*')):
-        if path.suffix not in ('.h', '.cpp'):
+    for path in sorted([*(root / 'dll/tgcx').rglob('*'), *(root / 'rust').rglob('*.rs')]):
+        if 'target' in path.relative_to(root).parts or path.suffix not in ('.h', '.cpp', '.rs'):
             continue
         for line, text in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
             if 'from V2DLL:' in text:
@@ -134,15 +148,15 @@ def provenance(files, root):
                          'V2DLL distribution', 'game logs/saves', 'Ghidra/decompiled dumps']}
 
 
-def readme_bytes(root):
+def readme_bytes(root, name=README):
     # CRLF for Notepad, and independent of how git checked the file out.
-    text = (root / DOCS / README).read_text(encoding='ascii')
+    text = (root / DOCS / name).read_text(encoding='ascii')
     return text.replace('\r\n', '\n').replace('\n', '\r\n').encode('ascii')
 
 
 def verify_release(files, manifest, identity):
     check_manifest(files, manifest)
-    if {name.split('/')[0] for name in files} != {README, 'lua51.dll', 'mod'}:
+    if {name.split('/')[0] for name in files} != {README, CHANGELOG, 'lua51.dll', 'mod'}:
         raise ValueError('unexpected top-level content')
     if sha(files[PACKAGE + 'tgcx.dll']) != LOGIC or files[PACKAGE + 'tgcx.dll'] != files[PACKAGE + 'v2dll_mod.dll']:
         raise ValueError('accepted logic changed')
@@ -157,10 +171,11 @@ def verify_release(files, manifest, identity):
     for name, data in files.items():
         if name.endswith(('.exe', '.py', '.ps1', '.bat', '.cmd', '.pdb', '.log', '.v2')) or 'lua51_real' in name:
             raise ValueError('unexpected recipient content')
-    try:
-        files[README].decode('ascii')
-    except UnicodeDecodeError:
-        raise ValueError('README.txt must be plain ASCII (no em dashes)')
+    for name in (README, CHANGELOG):
+        try:
+            files[name].decode('ascii')
+        except UnicodeDecodeError:
+            raise ValueError(name + ' must be plain ASCII (no em dashes)')
     if any(PACKAGE + 'interface/' + name in files for name in ('buildunit.gui', 'unitpanel.gui', 'country_politics.gui')):
         raise ValueError('base GUI override present')
     if len([n for n in files if n.endswith('.dds')]) != ART_COUNT:
@@ -193,8 +208,9 @@ def build(source, output, root=ROOT, commit=None):
     files = {name: data for name, data in accepted.items() if name.startswith('mod/') or name == 'lua51.dll'}
     files[DESCRIPTOR] = f'name = "{NAME}"\npath = "mod/tgcx_army_universal"\n'.encode('cp1252')
     files[README] = readme_bytes(root)
-    # The accepted ZIP's own README.txt is replaced, not payload.
-    changed = [name for name in files if name != README and name in accepted and files[name] != accepted[name]]
+    files[CHANGELOG] = readme_bytes(root, CHANGELOG)
+    # The accepted ZIP's own README.txt and CHANGELOG.txt are replaced, not payload.
+    changed = [name for name in files if name not in (README, CHANGELOG) and name in accepted and files[name] != accepted[name]]
     if set(changed) - {DESCRIPTOR}:
         raise ValueError('only launcher branding may change in accepted payload')
     identity = {
@@ -203,12 +219,16 @@ def build(source, output, root=ROOT, commit=None):
         'gameplay_source_commit': commit or source_commit(root), 'accepted_archive_sha256': ACCEPTED_ZIP,
         'logic_sha256': LOGIC, 'loader_sha256': LOADER,
         'tested_executable_sha256': '62d48c204364dd706584777c2e2b3c7ab3c5f1dd0170872554943575d53d6648',
-        'runtime_checks': ['TGC 2.5.2 + V2DLL 5.82 (filters, saved Conform orders across a load)',
-                           'TGC 2.5.2 + ATCU loader (templates, Conform)'],
+        'runtime_checks': ['TGC 2.5.2 + ATCU loader 0.11.15/0.11.16 (Replace depleted, orders across '
+                           'in-game and main-menu loads, name box beside Disband depleted)',
+                           'TGC 2.5.2 + ATCU loader 0.11.3/0.11.6 (Non-core only, Build Army gathering)'],
+        'earlier_runtime_checks_0_11_2': ['TGC 2.5.2 + V2DLL 5.82 (filters, saved Conform orders across a load)'],
         'earlier_runtime_checks_0_10_4': ['vanilla', 'HPM 0.4.5', 'DoD Fan Fork', 'TGC 2.5.2 + V2DLL 5.82'],
         'changed_accepted_payload_files': changed,
         'pending': ['own license undecided by user choice', 'bundled artwork publication status',
-                    'second-PC recipient test', '0.11.x filters not rechecked on vanilla, HPM or DoD'],
+                    'second-PC recipient test', '0.11.3+ features not rechecked on vanilla, HPM or DoD',
+                    '0.11.3+ not rechecked with V2DLL', 'Build Army gathering save/reload',
+                    'multiplayer'],
     }
     manifest = {name: sha(data) for name, data in sorted(files.items())}
     verify_release(files, manifest, identity)
@@ -220,7 +240,7 @@ def build(source, output, root=ROOT, commit=None):
     archive = archive_path(output)
     with zipfile.ZipFile(archive, 'x', compression=zipfile.ZIP_DEFLATED) as z:
         for name, data in sorted(files.items()):
-            info = zipfile.ZipInfo(name, (2026, 10, 19, 0, 0, 0))
+            info = zipfile.ZipInfo(name, (2026, 10, 25, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
             z.writestr(info, data)
