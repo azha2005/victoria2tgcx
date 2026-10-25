@@ -43,4 +43,4 @@ GUI/Army/filter/catalogue pass. `work/tpl12-01115/ATCU-0.11.15-candidate.zip`,
 logic DLL `04327d5aff13d6527fa18c5aacbd1ec4c3b0c9e95b305d0cd8bed7d7d2a2b546`.
 No game process; 0.11.14 backup with log and settings
 `work/tpl12-01115/before-01115` (58 files); 48 payload hashes verified;
-settings untouched. Not committed.
+settings untouched. Committed b2ed27c.

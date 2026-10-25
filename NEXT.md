@@ -1,6 +1,6 @@
 # NEXT - what comes next
 
-2026-10-24 (81). **TPL-12 0.11.15 installed in the test copy (not committed;
+2026-10-24 (81). **TPL-12 0.11.15 installed in the test copy (committed b2ed27c;
 0.11.14 is b9bf601). User: Lubny regiment still did not march on 0.11.14.
 Cause: a save loaded from the main menu was never seen as a load (P65).
 Not tested in game.** `work/tpl12-01115/ATCU-0.11.15-candidate.zip`.

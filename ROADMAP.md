@@ -48,7 +48,7 @@ Lubny regiment still did not march. Log: only the menu's bookmark-date
 load was seen; the later save loaded forward was never a load (P65).
 Rust **0.11.15**: before a day step is known, a jump over two days is a
 load. 31 tests/gates pass; installed, 58-file rollback. **Not tested in
-game; not committed.** report-tpl-12-menu-load-1024.md.
+game; committed b2ed27c.** report-tpl-12-menu-load-1024.md.
 
 2026-10-24, session 81 (later): user ran 0.11.13: **GUI fine, new regiment
 did not go to the stack**. Log: a false load right after the click dropped
