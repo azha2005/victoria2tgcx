@@ -1,5 +1,7 @@
 # ROADMAP.md — Status, decisions and session close for the TGCX submod
 
+2026-10-26 ARMY-HANDOFF complete: local research ZIP with 21 targeted decompilations/disassembly, partial CArmy/CRegiment fields and country list. No new runtime validation. `docs/report-army-handoff-1026.md`.
+
 > **What this file is.** The project's status (what is done, with which
 > numbers), the decisions, the risks and the closing procedure. **What
 > happens next is not here: it is in `NEXT.md`**, the only place that says
@@ -25,7 +27,7 @@
    §11.
 2. Work on **one card at a time**; the next one does not start while the
    previous one is red. New pitfall: `Pnn` in `docs/pitfalls.md` and in the
-   index in `AGENTS.md` §8 (the next one is **P64**).
+   index in `AGENTS.md` §8 (the next one is **P77**).
 3. **When closing the session: §7** (required).
 
 **Process rules (not negotiable):**
@@ -41,7 +43,120 @@
 
 ---
 
-## 1. Status by stage (as of 2026-10-24)
+## 1. Status by stage (as of 2026-10-25)
+
+2026-10-29 VOL-OPT:0.0.10 siege progress accepted.0.0.11 negative callback filters and compact closed-panel snapshots installed with rollback.43 Rust/five package checks and96 guards pass; controlled helper medians improve10.7x/176.5x, not game FPS. Relevant fresh gates retained; source commit/push requested. `docs/report-volunteers-optimization-1029.md`; steps `docs/instructions-volunteers-optimization.md`.
+
+
+2026-10-29 VOL-SIEGE:0.0.9 battle confirmed by user/log, donor neutral.0.0.10 initial/existing-siege and empty-visibility corrections installed;41 Rust/five package checks and96 guards pass.15 payload hashes match/nine protected files unchanged. Siege progress/credit and custom vision unverified; user retains testing. `docs/report-volunteers-siege-1029.md`; steps `docs/instructions-volunteers-siege.md`.
+
+
+2026-10-29 VOL-CONTROLS:0.0.9 installed/launched with six hooks admitted; user takes over testing. Persistent entry, actual recipient/front display knowledge, scoped native exile permission and shared-vector/scalar-read costs addressed.39 Rust/five package checks pass; combat, organization recovery, fog and performance unverified. `docs/report-volunteers-controls-1029.md`; steps `docs/instructions-volunteers-controls.md`.
+
+
+2026-10-29 VOL-SEND-0008-INSTALL: user confirmed normal exit;0.0.8 installed in the isolated E: copy.15 payload readbacks match; nine protected files unchanged;0.0.7 backup preserved. No game launch, successful Send or lag improvement verified. Continue Send card steps4..10. `docs/report-volunteers-install-0008-1029.md`.
+
+
+2026-10-29 VOL-SEND-0008: live ARC five-to-four split diagnosed; native last-member guard. Whole-stack reuse, unchanged-day journal suppression, bounded recipient visibility and reload/history corrections built/staged.36 Rust/five package-loader checks pass; waiting for normal exit before isolated install, game/lag acceptance open. `docs/report-volunteers-send-assembly-1029.md`; steps `docs/instructions-volunteers-send-0008.md`. No subagents.
+
+
+2026-10-29 VOL-UI/SEND: user accepts appearance; read-only live refusal diagnosis confirms France at war with Algeria. Prototype donor must be neutral. No successful sending/game actions or OOS acceptance; report-volunteers-send-refusal-1029.md. No subagents.
+
+2026-10-29 VOL-PROTOTYPE: donor-controlled SP prototype0.0.7 connected and
+installed in E:/Victoria-II-Volunteers-0004 with explicit prototype launcher,
+observe default and0.0.6 rollback. Native action-grid Send volunteers entry,
+local session/load fence, native-command journal, guarded combat/access/vision,
+battle-side country attribution, route/return/loss coordination implemented.
+Reference EXE/80 guards, all-targets check, strict Clippy and release compilation
+pass; package/install hashes checked. No behavioral/native ABI/game/MP test or
+desktop input. Full playable-prototype acceptance remains open; MP Send refused.
+OOS source mechanism: sender-local registry changes native maintenance bypass
+in Maxioten's reference. Actual screenshot cause unestablished; paired evidence
+still missing. report-volunteers-prototype-1029.md and report-volunteers-oos-1029.md;
+next instructions-volunteers-prototype.md and instructions-volunteers-oos.md.
+
+2026-10-28 VOL-UI: user rejects flat placeholder look, selects actual game
+assets and flush placement (D23), then confirms normal close. Rust0.0.5 uses
+native army art/fonts, explicit native caption textboxes, text cache and side
+docking; compiled/private preview inspected and installed in the same E: copy.
+15 mod files verified; nine protected files unchanged;0.0.4 rollback preserved.
+New appearance/docking untested in game; no game launch or subagents. Screenshot
+is a short0.0.4 window/selection observation, not gameplay acceptance.
+docs/report-volunteers-native-art-1028.md; next instructions-volunteers-native-art.md.
+
+2026-10-28 VOL-INSTALL-E: user-authorized separate copy installed at
+E:\Victoria-II-Volunteers-0004 with TGC2.5.2, prior local V2DLL5.98 and
+Volunteers0.0.4 audit-r2.25,385 source/base/loader files and13 package files
+hash-verified; independent save profile and preview/observe launchers prepared.
+No game launch/behavior test/subagents; gameplay remains blocked. Main/source
+installations unchanged. docs/report-volunteers-install-e-1028.md; next
+docs/instructions-volunteers-e-copy.md.
+
+2026-10-27 VOL-AUDIT: audited volunteer sources against pitfalls.md;
+Rust0.0.4 compiles with type preflight, native-call/CPU/lifetime guards,
+partial-hook rollback tracking, actual font/CSV corrections and checkpoint/
+transient-read hardening. P66-P68 documented. Forty scoped byte guards pass.
+Default observation; UI opt-in; gameplay/MP remain blocked. Tests/game/install
+deferred, so no universal crash/OOS safety claim. No subagents used.
+`docs/report-volunteers-pitfalls-1027.md`; next instructions-volunteers-audit.md
+and instructions-volunteers-native.md.
+
+2026-10-27 VOL-NATIVE: user requests coding first, tests later. Rust 0.0.3
+compiles with optional native diplomacy/two-panel UI, selected donor-owned
+Create+Transfer/Move wrappers, daily recall/receipt coordination, registry,
+bounded command payloads and save-bound checkpoint endpoints. Gameplay remains
+blocked pending native session/campaign/combat/access/vision/lifecycle evidence;
+MP/unknown sessions refuse simulation work. OOS screenshot is evidence of a
+desync, not its cause or a verified fix. No tests, game, install or subagents.
+`docs/report-volunteers-implementation-1027.md`; next
+`docs/instructions-volunteers-native.md`.
+
+2026-10-27 VOL-DONOR: user selects donor ownership and sending-player control,
+keeping our layout. Rust0.0.2 adds donor native argument planning, full-stack
+receipt validation, scoped context and independent vision lifetime.24 Rust/five
+Python checks pass; checked observe-only ZIP staged, not installed or tested in
+game. Repeated combat hostility gates identified; native combat/access/vision
+and Send UI remain open. `docs/report-volunteers-donor-1027.md`.
+
+2026-10-27 VOL-MAXIOTEN: completed supplied-message/C++/GUI cross-reference.
+The donor-owned requirements conflict with the recipient-owned prototype;
+control/maintenance/lifetime/persistence/vision blockers documented. Reference
+gate, 17 RVA mappings and six raw exports (five decompiles, one render timeout).
+Actual Rust observer log now confirms nine ticks/two armies; save/reload/normal
+exit remain unverified. `docs/report-volunteers-maxioten-crossref-1027.md`.
+
+2026-10-27 VOL-0-CHECK permission update: human authorizes desktop control if
+necessary and requests the same Terra/high subagent. That agent resumes the
+disposable observer campaign test. Earlier surface-only assessment verified
+files but ran no game; acceptance remains open. Current instructions:
+`docs/instructions-volunteers-desktop.md`.
+
+2026-10-27 VOL-0-ISOLATED/VOL-1: user authorizes agent-operated testing only
+without host desktop takeover. Disposable copy ready, campaign untested.
+19 read-only Ghidra exports clarify affiliation versus owner; no loan command
+established or new runtime mutation enabled. Checked preview unchanged.
+`docs/report-volunteers-background-1027.md`.
+
+2026-10-27 VOL-0: independent volunteer submod selected; Rust0.0.1 observer
+and lifecycle foundation built with16 Rust/five Python checks. No Send enabled,
+not installed or tested in game. `docs/report-volunteers-foundation-1027.md`.
+
+2026-10-26 VOLUNTEER-RE: five-area static research handoff delivered;201 raw
+function pairs, five guides and verified local ZIP. Control/UI/network and
+foreign-pop maintenance require further engineering; no implementation selected.
+`docs/report-volunteer-re-1026.md`, `docs/instructions-volunteer-re.md`.
+
+2026-10-26 ARMY-HANDOFF revision 2 complete: 40 targeted exports, expanded
+partial class maps and verified clearer ZIP; no new runtime validation.
+`docs/report-army-handoff-reviewed-1026.md`. No implementation selected.
+
+2026-10-25, session 84 follow-up: user requested three black PRU title cards; uploaded with accurate artwork captions. All setup checks green, normal Go Live succeeded. Profile live; original ZIP still awaits ModDB staff authorisation. `docs/report-pru-moddb-live-1025.md`.
+
+2026-10-25, session 84: PRU 0.0.1 submitted to ModDB with exact GitHub ZIP, two original screenshots, README and changelog. ZIP server size/MD5 verified. Profile Go Live blocked by three missing required images and automatic approval review; file awaits staff authorisation. No code, install or game control. See `docs/report-pru-moddb-1025.md`.
+
+2026-10-25, session 83: user-supplied ATCU 0.0.3 logo and collage published unchanged. ModDB profile logo/release preview saved; GitHub collage uploaded and embedded, hash/render verified. No further media work; `docs/report-release-003-images-1025.md`.
+
+2026-10-25, session 82: **ATCU 0.0.3 published** on GitHub and ModDB. Source 6a32c2c pushed; v0.0.3 and ZIP hashes verified. README/changelog used; no new images uploaded because the user will make the collage. `docs/report-release-003-published-1025.md`. No binary/install/game changes.
 
 2026-10-25, session 81: **0.11.16 passed in game** (user: "worked"); ATCU 0.0.3
 release candidate prepared from it (`docs/report-release-003-1025.md`).
@@ -373,14 +488,20 @@ TPL-1 update (2026-10-17): **0.6.3 army-style GUI installed on E: and accepted i
 
 ## 2. The version matrix
 
+PRU 0.0.1 (internal 0.2.8): unchanged GitHub release ZIP submitted to
+ModDB. Profile live after user-requested title cards; ZIP awaiting staff
+authorisation. No build or installation changed.
+
 | Separate candidate | Staged | Installed | Game acceptance |
 |---|---|---|---|
+| Volunteers0.0.2 (Rust, donor contracts; observe-only runtime) | work/volunteers-0002/Volunteers-technical-preview-0.0.2-donor-checked.zip | Not installed | Not tested in game; active sending/control/combat/vision integration absent |
+| Volunteers0.0.1 (Rust, observe-only) | work/volunteers-0001/Volunteers-technical-preview-0.0.1-checked.zip | Disposable work/Victoria-II-Volunteers-0001 copy only; main game unchanged | Nine daily samples/two selected armies observed; save/reload/normal exit open; sending absent |
 | ATCU 0.11.16 (TPL-12 name box stops at Disband depleted, Rust) | work/tpl12-01116/ATCU-0.11.16-candidate.zip | Own-loader TGC copy; 0.11.15 rollback `before-01116` | **Passed in game** (user, 2026-10-25); input of ATCU 0.0.3 RC |
 | ATCU 0.11.15 (TPL-12 menu-load fix, Rust) | work/tpl12-01115/ATCU-0.11.15-candidate.zip | Superseded in the test copy by 0.11.16 | **Passed single-player check** (TGC v2.5.2); MP/other bases open |
 | ATCU 0.11.14 (TPL-12 false-load fix, Rust) | work/tpl12-01114/ATCU-0.11.14-candidate.zip | Superseded by 0.11.15 | Lubny regiment still did not march (P65) |
 | ATCU 0.11.13 (TPL-12 Replace reload fixes, Rust) | work/tpl12-01113/ATCU-0.11.13-candidate.zip | Superseded by 0.11.14 | GUI fine (user); new regiment did not march (P64) |
 | ATCU 0.11.12 (TPL-12 native Y/single-line titles, Rust) | work/tpl12-01112/ATCU-0.11.12-candidate.zip | Superseded in the test copy by 0.11.13 | Alignment/title visual short pass, clean short-run logs; functional/reload/MP open |
-| PRU - Province Rename Universal 0.0.1 (build 0.2.8) | work/releases/pru/0.0.1/PRU-0.0.1.zip (+ notes, README, CHANGELOG, ss1/ss2) | Dedicated copy has the same 0.2.8 payload under the old launcher name | **0.2.8 accepted in game** (user, 2026-10-25); prepared locally, not published; `docs/report-pru-release-028-1025.md` |
+| PRU - Province Rename Universal 0.0.1 (build 0.2.8) | work/releases/pru/0.0.1/PRU-0.0.1.zip (+ notes, README, CHANGELOG, ss1/ss2) | Dedicated copy has the same 0.2.8 payload under the old launcher name | **0.2.8 accepted in game** (user, 2026-10-25); **published** as GitHub pre-release `pru-v0.0.1` (source a812c1c, assets verified); ModDB not done; `docs/report-pru-release-028-1025.md` |
 | Province Rename 0.2.8 Universal, V2DLL API1 | work/releases/province-rename/0.2.8/Province-Rename-Universal-0.2.8.zip | Dedicated copy 0.2.8 (2026-10-25), 11 payload/25,388 protected hashes verified; 0.2.7 backup `release-028-1025/before-028` | ABC 2px lower than 0.2.7 (user: "slightly too up"); 66 native/4 package checks; not tested in game; ZIP only, `docs/report-province-rename-027-1025.md` |
 | Province Rename 0.2.7 Universal, V2DLL API1 | work/releases/province-rename/0.2.7/Province-Rename-Universal-0.2.7.zip | Dedicated copy 0.2.7 (2026-10-25), 11 payload/25,388 protected hashes verified; 0.2.6 backup `release-027-1025/before-027` | ABC 20x20, centre 3px higher (user: 0.2.6 "too low and big"); 66 native/4 package checks; not tested in game; ZIP only, `docs/report-province-rename-027-1025.md` |
 | Province Rename0.2.6 Universal, V2DLL API1 | work/releases/province-rename/0.2.6/Province-Rename-Universal-0.2.6.zip | Dedicated copy0.2.6,11payload/25,388protected hashes verified |0.2.5 accepted, final ABC2px check pending; ZIP only, publication deferred |
@@ -428,6 +549,10 @@ Vanilla 0.9.0: Templates accepted by user and recruitment log; Conform opening c
 ---
 
 ## 3. Decisions
+
+D22 (user,2026-10-27): Volunteers retains donor ownership and sending-player
+control, with our existing layout. Recipient/AI gets no command permission.
+See AGENTS.md §9, volunteers-design.md and report-volunteers-donor-1027.md.
 
 Full table in `AGENTS.md` §9. Closed on 2026-10-12: D1, D2 and, in the
 user's fourth answer, D4-D7; after the mockups, D9; at the end of the day,
@@ -497,6 +622,33 @@ mod; the stable version's `.mod` is called **"TGC v 2.5.2 (stable)"**.
 ---
 
 ## 7. Session close (required)
+
+2026-10-27 donor decision: prior NEXT/design/SVG archived; current design,
+layout, instructions and statuses updated. Rust24-test/five-package checks and
+render inspected; no live donor-loan acceptance claimed.
+
+2026-10-27 Maxioten cross-reference: prior NEXT archived verbatim, full private
+review plus public-safe summary/instructions written, status corrected from
+unrun to partial observer evidence. Supplied sources unchanged; no gameplay
+implementation or silent design replacement.
+
+2026-10-27 desktop permission update: prior NEXT archived verbatim, same
+subagent resumed, current instructions/statuses record the superseding human
+authorization. No runtime result inferred from dispatch.
+
+2026-10-27 background follow-up: foundation NEXT checkpoint archived verbatim;
+no-desktop-takeover instruction recorded, separate-surface card/instructions
+added, ownership research and statuses updated. No gameplay acceptance claimed.
+
+2026-10-27 VOL-0: session-start NEXT archived; user-selected independent
+volunteers reflected in current scope. Probe candidate built, exact hash/tests
+recorded, check/command follow-up instructions and card/version statuses updated.
+
+2026-10-25, session 84: PRU ModDB submission recorded; session-start NEXT
+archived verbatim, follow-up instructions and statuses updated. Publication
+remains incomplete; no bypass of the image prerequisite.
+
+2026-10-25: session 82 published ATCU 0.0.3; source/tag/assets verified, session-start NEXT archived, statuses updated. No next implementation selected; existing test instructions retained.
 
 2026-10-24: session 75 finished TPL-12 option A in Rust 0.11.8; local
 ZIP with README/changelog verified, session-start NEXT archived and current

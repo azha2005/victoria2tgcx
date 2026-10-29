@@ -172,3 +172,53 @@ visual check. No new final screenshot supplied. Latest log contains no
 GUI/font fault; it cannot independently prove every alignment/visibility
 case. Functional/reload/other-base/MP checks remain open.
 report-tpl-12-visual-check-1024.md; logs under work/tpl12-01112/check-1024.
+
+
+## Volunteers (working design, 2026-10-27)
+
+The user selected a separate volunteer submod in PRU/ATCU style.
+`docs/volunteers-layout.svg` proposes332px green/gold/parchment panels;
+`work/volunteers-0001/volunteers-layout.png` is its rendered preview. The accepted
+Conform screenshot was opened as a visual reference. This is a new local
+proposal, not a gameplay capture or user-accepted volunteer UI. The0.0.1 DLL
+is observe-only and adds no native window. No existing remote board changed.
+
+2026-10-27 donor decision: retain the same chooser/active-forces layout, update
+text for donor ownership, supply, flag/statistics and exclusive sending-player
+command. Current preview work/volunteers-0002/volunteers-layout.png was rendered
+and visually checked. Old SVG archived verbatim. Maxioten's screenshot is kept
+privately at work/volunteers-0002/maxioten-reference.png; it shows foreign-unit
+selection, not proof of billing/battle/AI/MP semantics. Runtime0.0.2 still has no
+Send or loan UI enabled. See report-volunteers-donor-1027.md.
+
+2026-10-27 native coding: same panel dimensions/style retained in 0.0.3,
+with recipient/brigade/mission paging arrows and current development labels.
+Own procedural assets/additive GUI are generated; this is compiled code and a
+mockup update, not an in-game visual pass. Entry anchor, availability styling,
+native wrapping and callback/lifetime behavior remain unverified. Tests/game
+checks are deferred. report-volunteers-implementation-1027.md.
+
+2026-10-27 pitfall audit0.0.4: panel structure retained. Native small-text font
+changed from absent vic_14_black to reference-declared Arial14_black; appearance
+is not runtime-verified. SVG labels updated for observation default/opt-in UI;
+export work/volunteers-0004/volunteers-layout.png inspected. Optional Inkscape
+AppData log/recent-file writes failed, but PNG export completed. Old SVG/design
+archived verbatim before the update. No game screenshot or UI acceptance.
+
+2026-10-28 native-art correction D23: user0.0.4 screenshot rejects flat panels,
+raw localisation keys and blank buttons. Source screenshot retained unchanged
+under work/volunteers-0005. Current0.0.5 native-panel preview uses actual
+installed game textures and BMFont atlases; inspected at native332px widths.
+docs/volunteers-layout.svg now embeds that private generated image. Old SVG/
+design archived verbatim. Runtime panes dock flush beside Diplomacy; no new
+game screenshot or native positioning acceptance yet. The E: test copy is
+updated after confirmed close, with0.0.4 rollback. See report-volunteers-native-art-1028.md.
+
+2026-10-29 Volunteers entry correction: the user's cropped reference places Send
+volunteers in the vacant bottom action cell beside Command Units. Generator uses
+GFX_button_thin_160160x24/vic_18_black, not custom placeholder art. Runtime follows
+native action0..N rows. Current SVG embeds the new native-art detail plus retained
+two panels from work/volunteers-0007. Prior SVG/design archived verbatim. The user
+reported earlier UI working; new position/gameplay were not tested by this agent.
+
+2026-10-29: user accepts Volunteers native appearance.0.0.8 preserves these panels/assets; source mockup volunteers-layout.svg records whole-stack retention versus partial split. No new visual layout or art is introduced.

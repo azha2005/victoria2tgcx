@@ -1,0 +1,18 @@
+[package]
+name = "tgcx-volunteers"
+version = "0.0.11"
+edition = "2024"
+publish = false
+
+[lib]
+name = "tgcx_volunteers"
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = 2
+debug = 1
+
+[profile.dev]
+panic = "abort"

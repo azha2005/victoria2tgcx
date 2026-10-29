@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="555" viewBox="0 0 704 555">
+<rect width="704" height="555" fill="#d5d2c7"/>
+<text x="20" y="23" font-family="serif" font-size="17">Volunteers0.0.7: native action entry and retained panels</text>
+<image x="20" y="40" width="320" height="72" href="../work/volunteers-0007/diplomacy-action-preview.png"/>
+<text x="355" y="65" font-family="serif" font-size="13">Requested empty cell beside Command Units.</text>
+<text x="355" y="85" font-family="serif" font-size="12">Native160x24 thin button and bitmap font.</text>
+<image x="20" y="140" width="664" height="378" href="../work/volunteers-0007/native-panels-preview.png"/>
+<text x="20" y="543" font-family="serif" font-size="12">Generated design preview. New grid placement and prototype gameplay await runtime acceptance.</text>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="730" height="470" viewBox="0 0 730 470">
+<style>text{font-family:Georgia,serif;fill:#171b14}.title{fill:#fff;font-size:16px;font-weight:bold}.label{font-size:13px}.small{font-size:11px}.button{font-size:13px;font-weight:bold;text-anchor:middle}</style>
+<rect width="730" height="470" fill="#d5d2c7"/>
+<text x="20" y="24" font-size="17">Volunteers: working interface design</text>
+<text x="20" y="43" class="small">332px native panels; donor-owned design. 0.0.4: observation default, untested UI opt-in; Send blocked.</text>
+<g transform="translate(20,62)">
+<rect width="332" height="378" fill="#d7d4bd" stroke="#514a2c" stroke-width="4"/>
+<rect x="3" y="3" width="326" height="26" fill="#344d35" stroke="#ac9456" stroke-width="2"/>
+<text x="12" y="22" class="title">Send volunteers</text><text x="314" y="22" class="title">×</text>
+<text x="14" y="52" class="label">From: France</text><text x="14" y="76" class="label">Recipient</text>
+<rect x="14" y="84" width="304" height="28" fill="#e9e5d3" stroke="#827a57"/>
+<text x="23" y="103" class="label">‹</text><text x="50" y="103" class="label">Spain · at war</text><text x="300" y="103" class="label">›</text>
+<text x="14" y="136" class="label">Selected army: 1er Corps d'Armée</text>
+<rect x="14" y="148" width="304" height="30" fill="#eeeadd" stroke="#9d9577"/>
+<text x="23" y="168" class="label">☑ 1st Infantry · 3,000 men</text>
+<rect x="14" y="180" width="304" height="30" fill="#eeeadd" stroke="#9d9577"/>
+<text x="23" y="200" class="label">☐ 1st Artillery · 3,000 men</text>
+<text x="14" y="238" class="label">1 brigade selected · limit 5</text><text x="273" y="231" class="label">‹</text><text x="301" y="231" class="label">›</text>
+<text x="14" y="263" class="small">You own, command and supply the volunteers.</text>
+<text x="14" y="281" class="small">It fights for Spain; France stays out of the war.</text>
+<text x="14" y="299" class="small">French flag and military statistics are retained.</text>
+<text x="14" y="317" class="small">Recall or recipient peace requests physical return.</text>
+<rect x="14" y="335" width="144" height="28" rx="2" fill="#a9bdba" stroke="#53615b"/>
+<text x="86" y="354" class="button">Cancel</text>
+<rect x="174" y="335" width="144" height="28" rx="2" fill="#a9bdba" stroke="#53615b"/>
+<text x="246" y="354" class="button">Send volunteers</text>
+</g>
+<g transform="translate(378,62)">
+<rect width="332" height="266" fill="#d7d4bd" stroke="#514a2c" stroke-width="4"/>
+<rect x="3" y="3" width="326" height="26" fill="#344d35" stroke="#ac9456" stroke-width="2"/>
+<text x="12" y="22" class="title">Volunteer forces</text>
+<rect x="14" y="45" width="304" height="66" fill="#eeeadd" stroke="#9d9577"/>
+<text x="23" y="66" class="label">France → Spain</text><text x="23" y="86" class="label">1 brigade · serving</text>
+<text x="23" y="103" class="small">France owns and commands · Spain has no control</text>
+<rect x="14" y="124" width="304" height="66" fill="#e0ddcd" stroke="#9d9577"/>
+<text x="23" y="146" class="label">France → Portugal</text><text x="23" y="166" class="label">1 brigade · return pending</text>
+<text x="23" y="183" class="small">Waiting for the current battle to end</text>
+<rect x="174" y="218" width="144" height="28" rx="2" fill="#a9bdba" stroke="#53615b"/>
+<text x="246" y="237" class="button">Recall selected</text>
+<text x="23" y="237" class="label">‹</text><text x="53" y="237" class="label">›</text><text x="76" y="237" class="small">1</text>
+</g>
+<text x="380" y="355" class="label">0.0.4 pitfall audit candidate</text>
+<text x="380" y="378" class="small">Native type/lifetime/ABI guards added; untested.</text>
+<text x="380" y="396" class="small">Send/Recall blocked; tests and game checks deferred.</text>
+<text x="380" y="422" class="small">Recipient vision persists after recall/loss until peace.</text>
+</svg>

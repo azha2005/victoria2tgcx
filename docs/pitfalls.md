@@ -1083,3 +1083,182 @@ Conform or Build Army stay where they were built (TPL-12 0.11.14).
 
 **Fix (0.11.15).** With no step known, a forward change of more than two
 days is a load (`conform::date_jump`). See report-tpl-12-menu-load-1024.md.
+
+### P66 - A failed protection restore can leave a successful hook installed
+
+**Found:** 2026-10-27, static volunteer audit. No observed game crash or Windows
+API failure is attributed to this case.
+
+**Cause:** a pointer compare-and-swap succeeds, then VirtualProtect restoring
+the original page protection fails. Returning `changed && restored` reports
+failure while the pointer can still target our callback. A multi-slot installer
+that rolls back only earlier successful slots misses the current changed slot.
+
+**Fix:** track pointer installation, protection restoration and rollback
+separately. Attempt rollback with compare-and-swap, preserving the first page
+protection value across retries. Include the current slot in transaction cleanup.
+Keep the DLL pinned and originals/context alive if any residual hook exists;
+enable UI callbacks only after all slots install. Report uncertain protection
+instead of claiming no hook was installed. Do not overwrite another hook owner.
+
+**Verification:** Rust0.0.4 compiles; source audit only. Fault-injection checks
+for protection/CAS/rollback and actual loader teardown are deferred by the user.
+Severe OS failures can still leave uncertain protection and need diagnosis.
+See report-volunteers-pitfalls-1027.md and rust/volunteers/src/patch.rs.
+
+### P67 - A plausible font name need not exist in the loaded game
+
+**Found:** 2026-10-27, static volunteer audit. The generated UI requested
+`vic_14_black`; it is absent from the inspected vanilla and TGC .gfx definitions.
+
+**Risk:** missing labels, parse/construction failure or a bad native font path.
+A particular crash from this font has not been observed or reproduced.
+
+**Fix:** resolve names against actual bitmapfont definitions and their assets.
+Use the existing `Arial14_black`, declared in vanilla interface/core.gfx, for
+the small black volunteer labels. Never invent a font by combining a known
+family, size and colour suffix. Unknown effective-base overrides still require
+the native/parser and in-game check. Rust compilation does not check GUI fonts.
+
+**Verification:** installed definitions inspected; generated font names corrected.
+Game rendering remains deferred. See report-volunteers-pitfalls-1027.md.
+
+### P68 - An unescaped semicolon shifts localisation CSV columns
+
+**Found:** 2026-10-27. The volunteer rule text contained a semicolon; the
+generator concatenated it directly into the semicolon-delimited CSV. Packaging's
+new validation rejected that value before creating a ZIP.
+
+**Risk:** the English phrase is split into language columns and the trailing
+marker/column count moves. This is malformed localisation, not a proved crash.
+
+**Fix:** use punctuation that does not introduce a delimiter for generated
+single-line text. Reject semicolons and CR/LF in values before emitting rows;
+retain cp1252 and the game's existing language-column order. Do not assume
+ordinary spreadsheet CSV quoting is supported by the game's parser.
+
+**Verification:** the validator caught the actual bad value during staging;
+the corrected package completed. No gameplay or parser execution is claimed.
+
+### P69 - Native commands do not synchronize a plugin's local simulation policy
+
+**Found:**2026-10-29, static source inspection of Maxioten's volunteer prototype.
+The particular OOS screenshot was not reproduced and its cause is unestablished.
+
+**Cause:** a sender posts native Create/Transfer commands, then stores a mission
+only in its local g_recs/text file. HookReconcile consults that record and skips
+native pop/regiment maintenance. Another peer can execute the original maintenance
+on the same army. Matching DLLs or native membership commands do not synchronize
+the local record. Independent per-peer daily Recall can also duplicate commands.
+
+**Fix:** keep ordinary maintenance with donor ownership. Simulation-affecting
+registry/scope must derive from the same synchronized execution/authority on all
+peers. Use proved session/issuer/sequence gates and command-backed data; a digest
+is diagnostic, not transport. Our experimental SP prototype refuses MP Send and
+uses no maintenance bypass. Do not suppress CRC checks or claim that refusing MP
+is equivalent to implementing multiplayer. Reproduce against paired same-save
+artifacts before claiming the reported OOS fixed.
+
+**Verification:** source path inspected; new SP code compiles/static-checks only.
+No two-peer reproduction. report-volunteers-oos-1029.md; instructions-volunteers-oos.md.
+
+### P70 - A valid Transfer command can refuse the final source brigade at execution
+
+2026-10-29. User's ARC -> RGS Send selected five brigades. Read-only inspection
+found four in the new army and one in the original army, all donor-owned and idle.
+FUN_00513F30 / RVA0x113F30 contains a land-stack/leader predicate and refuses when
+the source's regiment count is below2. The inspected source leader slot8 points
+to the guarded return-true helper RVA0x631490. Transfer execute calls this gate
+separately from the validity method checked before posting the batch.
+
+0.0.8 keeps an existing army for whole-stack selection, including single-brigade
+armies and the leader. Native preparation revalidates exact full membership;
+partial selections still queue Create+Transfers and leave source members. Never
+bypass can-transfer, write membership directly or mark a partial receipt complete.
+Regression scenarios pass; new game acceptance remains open. Preserve incomplete
+old records for review instead of replaying queued work automatically. See
+report-volunteers-send-assembly-1029.md and instructions-volunteers-send-0008.md.
+
+### P71 - A persisted observation date turns idle days into simulation commands
+
+2026-10-29. Registry encoded last_processed_date, so every daily sample changed
+the journal bytes even if mission/vision/membership stayed unchanged. User reports
+lag; preserved log has325 ARC journal commits while the mission is unresolved.
+Each commit entails native variable commands and repeated bounded lookups/checksums.
+This is avoidable work, not a measured explanation of all game lag.
+
+0.0.8 keeps the watermark runtime-only and emits0 in its existing reserved wire
+slot, retaining old checkpoint decoding. Real transitions still persist. A regression
+observes300 unchanged days without changing bytes, then verifies peace changes them.
+Empty/unverified scopes no longer enter native callbacks, and vision visits only
+entitled recipients' owned provinces. A sparse40000-province fixture reads fewer
+than100 fields for one entitled province. Measure actual game responsiveness before
+claiming performance fixed; never remove synchronization to reduce work. Same report.
+
+
+### P72 - A caller filter inside Rust is too late for a shared hot helper
+
+2026-10-29. The volunteer country-vector hook entered FXSAVE/Rust/session checking
+before checking its unique battle caller. The helper serves unrelated systems.
+0.0.9 bypasses other return addresses in assembly, preserving input registers,
+flags and the original path.100000-call fixture confirms no Rust validation for
+unrelated calls; real log later shows1512820 bypasses versus173 targeted calls.
+This supports removing avoidable work, not a measured claim that all lag is fixed.
+Scalar field reads also formerly allocated a Vec/kernel read each time; bounded
+local SEH reads and a real PAGE_NOACCESS fixture retain fail-closed behavior.
+Never remove native/session validation from the relevant path to improve speed.
+See report-volunteers-controls-1029.md and report-volunteers-siege-1029.md.
+
+### P73 - Movement permission alone does not prevent native exile
+
+2026-10-29. Neutral donor ownership can pass the patched movement path while
+native exile coordinators still consult donor-based country permission. Exile
++164 independently blocks combat, supply and reinforcement. User saw organization
+fall after Send; the old process exited before its flag could be read, so that
+particular cause was not runtime-proved.0.0.9 scopes four proven country-permission
+callers to a receipt-validated recipient input image. Native engine still computes
+and writes the flag; no direct clearing or maintenance skip. Actual0.0.9 log has
+288 permission grants and combat becomes observable. Older exiled stacks may still
+need normal return to accessible territory; never force organization/flags. Same reports.
+
+### P74 - A display plan can reject the whole world on one empty visibility array
+
+2026-10-29.0.0.9 log shows389 visibility callbacks but zero custom grants. Native
+world recompute permits a non-null dummy/uninitialized province with a length0
+per-country visibility array. Our planner instead returned None, discarding other
+valid grants.0.0.10 skips empty knowledge while preserving bounds for nonempty
+arrays, accepts both guarded CMapProvince primary/secondary tables, and separates
+vision_refused from vision_empty counters. The empty-dummy fixture reproduces the
+source failure; the exact offending live province was not captured. Fog-grant
+acceptance remains open. Never write the province+174 simulation array or assume
+own-army local sight proves recipient-wide sharing. report-volunteers-siege-1029.md.
+
+### P75 - Battle hostility overrides do not authorize siege or determine credit
+
+2026-10-29. User confirms0.0.9 battles but no siege. Initial siege gate005CC200
+(RVA1CC200) and fortress join slot16/FUN005A9E80 (RVA1A9E80) compare real army
+owner hostility separately.0.0.10 evaluates their original read-only predicates
+with a private recipient image, preserving native busy/exile/retreat/strength and
+friendly-attacker conditions. Siege progress/control attribution reads the attacker's
+country list; the validated CLandCombatant AddArmy reference must name the recipient
+once. Do not merely return true, change ownership/controller directly or let a
+neutral donor join a siege led by its recipient's enemy. Native engine retains
+creation, progress and capture. Wrapper fixtures pass; actual siege/capture-credit
+verification remains required. report-volunteers-siege-1029.md.
+
+### P76 - An optimization filter must not become stale permission or hide a loaded journal
+
+2026-10-29.0.0.11 skips unrelated unit work by identity and narrows closed-panel
+snapshots to mission countries. Identity is only a negative filter: a match must
+still read current SP/session/context/epoch and exact owner/member receipts. Never
+cache a positive permission, combat result or native pointer across a load.
+
+A compact snapshot made from the OLD registry can omit a NEW journal's recipient
+when loading or switching player. That can restore suspended vision with unknown
+war state. Use compact polling only for the same explicitly bound player/load
+epoch; rebind and UI actions take full snapshots. A cheap atomic load barrier runs
+before unit argument reads, followed by full native context checks for positive
+admission. Tests cover wrong membership, fresh MP transport changes and equal
+orders/journal under service, peace and donor war. Benchmarks demonstrate helper
+cost only; in-game timing/save-load acceptance still required. See
+report-volunteers-optimization-1029.md and instructions-volunteers-optimization.md.

@@ -1,5 +1,69 @@
 # Index of `docs/`
 
+2026-10-29 VOL-OPT:0.0.10 siege progress accepted.0.0.11 negative callback filters and compact closed-panel snapshots installed with rollback.43 Rust/five package checks and96 guards pass; controlled helper medians improve10.7x/176.5x, not game FPS. Relevant fresh gates retained; source commit/push requested. `docs/report-volunteers-optimization-1029.md`; steps `docs/instructions-volunteers-optimization.md`.
+
+
+2026-10-29 VOL-SIEGE:0.0.9 battle confirmed by user/log, donor neutral.0.0.10 initial/existing-siege and empty-visibility corrections installed;41 Rust/five package checks and96 guards pass.15 payload hashes match/nine protected files unchanged. Siege progress/credit and custom vision unverified; user retains testing. `docs/report-volunteers-siege-1029.md`; steps `docs/instructions-volunteers-siege.md`.
+
+
+2026-10-29 VOL-CONTROLS:0.0.9 installed/launched with six hooks admitted; user takes over testing. Persistent entry, actual recipient/front display knowledge, scoped native exile permission and shared-vector/scalar-read costs addressed.39 Rust/five package checks pass; combat, organization recovery, fog and performance unverified. `docs/report-volunteers-controls-1029.md`; steps `docs/instructions-volunteers-controls.md`.
+
+
+2026-10-29 VOL-SEND-0008-INSTALL: user confirmed normal exit;0.0.8 installed in the isolated E: copy.15 payload readbacks match; nine protected files unchanged;0.0.7 backup preserved. No game launch, successful Send or lag improvement verified. Continue Send card steps4..10. `docs/report-volunteers-install-0008-1029.md`.
+
+
+2026-10-29 VOL-SEND-0008: live ARC five-to-four split diagnosed; native last-member guard. Whole-stack reuse, unchanged-day journal suppression, bounded recipient visibility and reload/history corrections built/staged.36 Rust/five package-loader checks pass; waiting for normal exit before isolated install, game/lag acceptance open. `docs/report-volunteers-send-assembly-1029.md`; steps `docs/instructions-volunteers-send-0008.md`. No subagents.
+
+
+- `report-volunteers-send-refusal-1029.md`: live read-only diagnosis, France at war with Algeria blocks neutral-donor Send; UI accepted, successful gameplay still open.
+
+- `report-volunteers-prototype-1029.md`: current0.0.7 connected experimental SP implementation, exact native ABI/evidence, installed hashes and untested limits.
+- `instructions-volunteers-prototype.md`: current implementation/fixture/SP acceptance steps and isolated prototype launcher.
+- `report-volunteers-oos-1029.md`: concrete local-registry/native-maintenance divergence mechanism; screenshot cause not reproduced.
+- `instructions-volunteers-oos.md`: paired evidence collection, bounded comparison and MP integration requirements.
+
+- `report-volunteers-native-art-1028.md`: current0.0.5 native game-art/font UI, runtime captions, flush side docking, user0.0.4 screenshot and backed-up E: update; new appearance unverified in game.
+- `instructions-volunteers-native-art.md`: current screenshot/reopen/docking check; retain native asset pipeline and all pitfall guards.
+
+- `report-volunteers-install-e-1028.md`: verified isolated E: Victoria II/TGC/V2DLL/Volunteers0.0.4 installation, launch files/profile and untested limits.
+- `instructions-volunteers-e-copy.md`: current disposable-copy observer/UI testing entry point; no gameplay claim.
+
+- `report-volunteers-pitfalls-1027.md`: current Rust0.0.4 static crash/lifecycle audit against P1-P68, concrete corrections, compile-only candidate and unresolved runtime cases.
+- `instructions-volunteers-audit.md`: preserve audit hardening and exact deferred wrapper/patch/GUI/checkpoint/game verification cases.
+
+- `report-volunteers-implementation-1027.md`: Rust 0.0.3 native UI/commands/registry/checkpoint coding, compile-only candidate, explicit missing gates and OOS limits; tests deferred.
+- `instructions-volunteers-native.md`: current remaining native SP evidence/integration steps; tests/game/MP remain deferred.
+
+- `report-volunteers-donor-1027.md`: donor/player-control decision, Rust0.0.2 mission/receipt/vision contracts, repeated combat gate map and checked observe-only candidate.
+- `instructions-volunteers-donor.md`: current native donor-owned combat/access/UI integration steps; supersedes recipient-owned route.
+- `report-volunteers-maxioten-crossref-1027.md`: supplied message/C++/GUI versus current evidence, ownership design conflict and concrete blockers; full private review in work/volunteermaxioten.
+- `instructions-volunteers-maxioten.md`: design reconciliation and missing donor-owned combat/access/vision/score traces before implementation.
+- `instructions-volunteers-desktop.md`: latest human authorization for the same Terra/high subagent to operate the disposable game through computer use.
+- `report-volunteers-agent-test-1027.md`: earlier surface assessment and verified files; no game launch, isolation restriction subsequently superseded.
+- `report-volunteers-background-1027.md`: no-desktop-takeover constraint, disposable test copy and 19 ownership/affiliation exports; game check still open.
+- `instructions-volunteers-isolated.md`: agent-operated game testing requires a separate input/display surface.
+- `report-volunteers-foundation-1027.md`: standalone Rust0.0.1 observer, lifecycle model and verified candidate; no sending or game acceptance.
+- `volunteers-design.md` and `volunteers-layout.svg`: working gameplay/architecture and PRU/ATCU-style layout proposal.
+- `instructions-volunteers-check.md`: observer campaign recipe, subject to the separate-surface gate.
+- `instructions-volunteers-commands.md`: VOL-1 command/control/pop-affiliation implementation order.
+
+- `report-volunteer-re-1026.md`: five-area native research handoff, verified201 function exports; explicit unresolved MP/registration scope.
+- `instructions-volunteer-re.md`: follow-up order for control, network, pop maintenance and runtime probes.
+
+- `report-army-handoff-reviewed-1026.md`: revision 2, analysed partial army/regiment maps, 40 exports, compile-checked header and verified ZIP.
+
+- `report-army-handoff-1026.md`: verified local army/regiment Ghidra handoff.
+- `instructions-army-handoff.md`: optional targeted research/export follow-up.
+
+- `report-pru-moddb-live-1025.md`: three user-requested PRU title cards uploaded; normal Go Live completed; ZIP still awaiting staff authorisation.
+
+- `report-pru-moddb-1025.md`: exact PRU GitHub ZIP and two original screenshots submitted to ModDB; three-image setup requirement and file authorisation remain.
+- `instructions-pru-moddb.md`: complete publication using three additional approved images, without duplicate uploads or bypassing setup.
+
+- `report-release-003-images-1025.md`: user-supplied ModDB logo/release preview and GitHub release collage published and verified.
+
+- `report-release-003-published-1025.md`: ATCU 0.0.3 GitHub/ModDB publication, source tag and ZIP verification; user handles collage.
+
 - `report-release-003-1025.md`: ATCU 0.0.3 release candidate (build 0.11.16): inputs, gates, what is pending.
 - `release-0.0.3/`: README.txt, CHANGELOG.txt and RELEASE_NOTES.md of ATCU 0.0.3.
 - `report-tpl-12-namebox-1024.md`: TPL-12 0.11.16, the unit name box's hit area stops at Disband depleted while it is shown; passed in game 2026-10-25.

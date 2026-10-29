@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P66**).
+number (**the next one is P77**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -477,6 +477,27 @@ number (**the next one is P66**).
 - **P65** The main menu's world shows the bookmark date: a save loaded from the menu jumps forward with no day step known and was never a load. Any jump over two days then counts (0.11.15).
 
 
+- **P66** A failed VirtualProtect restore can leave a successful pointer hook active; track actual ownership/protection, roll back the current slot too and keep residual code pinned.
+- **P67** Verify native font names in actual bitmapfont declarations; `vic_14_black` was absent, while `Arial14_black` exists. Compilation does not validate GUI fonts.
+- **P68** Semicolons or line breaks in generated localisation values shift CSV columns; reject them before packaging and retain the native column order.
+
+- **P69** Native membership commands do not synchronize a local mission registry or maintenance bypass; derive policy from synchronized execution and prove peer equivalence (specific OOS cause unestablished).
+
+- **P70** Prequeue command validity does not prove native Transfer execution: the last land brigade can be refused. Reuse whole selected armies and prove exact receipts; split only partial selections.
+
+- **P71** Persisting a daily observation watermark forces native journal commands for unchanged missions. Keep sampling dates runtime-only; checkpoint actual state changes and bound visibility work to entitled recipients.
+
+- **P72** Filter unrelated callers before entering a shared hot helper's Rust/session work; count bypasses and preserve native registers/flags.
+
+- **P73** Native exile has separate owner-based permission gates; scoped movement alone does not establish combat/supply eligibility. Keep native flag writes and maintenance.
+
+- **P74** Empty per-country visibility arrays are valid native entries; do not reject all display grants because of one dummy province. Never write simulation visibility.
+
+- **P75** Battle admission does not imply siege permission or recipient capture credit; preserve both siege gates, friendly-side checks and native recipient attribution.
+
+- **P76** Optimization filters are negative-only; preserve fresh positive gates and use full snapshots on player/load rebind so new journal recipients are not omitted.
+
+
 ## 9. Decisions
 
 | ID | Decision | Options | Status |
@@ -501,6 +522,8 @@ number (**the next one is P66**).
 | **D19** | ATCU non-core culture filter | Third Non-core only checkbox in both Templates and Conform; mutually exclusive with existing choices, none=All, click selected=clear. Narrow Conform may use two lines. Hold lifted 2026-10-24 (all new DLL code Rust); built in Rust 0.11.3, Conform 6 Changes rows, settings v3. | **closed**; passed in game (2026-10-24); docs/report-tpl-8-noncore-1024.md |
 | **D20** | TPL-11 Build Army gathering | Each Build Army click makes **one template army**: its regiments march by safe land path and **merge** into one stack. Default target: the owned province with the highest supply limit that every source can reach by land; a footer selector "Gather at" (Best supply / Capital / land rally point, session only like the continent; the map-selected province of 0.11.4 was replaced by the rally point, user 2026-10-24, because the Military screen closes the province window) overrides it. If an army of ours already stands at the target, or the player recruits more than one template army, each further army gathers in the next adjacent owned, reachable province by supply. A regiment whose source has no land route to its target is not built (reported left out) | **closed** (user, 2026-10-24, corrected the same day); docs/instructions-tpl-11.md |
 | **D21** | TPL-12 Replace depleted | Independent army-header button beside Conform; both **20x20** (native Disband size), native 21px pitch (2px painted gap), native Y (live evidence supersedes the earlier 1px lift), green Conform / maroon Replace (infantry + low bar), beside the native header actions (not above); move right when native Disband depleted is hidden and back when shown. Conform retains its two-button footer. Replace opens a separate 332x270 chooser at Conform's position, closing the other window. Low strength slider 10%-90% by 10 (default 50%) and/or Pop too small (red and yellow); independent exclusive culture boxes, none=All. Build first within land reach; detach old regiment only after replacement merges, never disband. | **closed** (user, 2026-10-24); docs/instructions-tpl-12.md, docs/report-tpl-12-title-alignment-1024.md |
+| **D22** | Volunteers ownership and control | Independent donor-owned volunteer stacks; the sending player selects and commands them, recipient/AI gets no control. Keep our volunteer layout and reuse proved code. Donor ownership/accounting/flag/statistics remain intact; scope recipient war context to registered loan combat/access and vision until recipient peace. Replaces the recipient-owned prototype. | **closed** (user, 2026-10-27); docs/volunteers-design.md, docs/report-volunteers-donor-1027.md |
+| **D23** | Volunteers native appearance | Use actual in-game panel/button/row/arrow art and native fonts, following PRU/Conform. The flat placeholder UI is rejected. Keep chooser/forces structure, make panes flush and integrate placement with Diplomacy. Derived game pixels stay private outside tracked source. | **closed** (user, 2026-10-28); docs/report-volunteers-native-art-1028.md |
 | **D10** | Language | **English for everything**: code, comments, docs, file names, commit messages, in-game text and chat. Nothing is written in Spanish. All existing files were translated on 2026-10-12 | **closed** (user, 2026-10-12) |
 
 ---

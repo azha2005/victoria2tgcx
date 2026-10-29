@@ -1,3 +1,950 @@
+# 2026-10-29:0.0.10 siege accepted;0.0.11 optimization and source checkpoint
+
+## Previous NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-29. **User tests installed Volunteers0.0.10 siege candidate.**
+0.0.9 sending and combat confirmed by user screenshots/log, while donor remains
+neutral. Siege failed.0.0.10 adds both native siege hostility gates and corrects
+empty visibility-array handling; runtime siege/fog acceptance remains open.
+
+## Verified current state
+
+- E:/Victoria-II-Volunteers-0004 now0.0.10;15 payload readbacks match, nine protected
+  game/loader/TGC files unchanged. No game running at install and no new launch.
+ 0.0.9 rollback: work/volunteers-0010/before-0010. Main installs/saves untouched.
+- ZIP: work/volunteers-0010/Volunteers-0.0.10-SP-siege-private.zip.
+  SHA256: e951a1798902bc829898110f5d8190de495c4abf6258db8896deb854f0fcba86.
+-41 Rust tests, five package/actual-loader checks, strict Clippy/release/format
+  and96 signature guards pass. New siege/fortress wrapper ABI fixtures pass.
+-0.0.9 log: country_bypass1512820, country_target173, exile_granted288,
+  vision_runs389, vision_grants0, thread_refusals0. Combat=true observed for donor
+  army40/2183. Actual lag improvement, recipient-wide fog and siege credit unverified.
+- Only read-only predicates borrow recipient context; complete receipts required.
+  Native engine creates/ticks sieges and changes control through its own path.
+  No actual owner/controller, organization, flags, maintenance or fog-array writes.
+
+## Remaining cards
+
+| Card | Status | Step-by-step instructions |
+|---|---|---|
+| VOL-SIEGE |0.0.10 installed; siege start/progress/join/capture-credit check pending | docs/instructions-volunteers-siege.md |
+| VOL-CONTROLS |0.0.9 battle confirmed; visibility/organization/performance acceptance partial | Siege card step6..7, docs/instructions-volunteers-controls.md |
+| VOL-PROTOTYPE | Return/loss/load/supply and full acceptance incomplete | docs/instructions-volunteers-prototype.md |
+| VOL-OOS / VOL-MP | MP refused; paired reproduction/transport absent | docs/instructions-volunteers-oos.md |
+
+Evidence: docs/report-volunteers-siege-1029.md and work/volunteers-0010.
+User is doing the game tests; do not take desktop input back. No new subagents,
+commits, publication or memory edits. Keep donor ownership/command/accounting,
+ordinary maintenance, native siege conditions and recipient occupation credit.
+
+
+---
+
+# 2026-10-29:0.0.9 combat confirmed;0.0.10 siege candidate
+
+## Previous NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-29. **User is testing Volunteers0.0.9; wait for their results.**
+User0.0.8 check confirms sending/serving but reports hidden diplomacy entry, fog
+obstructing command, organization falling after Send, no combat and ongoing lag.
+0.0.9 addresses those paths; no successful new in-game result is presumed.
+
+## Current verified state
+
+- Installed E:/Victoria-II-Volunteers-0004,0.0.9.15 mod readbacks match; nine
+  protected executable/loader/TGC files unchanged.0.0.8 rollback:
+  work/volunteers-0009/before-0009. Main installs/saves untouched.
+- Stage/ZIP: work/volunteers-0009/Volunteers-0.0.9-SP-controls-private.
+  ZIP SHA256: 47afd87f51c14b0d924320527d26bfa99fb6004c5d50ac64805af428a225e26e.
+-39 Rust tests, five package/actual-loader checks, strict Clippy/release/format,
+  reference EXE and85 signature gates pass. New SEH and x86 wrapper fixtures pass.
+- Launched prototype mode, PID7692/base0x00CF0000 at observation. Startup admits
+  six scoped hooks. Capture attempts failed (activation/FrameArrived timeouts);
+  no input/campaign manipulation. User takes over; leave desktop controls to them.
+-0.0.8 log proves checkpoints stopped at head3 through283 ticks. Remaining lag
+  has other causes;0.0.9 removes unrelated shared-vector scope work and per-scalar
+  allocation/kernel reads. Actual performance improvement is unmeasured.
+- Exile is a concrete native permission failure path, not a runtime-proved cause
+  of their old organization loss; the process exited before fields were captured.
+  New permission hook leaves native writes/maintenance intact. Old exiles may need
+  normal return to accessible territory; use pre-send saves for clean deployment.
+
+## Cards / next steps
+
+| Card | Status | Step-by-step instructions |
+|---|---|---|
+| VOL-CONTROLS |0.0.9 installed/launched, user check pending | docs/instructions-volunteers-controls.md steps1..7 |
+| VOL-PROTOTYPE | Sending0.0.8 serving confirmed; combat/control/return/load incomplete | Controls card step8 then docs/instructions-volunteers-prototype.md |
+| VOL-OOS / VOL-MP | MP refused; no paired reproduction/registered transport | docs/instructions-volunteers-oos.md |
+
+Evidence: docs/report-volunteers-controls-1029.md; private build/install/startup
+artifacts under work/volunteers-0009. All new changes Rust/targeted Ghidra/tools;
+no subagents, commits, publication or memory updates. Keep donor ownership, command,
+flag/supply/reinforcement/rank and ordinary native maintenance. Do not force exile,
+organization or visibility arrays, bypass sync checks or widen unknown thread gates.
+
+
+---
+
+# 2026-10-29: Volunteers0.0.9 visibility, permission and hot-path correction
+
+## Previous NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-29. **Verify installed Volunteers0.0.8 in game.**
+User's ARC -> RGS Send accepted but split five selected brigades into four plus
+one; native last-member transfer guard blocked completion.0.0.8 reuses whole
+armies, retains native partial splits and removes daily date-only checkpoints.
+The user also reported lag. Game performance improvement remains unmeasured.
+
+## Current state
+
+- E:/Victoria-II-Volunteers-0004 now has0.0.8. User confirmed normal exit; no
+  game process remained. No game launched by the agent. Main installations unchanged.
+-0.0.8 stage: work/volunteers-0008/Volunteers-0.0.8-SP-send-fix-private.
+  ZIP SHA256: 3a74938684a3a628c9066c21a039b93bd56d40c7cb831c70c0e813e0b9c9a82f.
+  Earlier prototype-private0.0.8 stage is intermediate; use send-fix-private.
+-36 Rust tests, strict Clippy/format/release, five package/actual-loader checks pass.
+  Successful Send, battle/return/load acceptance and measured lag improvement open.
+- Installer completed: work/volunteers-0008/update_e_copy.py. All15 installed mod
+  files match; nine protected base files are unchanged.0.0.7 backup exists at
+  work/volunteers-0008/before-0008. See docs/report-volunteers-install-0008-1029.md
+  and docs/report-volunteers-send-assembly-1029.md for diagnosis and build evidence.
+- Current failed mission is review-only; use a fresh campaign/pre-failure save for
+  the next clean check. No replay or deletion of queued mission history.
+
+## Cards and next steps
+
+| Card | Status | Step-by-step instructions |
+|---|---|---|
+| VOL-SEND-0008 | Installed/hash-verified; game Send/lag check pending | docs/instructions-volunteers-send-0008.md steps4..7 |
+| VOL-PROTOTYPE | Native appearance accepted; gameplay acceptance open | Same Send card steps8..10, then docs/instructions-volunteers-prototype.md |
+| VOL-OOS | Concrete original source divergence mechanism; paired repro missing | docs/instructions-volunteers-oos.md |
+| VOL-MP | Sending refused; synchronized transport/authority unimplemented | OOS card; never force admission |
+
+Donor ownership, command, flag, supply/reinforcement and military rank remain the
+contract. All simulation changes use native commands; retain ordinary maintenance.
+Read pitfalls P70/P71 before revisiting assembly or journal performance. No new
+subagents, desktop input, launch, forced exit, commits, publication or memory edits.
+Other PRU/ATCU and publication work is outside this correction.
+
+
+---
+
+# 2026-10-29: Volunteers0.0.8 installed after normal exit
+
+## Pre-install NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-29. **Install and verify Volunteers0.0.8 after normal game exit.**
+User's ARC -> RGS Send accepted but split five selected brigades into four plus
+one; native last-member transfer guard blocked completion.0.0.8 reuses whole
+armies, retains native partial splits and removes daily date-only checkpoints.
+The user also reported lag. Game performance improvement remains unmeasured.
+
+## Current state
+
+- E:/Victoria-II-Volunteers-0004 still runs0.0.7 (PID29728 at final observation).
+  Do not overwrite its loaded DLL or force exit. Main installations unchanged.
+-0.0.8 stage: work/volunteers-0008/Volunteers-0.0.8-SP-send-fix-private.
+  ZIP SHA256: 3a74938684a3a628c9066c21a039b93bd56d40c7cb831c70c0e813e0b9c9a82f.
+  Earlier prototype-private0.0.8 stage is intermediate; use send-fix-private.
+-36 Rust tests, strict Clippy/format/release, five package/actual-loader checks pass.
+  Successful Send, battle/return/load acceptance and measured lag improvement open.
+- Installer prepared: work/volunteers-0008/update_e_copy.py. It checks normal exit,
+  exact target/EXE/manifest, backs up0.0.7 and preserves nine protected base files.
+  Not run while the game remains open. See report-volunteers-send-assembly-1029.md.
+- Current failed mission is review-only; use a fresh campaign/pre-failure save for
+  the next clean check. No replay or deletion of queued mission history.
+
+## Cards and next steps
+
+| Card | Status | Step-by-step instructions |
+|---|---|---|
+| VOL-SEND-0008 | Built/staged; waiting for normal game exit before install | docs/instructions-volunteers-send-0008.md steps1..7 |
+| VOL-PROTOTYPE | Native appearance accepted; gameplay acceptance open | Same Send card steps8..10, then docs/instructions-volunteers-prototype.md |
+| VOL-OOS | Concrete original source divergence mechanism; paired repro missing | docs/instructions-volunteers-oos.md |
+| VOL-MP | Sending refused; synchronized transport/authority unimplemented | OOS card; never force admission |
+
+Donor ownership, command, flag, supply/reinforcement and military rank remain the
+contract. All simulation changes use native commands; retain ordinary maintenance.
+Read pitfalls P70/P71 before revisiting assembly or journal performance. No new
+subagents, desktop input, launch, forced exit, commits, publication or memory edits.
+Other PRU/ATCU and publication work is outside this correction.
+
+
+---
+
+# 2026-10-29: Volunteers accepted Send stalls and lag (0.0.8 correction)
+
+## Session-start NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-29 live user check: native appearance accepted. Send refusal diagnosed
+read-only: France is at war with Algeria; donor must be at peace. RGS is at war
+and nonhostile. Prototype/load hooks admitted; successful sending remains open.
+No game input/write/build/install this follow-up. See
+ docs/report-volunteers-send-refusal-1029.md. Preserve the current running game.
+Next UI improvements: specific refusal text and nonblank army fallback labels;
+follow instructions-volunteers-prototype.md for remaining acceptance.
+
+2026-10-29. **Continue the donor-controlled Volunteers prototype and OOS work.**
+The native UI was reported working by the user; the new Send volunteers button
+matches the supplied empty action cell beside Command Units. The first connected
+SP implementation0.0.7 is installed, but playable-prototype acceptance is open.
+
+## Current candidate and actual verification
+
+- Copy: E:/Victoria-II-Volunteers-0004, TGC2.5.2/V2DLL5.98, unchanged test profile.
+- `tgcx_start_prototype.cmd`: explicit experimental SP gameplay; all native gates
+  remain mandatory. `tgcx_start_preview.cmd`: UI without volunteer commands.
+  `tgcx_start_observe.cmd`: observer only. Installed default stays observe.
+-0.0.6 rollback: work/volunteers-0007/before-0007. Native button-only0.0.6 and
+  prior0.0.5/0.0.4 stages remain preserved. Main/source installations untouched.
+- ZIP: work/volunteers-0007/Volunteers-0.0.7-SP-prototype-private.zip.
+  SHA2565d0ed71fe8451b106816f5aa43edef2f01609db56d786baee6bf82605e37a863.
+- Reference EXE/80 signature guards, format, i686 all-targets compilation, strict
+  Clippy and release build pass. ZIP/manifest/install hashes verified.15 package
+  files installed, nine protected files unchanged. No new behavior suite, game,
+  desktop input, commit, publication or memory write. Tests were requested later.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| VOL-PROTOTYPE | First SP implementation connected; runtime acceptance open | instructions-volunteers-prototype.md; report-volunteers-prototype-1029.md |
+| VOL-UI | Native art retained; new action-grid button installed, position untested | Same prototype card; reference in work/volunteers-0006 |
+| VOL-INSTALL-E |0.0.7 installed with rollback, prototype launcher added | work/volunteers-0007/install-result.json |
+| VOL-OOS | Concrete source divergence mechanism identified; paired reproduction missing | instructions-volunteers-oos.md; report-volunteers-oos-1029.md |
+| VOL-MP | Sending refused; no synchronized volunteer transport/automatic-command authority | OOS card |
+| VOL-DONOR | Donor owns, commands, supplies, keeps flag/rank; no recipient AI command | D22, prototype report |
+| PRU-MODDB / RELEASE-003 | Prior publication states retained; unrelated to this pass | Existing PRU/ATCU reports |
+| TPL-11/TPL-12 | Prior user passes retained; broader save/reload acceptance unchanged | Existing TPL cards |
+
+## Next work, step by step
+
+1. Follow docs/instructions-volunteers-prototype.md. Preserve pitfalls, especially
+   command-only state changes, exact ABI/allocations, partial hooks, native deferred
+   GUI lifetime and Create+Transfers together. Run check_exe before address work.
+2. Complete independent native ABI/failure fixtures and the disposable SP scenario
+   when the testing phase begins. Current runtime behavior is not verified merely
+   because every required code path now exists. Do not override a refused gate.
+3. Verify Send, ordinary player control, initial/existing battles and recipient war
+   attribution; donor costs/flag/rank and recipient-AI exclusion. Then recall,
+   destruction/vision, interrupted intent, save/reload/switch and clean exit.
+   Keep land-only/first-owned-land/bounded-journal limitations explicit.
+4. Follow docs/instructions-volunteers-oos.md for the specific OOS. Pending human
+   question asks both peers' log/save locations and immediate versus delayed OOS.
+   Continue independent SP work while awaiting evidence. No OOS fix claim yet.
+5. Keep MP refused until synchronized registry/issuer/sequence execution, one
+   automatic-command authority, load/late-join and two-peer equivalence are proved.
+6. Close with a new immutable report, archived NEXT, rewritten cards/status/index.
+   Current next pitfall is P70. No memory update was authorized.
+
+
+---
+
+# 2026-10-29: live Send-refusal diagnosis
+
+Prior NEXT (verbatim):
+
+# NEXT - what comes next
+
+2026-10-29. **Continue the donor-controlled Volunteers prototype and OOS work.**
+The native UI was reported working by the user; the new Send volunteers button
+matches the supplied empty action cell beside Command Units. The first connected
+SP implementation0.0.7 is installed, but playable-prototype acceptance is open.
+
+## Current candidate and actual verification
+
+- Copy: E:/Victoria-II-Volunteers-0004, TGC2.5.2/V2DLL5.98, unchanged test profile.
+- `tgcx_start_prototype.cmd`: explicit experimental SP gameplay; all native gates
+  remain mandatory. `tgcx_start_preview.cmd`: UI without volunteer commands.
+  `tgcx_start_observe.cmd`: observer only. Installed default stays observe.
+-0.0.6 rollback: work/volunteers-0007/before-0007. Native button-only0.0.6 and
+  prior0.0.5/0.0.4 stages remain preserved. Main/source installations untouched.
+- ZIP: work/volunteers-0007/Volunteers-0.0.7-SP-prototype-private.zip.
+  SHA2565d0ed71fe8451b106816f5aa43edef2f01609db56d786baee6bf82605e37a863.
+- Reference EXE/80 signature guards, format, i686 all-targets compilation, strict
+  Clippy and release build pass. ZIP/manifest/install hashes verified.15 package
+  files installed, nine protected files unchanged. No new behavior suite, game,
+  desktop input, commit, publication or memory write. Tests were requested later.
+
+## Cards
+
+| Card | Status | Instructions / evidence |
+|---|---|---|
+| VOL-PROTOTYPE | First SP implementation connected; runtime acceptance open | instructions-volunteers-prototype.md; report-volunteers-prototype-1029.md |
+| VOL-UI | Native art retained; new action-grid button installed, position untested | Same prototype card; reference in work/volunteers-0006 |
+| VOL-INSTALL-E |0.0.7 installed with rollback, prototype launcher added | work/volunteers-0007/install-result.json |
+| VOL-OOS | Concrete source divergence mechanism identified; paired reproduction missing | instructions-volunteers-oos.md; report-volunteers-oos-1029.md |
+| VOL-MP | Sending refused; no synchronized volunteer transport/automatic-command authority | OOS card |
+| VOL-DONOR | Donor owns, commands, supplies, keeps flag/rank; no recipient AI command | D22, prototype report |
+| PRU-MODDB / RELEASE-003 | Prior publication states retained; unrelated to this pass | Existing PRU/ATCU reports |
+| TPL-11/TPL-12 | Prior user passes retained; broader save/reload acceptance unchanged | Existing TPL cards |
+
+## Next work, step by step
+
+1. Follow docs/instructions-volunteers-prototype.md. Preserve pitfalls, especially
+   command-only state changes, exact ABI/allocations, partial hooks, native deferred
+   GUI lifetime and Create+Transfers together. Run check_exe before address work.
+2. Complete independent native ABI/failure fixtures and the disposable SP scenario
+   when the testing phase begins. Current runtime behavior is not verified merely
+   because every required code path now exists. Do not override a refused gate.
+3. Verify Send, ordinary player control, initial/existing battles and recipient war
+   attribution; donor costs/flag/rank and recipient-AI exclusion. Then recall,
+   destruction/vision, interrupted intent, save/reload/switch and clean exit.
+   Keep land-only/first-owned-land/bounded-journal limitations explicit.
+4. Follow docs/instructions-volunteers-oos.md for the specific OOS. Pending human
+   question asks both peers' log/save locations and immediate versus delayed OOS.
+   Continue independent SP work while awaiting evidence. No OOS fix claim yet.
+5. Keep MP refused until synchronized registry/issuer/sequence execution, one
+   automatic-command authority, load/late-join and two-peer equivalence are proved.
+6. Close with a new immutable report, archived NEXT, rewritten cards/status/index.
+   Current next pitfall is P70. No memory update was authorized.
+
+
+---
+
+# 2026-10-29: donor-controlled Volunteers SP prototype and OOS diagnosis
+
+Native UI reported working by user. Continue to a prototype, integrate native Send volunteers in the supplied action cell, and investigate OOS. Prior NEXT preserved below, including its now-superseded0.0.5 status.
+
+## Session-start NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-28 latest request: use in-game assets and make Volunteers flush
+with the native UI. D23 records that the flat placeholder appearance is rejected.
+**Rust0.0.5 installed in E:\Victoria-II-Volunteers-0004 after user-confirmed close.**
+Native army-panel/button/row/arrow art and bitmap fonts, explicit caption
+textboxes and flush side docking replace0.0.4's appearance. Rollback:
+work/volunteers-0005/before-0005. No game launched for the new build.
+Current check: docs/instructions-volunteers-native-art.md.
+Report: docs/report-volunteers-native-art-1028.md.
+
+2026-10-28 user-authorized isolated install COMPLETE:
+E:\Victoria-II-Volunteers-0004. TGC2.5.2, V2DLL5.98 and Volunteers0.0.4 audit-r2;
+25,385 copied files/13 volunteer mod files verified. Own test profile and
+tgcx_start_preview.cmd / tgcx_start_observe.cmd prepared. No game launched.
+Current test entry point: docs/instructions-volunteers-e-copy.md.
+docs/report-volunteers-install-e-1028.md records hashes and limits.
+
+2026-10-27: Volunteers remains selected. Donor owns and the sending player
+commands; recipient/AI receives no command permission. Keep our layout and
+reuse proved code. **Latest request: install an isolated E: copy for testing; installation complete.**
+
+Rust 0.0.4 compiles after the pitfall audit: guarded optional native
+diplomacy/two-panel UI; selected
+donor-owned Create+Transfer/Move wrappers; registry/payloads; daily recall,
+receipt and loss coordination; save-bound checkpoint/lifecycle endpoints.
+Native session/campaign/combat/access/vision/save integration remains open.
+Send/Recall remain blocked; unknown/MP cannot admit simulation work.
+The provided OOS screenshot proves a reported desync, not its cause or a fix.
+Current audit: docs/report-volunteers-pitfalls-1027.md. Added type preflight,
+stale-object/thread/capacity guards, partial-hook rollback tracking, CPU/native
+call containment, actual font/CSV fixes and checkpoint/transient-read hardening.
+Default mode=observe; mode=preview opts into untested UI. No crash-free claim.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| VOL-UI |0.0.5 native-art UI installed; new appearance/docking awaits check | docs/instructions-volunteers-native-art.md |
+| VOL-INSTALL-E | Same E: copy updated to0.0.5; prior0.0.4 screenshot supplied | docs/report-volunteers-native-art-1028.md |
+| VOL-DONOR | Ownership/player-control decision closed; contracts retained | docs/report-volunteers-donor-1027.md |
+| VOL-NATIVE | 0.0.4 compiles; native prerequisites still open; tests deferred | docs/instructions-volunteers-native.md |
+| VOL-AUDIT | Static pitfall review/hardening coded; behavior untested | docs/instructions-volunteers-audit.md |
+| VOL-2 | Guarded optional chooser/forces UI coded, untested | docs/report-volunteers-pitfalls-1027.md |
+| VOL-MP | Refused; transport interface only; OOS cause unestablished | docs/instructions-volunteers-native.md step 12 |
+| VOL-MAXIOTEN | Supplied message/source/GUI cross-reference complete | docs/report-volunteers-maxioten-crossref-1027.md |
+| VOL-0-CHECK | Old 0.0.1: nine ticks/two armies; save/reload/normal exit open | docs/instructions-volunteers-desktop.md |
+| PRU-MODDB | Profile live; ZIP staff moderation last observed pending | docs/instructions-pru-moddb.md |
+| RELEASE-003 | ATCU 0.0.3 published, beta | docs/report-release-003-published-1025.md |
+| TPL-12 | 0.11.15 functional pass; 0.11.16 name box user pass | docs/report-tpl-12-namebox-1024.md |
+| TPL-11-CHECK | Gathering/rally short pass; save/reload open | docs/instructions-tpl-11-check.md |
+
+## Next session
+
+1. Follow docs/instructions-volunteers-native-art.md for the user-selected
+   UI check. Relaunch tgcx_start_preview.cmd in the same E: copy. Keep native
+   textures/fonts and explicit labels; do not restore procedural flat art.
+   Preserve audit guards. Native gameplay continuation remains in
+   docs/instructions-volunteers-native.md.
+2. Finish scoped combat, access and recipient vision from existing raw exports.
+   Preserve donor ownership, accounting, commands and normal engine gates.
+3. Finish coordinator pending/path/reload edge cases and native UI availability,
+   placement and lifetime handling. Use compile-only builds while tests are deferred.
+4. Do not enable Send by configuration or partial capabilities. The isolated
+   E: installation is now authorized and complete; see the current copy card
+   for later UI/observer checks. No game or Terra resumed during this install.
+5. Current private candidate: work/volunteers-0005/Volunteers-0.0.5-native-ui-private.zip.
+   Game-derived pixels are local/private, not licensed release assets. Old
+   candidate packages and0.0.4 rollback are retained.
+
+## Retained decisions
+
+- Independent Rust package; final public name provisional. Existing PRU/ATCU
+  releases/installations remain separate. Only the new E: test copy was installed; no commit/release.
+- Selected donor regiments detach through native commands, initially at their
+  source. Travel/return is physical. Only registered stack combat/access may
+  borrow recipient war context; donor remains outside that war.
+- Donor vision of recipient-owned territory persists after recall/loss until
+  known recipient peace. No whole maintenance skip or recipient owner swap.
+- Native UI preview is coded but not visually/runtime accepted. No copied base GUI.
+- Save checkpoints load suspended, bind exact save content/campaign and never
+  silently replay commands. Native lifecycle integration remains unestablished.
+- MP remains unsupported. A local registry/file or peer hash is not a transport.
+- Previous desktop permission remains available for later tests with the same
+  Terra/high agent and disposable copy; latest test deferral takes priority.
+- Existing publication state and deferred TPL-9/TPL-10 choices are retained.
+- NEXT from the start of this coding pass is archived verbatim in sessions.md.
+- Next pitfall is P69. No memory write authorized.
+
+
+---
+
+# 2026-10-28: Volunteers native-art UI and flush docking
+
+User rejects flat placeholder UI and asks for native assets/flush appearance; closed game confirmed. Rust0.0.5 built and installed in the existing E: test copy with rollback. No game launched.
+
+## Session-start NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-28 user-authorized isolated install COMPLETE:
+E:\Victoria-II-Volunteers-0004. TGC2.5.2, V2DLL5.98 and Volunteers0.0.4 audit-r2;
+25,385 copied files/13 volunteer mod files verified. Own test profile and
+tgcx_start_preview.cmd / tgcx_start_observe.cmd prepared. No game launched.
+Current test entry point: docs/instructions-volunteers-e-copy.md.
+docs/report-volunteers-install-e-1028.md records hashes and limits.
+
+2026-10-27: Volunteers remains selected. Donor owns and the sending player
+commands; recipient/AI receives no command permission. Keep our layout and
+reuse proved code. **Latest request: install an isolated E: copy for testing; installation complete.**
+
+Rust 0.0.4 compiles after the pitfall audit: guarded optional native
+diplomacy/two-panel UI; selected
+donor-owned Create+Transfer/Move wrappers; registry/payloads; daily recall,
+receipt and loss coordination; save-bound checkpoint/lifecycle endpoints.
+Native session/campaign/combat/access/vision/save integration remains open.
+Send/Recall remain blocked; unknown/MP cannot admit simulation work.
+The provided OOS screenshot proves a reported desync, not its cause or a fix.
+Current audit: docs/report-volunteers-pitfalls-1027.md. Added type preflight,
+stale-object/thread/capacity guards, partial-hook rollback tracking, CPU/native
+call containment, actual font/CSV fixes and checkpoint/transient-read hardening.
+Default mode=observe; mode=preview opts into untested UI. No crash-free claim.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| VOL-INSTALL-E | Isolated E: install verified; game unrun | docs/instructions-volunteers-e-copy.md |
+| VOL-DONOR | Ownership/player-control decision closed; contracts retained | docs/report-volunteers-donor-1027.md |
+| VOL-NATIVE | 0.0.4 compiles; native prerequisites still open; tests deferred | docs/instructions-volunteers-native.md |
+| VOL-AUDIT | Static pitfall review/hardening coded; behavior untested | docs/instructions-volunteers-audit.md |
+| VOL-2 | Guarded optional chooser/forces UI coded, untested | docs/report-volunteers-pitfalls-1027.md |
+| VOL-MP | Refused; transport interface only; OOS cause unestablished | docs/instructions-volunteers-native.md step 12 |
+| VOL-MAXIOTEN | Supplied message/source/GUI cross-reference complete | docs/report-volunteers-maxioten-crossref-1027.md |
+| VOL-0-CHECK | Old 0.0.1: nine ticks/two armies; save/reload/normal exit open | docs/instructions-volunteers-desktop.md |
+| PRU-MODDB | Profile live; ZIP staff moderation last observed pending | docs/instructions-pru-moddb.md |
+| RELEASE-003 | ATCU 0.0.3 published, beta | docs/report-release-003-published-1025.md |
+| TPL-12 | 0.11.15 functional pass; 0.11.16 name box user pass | docs/report-tpl-12-namebox-1024.md |
+| TPL-11-CHECK | Gathering/rally short pass; save/reload open | docs/instructions-tpl-11-check.md |
+
+## Next session
+
+1. Read docs/instructions-volunteers-audit.md, preserve its guards and keep
+   tests deferred. Follow docs/instructions-volunteers-native.md for remaining
+   evidence/integration. Establish native
+   SP/session authority and actual campaign/save lifecycle association first.
+2. Finish scoped combat, access and recipient vision from existing raw exports.
+   Preserve donor ownership, accounting, commands and normal engine gates.
+3. Finish coordinator pending/path/reload edge cases and native UI availability,
+   placement and lifetime handling. Use compile-only builds while tests are deferred.
+4. Do not enable Send by configuration or partial capabilities. The isolated
+   E: installation is now authorized and complete; see the current copy card
+   for later UI/observer checks. No game or Terra resumed during this install.
+5. Final candidate: work/volunteers-0004/Volunteers-0.0.4-audit-untested-r2.zip.
+   Earlier audit stages are interim. Old 0.0.3 and checked 0.0.1/0.0.2 ZIPs preserved.
+
+## Retained decisions
+
+- Independent Rust package; final public name provisional. Existing PRU/ATCU
+  releases/installations remain separate. Only the new E: test copy was installed; no commit/release.
+- Selected donor regiments detach through native commands, initially at their
+  source. Travel/return is physical. Only registered stack combat/access may
+  borrow recipient war context; donor remains outside that war.
+- Donor vision of recipient-owned territory persists after recall/loss until
+  known recipient peace. No whole maintenance skip or recipient owner swap.
+- Native UI preview is coded but not visually/runtime accepted. No copied base GUI.
+- Save checkpoints load suspended, bind exact save content/campaign and never
+  silently replay commands. Native lifecycle integration remains unestablished.
+- MP remains unsupported. A local registry/file or peer hash is not a transport.
+- Previous desktop permission remains available for later tests with the same
+  Terra/high agent and disposable copy; latest test deferral takes priority.
+- Existing publication state and deferred TPL-9/TPL-10 choices are retained.
+- NEXT from the start of this coding pass is archived verbatim in sessions.md.
+- Next pitfall is P69. No memory write authorized.
+
+---
+
+# 2026-10-28: Volunteers isolated E: test install
+
+User-authorized separate Victoria II/TGC/V2DLL/Volunteers copy installed and file-verified. No game launch. See report-volunteers-install-e-1028.md.
+
+## Session-start NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-27: Volunteers remains selected. Donor owns and the sending player
+commands; recipient/AI receives no command permission. Keep our layout and
+reuse proved code. **Latest user ordering: code everything possible; tests later.**
+
+Rust 0.0.4 compiles after the pitfall audit: guarded optional native
+diplomacy/two-panel UI; selected
+donor-owned Create+Transfer/Move wrappers; registry/payloads; daily recall,
+receipt and loss coordination; save-bound checkpoint/lifecycle endpoints.
+Native session/campaign/combat/access/vision/save integration remains open.
+Send/Recall remain blocked; unknown/MP cannot admit simulation work.
+The provided OOS screenshot proves a reported desync, not its cause or a fix.
+Current audit: docs/report-volunteers-pitfalls-1027.md. Added type preflight,
+stale-object/thread/capacity guards, partial-hook rollback tracking, CPU/native
+call containment, actual font/CSV fixes and checkpoint/transient-read hardening.
+Default mode=observe; mode=preview opts into untested UI. No crash-free claim.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| VOL-DONOR | Ownership/player-control decision closed; contracts retained | docs/report-volunteers-donor-1027.md |
+| VOL-NATIVE | 0.0.4 compiles; native prerequisites still open; tests deferred | docs/instructions-volunteers-native.md |
+| VOL-AUDIT | Static pitfall review/hardening coded; behavior untested | docs/instructions-volunteers-audit.md |
+| VOL-2 | Guarded optional chooser/forces UI coded, untested | docs/report-volunteers-pitfalls-1027.md |
+| VOL-MP | Refused; transport interface only; OOS cause unestablished | docs/instructions-volunteers-native.md step 12 |
+| VOL-MAXIOTEN | Supplied message/source/GUI cross-reference complete | docs/report-volunteers-maxioten-crossref-1027.md |
+| VOL-0-CHECK | Old 0.0.1: nine ticks/two armies; save/reload/normal exit open | docs/instructions-volunteers-desktop.md |
+| PRU-MODDB | Profile live; ZIP staff moderation last observed pending | docs/instructions-pru-moddb.md |
+| RELEASE-003 | ATCU 0.0.3 published, beta | docs/report-release-003-published-1025.md |
+| TPL-12 | 0.11.15 functional pass; 0.11.16 name box user pass | docs/report-tpl-12-namebox-1024.md |
+| TPL-11-CHECK | Gathering/rally short pass; save/reload open | docs/instructions-tpl-11-check.md |
+
+## Next session
+
+1. Read docs/instructions-volunteers-audit.md, preserve its guards and keep
+   tests deferred. Follow docs/instructions-volunteers-native.md for remaining
+   evidence/integration. Establish native
+   SP/session authority and actual campaign/save lifecycle association first.
+2. Finish scoped combat, access and recipient vision from existing raw exports.
+   Preserve donor ownership, accounting, commands and normal engine gates.
+3. Finish coordinator pending/path/reload edge cases and native UI availability,
+   placement and lifetime handling. Use compile-only builds while tests are deferred.
+4. Do not enable Send by configuration or partial capabilities. No tests, game
+   launch, installation or Terra resume until testing is selected later.
+5. Final candidate: work/volunteers-0004/Volunteers-0.0.4-audit-untested-r2.zip.
+   Earlier audit stages are interim. Old 0.0.3 and checked 0.0.1/0.0.2 ZIPs preserved.
+
+## Retained decisions
+
+- Independent Rust package; final public name provisional. Existing PRU/ATCU
+  releases/installations remain separate. No source commit, release or install.
+- Selected donor regiments detach through native commands, initially at their
+  source. Travel/return is physical. Only registered stack combat/access may
+  borrow recipient war context; donor remains outside that war.
+- Donor vision of recipient-owned territory persists after recall/loss until
+  known recipient peace. No whole maintenance skip or recipient owner swap.
+- Native UI preview is coded but not visually/runtime accepted. No copied base GUI.
+- Save checkpoints load suspended, bind exact save content/campaign and never
+  silently replay commands. Native lifecycle integration remains unestablished.
+- MP remains unsupported. A local registry/file or peer hash is not a transport.
+- Previous desktop permission remains available for later tests with the same
+  Terra/high agent and disposable copy; latest test deferral takes priority.
+- Existing publication state and deferred TPL-9/TPL-10 choices are retained.
+- NEXT from the start of this coding pass is archived verbatim in sessions.md.
+- Next pitfall is P69. No memory write authorized.
+
+---
+
+# 2026-10-27: Volunteers 0.0.4 pitfall audit
+
+Static source audit against P1-P68; native preflight, lifetime, pointer-patch, CPU/exception, encoding and persistence hardening. Compiled/staged only; tests deferred. See report-volunteers-pitfalls-1027.md.
+
+## Session-start NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-27: Volunteers remains selected. Donor owns and the sending player
+commands; recipient/AI receives no command permission. Keep our layout and
+reuse proved code. **Latest user ordering: code everything possible; tests later.**
+
+Rust 0.0.3 compiles: optional native diplomacy/two-panel UI; selected
+donor-owned Create+Transfer/Move wrappers; registry/payloads; daily recall,
+receipt and loss coordination; save-bound checkpoint/lifecycle endpoints.
+Native session/campaign/combat/access/vision/save integration remains open.
+Send/Recall remain blocked; unknown/MP cannot admit simulation work.
+The provided OOS screenshot proves a reported desync, not its cause or a fix.
+See docs/report-volunteers-implementation-1027.md.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| VOL-DONOR | Ownership/player-control decision closed; contracts retained | docs/report-volunteers-donor-1027.md |
+| VOL-NATIVE | 0.0.3 compiles; native prerequisites still open; tests deferred | docs/instructions-volunteers-native.md |
+| VOL-2 | Optional chooser/forces UI coded, untested | docs/report-volunteers-implementation-1027.md |
+| VOL-MP | Refused; transport interface only; OOS cause unestablished | docs/instructions-volunteers-native.md step 12 |
+| VOL-MAXIOTEN | Supplied message/source/GUI cross-reference complete | docs/report-volunteers-maxioten-crossref-1027.md |
+| VOL-0-CHECK | Old 0.0.1: nine ticks/two armies; save/reload/normal exit open | docs/instructions-volunteers-desktop.md |
+| PRU-MODDB | Profile live; ZIP staff moderation last observed pending | docs/instructions-pru-moddb.md |
+| RELEASE-003 | ATCU 0.0.3 published, beta | docs/report-release-003-published-1025.md |
+| TPL-12 | 0.11.15 functional pass; 0.11.16 name box user pass | docs/report-tpl-12-namebox-1024.md |
+| TPL-11-CHECK | Gathering/rally short pass; save/reload open | docs/instructions-tpl-11-check.md |
+
+## Next session
+
+1. Follow docs/instructions-volunteers-native.md in order. Establish native
+   SP/session authority and actual campaign/save lifecycle association first.
+2. Finish scoped combat, access and recipient vision from existing raw exports.
+   Preserve donor ownership, accounting, commands and normal engine gates.
+3. Finish coordinator pending/path/reload edge cases and native UI availability,
+   placement and lifetime handling. Use compile-only builds while tests are deferred.
+4. Do not enable Send by configuration or partial capabilities. No tests, game
+   launch, installation or Terra resume until testing is selected later.
+5. Final candidate: work/volunteers-0003/Volunteers-0.0.3-native-preview-untested-r2.zip.
+   Earlier 0.0.3 stages are interim. Checked 0.0.1/0.0.2 ZIPs preserved.
+
+## Retained decisions
+
+- Independent Rust package; final public name provisional. Existing PRU/ATCU
+  releases/installations remain separate. No source commit, release or install.
+- Selected donor regiments detach through native commands, initially at their
+  source. Travel/return is physical. Only registered stack combat/access may
+  borrow recipient war context; donor remains outside that war.
+- Donor vision of recipient-owned territory persists after recall/loss until
+  known recipient peace. No whole maintenance skip or recipient owner swap.
+- Native UI preview is coded but not visually/runtime accepted. No copied base GUI.
+- Save checkpoints load suspended, bind exact save content/campaign and never
+  silently replay commands. Native lifecycle integration remains unestablished.
+- MP remains unsupported. A local registry/file or peer hash is not a transport.
+- Previous desktop permission remains available for later tests with the same
+  Terra/high agent and disposable copy; latest test deferral takes priority.
+- Existing publication state and deferred TPL-9/TPL-10 choices are retained.
+- NEXT from the start of this coding pass is archived verbatim in sessions.md.
+- Next pitfall remains P66. No memory write authorized.
+
+---
+
+# 2026-10-27: Volunteers 0.0.3 native coding, tests deferred
+
+Compiled donor-owned UI/command/registry/checkpoint implementation; no tests, game, install or MP fix. See report-volunteers-implementation-1027.md.
+
+## Session-start NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-27: **Volunteers selected by the user**, independent from PRU/ATCU.
+VOL-0 Rust0.0.1 observe-only foundation ran in a disposable France campaign:
+nine daily samples and two selected armies observed. No sending/control/recall
+enabled; save/reload and normal-exit acceptance remain unverified.
+`docs/report-volunteers-foundation-1027.md`; working design `docs/volunteers-design.md`.
+
+Latest user decision: **donor ownership and control by the sending player**;
+keep our volunteer layout and reuse proved code. Recipient/AI receives no
+command permission. The earlier recipient-owned route is superseded.
+Rust0.0.2 adds offline donor command-plan/receipt/context/vision contracts;
+24 Rust/five Python checks pass. Native combat/access/vision integration and
+Send UI remain unfinished. `docs/report-volunteers-donor-1027.md`.
+
+Desktop control remains authorized for the same Terra/high test path if needed;
+no separate surface is required. Native F11 images enabled verified menu/game
+input despite Sky capture timeouts. No game process is currently running.
+
+2026-10-25, session 84. **PRU 0.0.1 ModDB profile is live.**
+The unchanged release ZIP awaits staff authorisation. The user requested
+three PRU title cards, uploaded alongside both original screenshots.
+See `docs/report-pru-moddb-live-1025.md`.
+ATCU 0.0.3 remains published on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| VOL-0-ISOLATED | Earlier surface assessment complete; restriction superseded | `docs/report-volunteers-agent-test-1027.md` |
+| VOL-MAXIOTEN | Supplied message/source/GUI compared; design conflict and concrete blockers documented | `docs/instructions-volunteers-maxioten.md` |
+| VOL-DONOR | Donor/player-control decision closed; 0.0.2 contracts built, native adapters open | `docs/instructions-volunteers-donor.md` |
+| VOL-0-CHECK | Nine ticks/two armies observed; save/reload/normal exit unverified | `docs/instructions-volunteers-desktop.md` |
+| VOL-1 | Donor-owned detachment and scoped combat/access adapter open | `docs/instructions-volunteers-donor.md` |
+| PRU-MODDB | Profile live, five images; file moderation pending | `docs/instructions-pru-moddb.md` |
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+1. Follow `docs/instructions-volunteers-donor.md`. Ownership decision is closed:
+   donor keeps ownership, affiliation, accounting and player commands.
+2. Finish scoped combat/access/vision and native UI adapters using current
+   mission.rs and the report's repeated-hostility gate map. Preserve our layout.
+   Reuse existing exports and safe native helpers; no recipient owner change,
+   whole maintenance skip or automatic all-armies sending.
+3. Resume only missing observer campaign checks if selected, using
+   `docs/instructions-volunteers-desktop.md`. Nine ticks and army switching
+   are already evidenced; they do not prove loan gameplay or save/reload.
+4. Candidate is work/volunteers-0002/Volunteers-technical-preview-0.0.2-donor-checked.zip,
+   still observe-only and not installed. Do not bypass R5 or enable Send from
+   a setting before native prerequisites are proved. Earlier checked ZIP kept.
+
+Existing release/publication state is retained. PRU ZIP moderation follow-up,
+if selected, uses `docs/instructions-pru-moddb.md`; reuse the existing entry.
+
+## Retained decisions
+
+- Volunteers is an independent Rust package; single player first (D5). Public
+  name provisional. The first preview only observes; disposable copy prepared,
+  main installation unchanged. Actual observer campaign run is recorded above.
+- Donor-owned Create+Transfer detaches the selected regiments at their source;
+  travel/return requires a physical command path. Ownership never changes to B.
+  Only registered-loan combat/access can use B's war context; A stays neutral.
+- Agent desktop control is now authorized if necessary for the volunteer test,
+  using the same Terra/high subagent and the disposable game copy.
+- The human has now explicitly selected the donor-owned route from the supplied
+  reference. Runtime remains Rust; the unsafe supplied C++ is not installed.
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- ATCU test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Preserve the user's running game and desktop.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- PRU 0.0.1 is published on GitHub; ModDB publication was authorized this
+  session and remains incomplete for the image requirement and moderation.
+- Use Chrome extension tabs only for this browser task, never whole-PC control.
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+---
+
+# 2026-10-25, session 84: PRU ModDB submission
+
+2026-10-25, session 84: PRU 0.0.1 submitted to ModDB with exact GitHub ZIP, two original screenshots, README and changelog. ZIP server size/MD5 verified. Profile Go Live blocked by three missing required images and automatic approval review; file awaits staff authorisation. No code, install or game control. See `docs/report-pru-moddb-1025.md`.
+
+## Session-start NEXT (verbatim)
+
+# NEXT - what comes next
+
+2026-10-25, session 83. **ATCU 0.0.3 is published** on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+No implementation or further publication is selected. Release media
+updates are complete. If further gameplay testing is selected, follow
+`docs/instructions-tpl-11-check.md` for gathering save/reload, or
+`docs/instructions-rust-check.md` for the remaining Rust gameplay scope.
+Keep the release README's testing limits: 0.0.3 features were checked on
+TGC 2.5.2 with the ATCU loader; other bases, V2DLL and multiplayer remain
+outside those new-feature checks.
+
+## Retained decisions
+
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- Test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Never launch or terminate the user's game.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- Province Rename publication remains deferred (`instructions-rename-026.md`).
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+---
+
+# 2026-10-25, session 83: user release images published
+
+Uploaded the user-supplied logo and collage unchanged to ModDB; uploaded and embedded the collage on GitHub. Verified saved URLs, GitHub hash and live image loading. No further work selected.
+
+## NEXT.md at session start (verbatim)
+
+# NEXT - what comes next
+
+2026-10-25, session 82. **ATCU 0.0.3 is published** on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user will make the collage; no new images were uploaded.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+No implementation or further publication is selected. The user handles
+the release collage. If further gameplay testing is selected, follow
+`docs/instructions-tpl-11-check.md` for gathering save/reload, or
+`docs/instructions-rust-check.md` for the remaining Rust gameplay scope.
+Keep the release README's testing limits: 0.0.3 features were checked on
+TGC 2.5.2 with the ATCU loader; other bases, V2DLL and multiplayer remain
+outside those new-feature checks.
+
+## Retained decisions
+
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- Test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Never launch or terminate the user's game.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- Province Rename publication remains deferred (`instructions-rename-026.md`).
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+
+---
+
+# 2026-10-25, session 82: ATCU 0.0.3 published
+
+Published the existing final ZIP on GitHub and ModDB at the user's request.
+Tag v0.0.3 names source 6a32c2c; asset hashes verified. README-based
+notes and full ModDB changelog saved. User will make the collage;
+neither image-generation output nor Pillow collage was uploaded.
+No binary changes or game control. See report-release-003-published-1025.md.
+
+## NEXT.md at session start (verbatim)
+
+# NEXT - what comes next
+
+2026-10-24 (81, end). **TPL-12 0.11.15 PASSED in game (user: "everything
+worked"; log in `docs/report-tpl-12-passed-1024.md`). 0.11.16 PASSED in game
+(user: "worked"): the unit name box stops at Disband depleted
+(`docs/report-tpl-12-namebox-1024.md`). Release candidate ATCU 0.0.3
+(build 0.11.16) prepared: `docs/release-0.0.3/`, validated; the final
+build waits for the source commit (`docs/report-release-003-1025.md`).**
+
+Earlier: TPL-12 0.11.15 installed in the test copy (committed b2ed27c;
+0.11.14 is b9bf601). User: Lubny regiment still did not march on 0.11.14.
+Cause: a save loaded from the main menu was never seen as a load (P65).
+Not tested in game.** `work/tpl12-01115/ATCU-0.11.15-candidate.zip`.
+Fixes: `docs/report-tpl-12-menu-load-1024.md`, `docs/report-tpl-12-load-1024.md` (P64). 0.11.13 reload fixes and README:
+`docs/report-tpl-12-reload-1024.md`.
+Earlier visual short pass (0.11.12): `docs/report-tpl-12-visual-check-1024.md`.
+
+## Current decisions and evidence
+
+- User: **0.11.8 works great**, but its buttons were too small. Current
+  instruction: **20x20, native Disband size, beside the native header
+  actions in the same row, not above**. Green Conform on the right,
+  maroon Replace on the left. Current correction: native 21px pitch,
+  **2px painted gaps**. Live 0.11.11 borders at y184 versus native y185
+  supersede the prior lift: **use native Y**. TGC shown-depleted positions
+  (172,32)/(193,32); hidden-depleted positions (193,32)/(214,32).
+  Follow native button visibility, closing its empty slot and moving back.
+  Long army names have less room; native name width is unchanged.
+- Conform list titles are now fitted to one line with native loaded-font
+  widths and ellipsis; counts stay below. Full compositions are unchanged.
+  User confirms the two visible fixes worked; no fresh final screenshot.
+  This accepts alignment/title appearance, not the remaining functional cases.
+- Replace opens independently where Conform opens. Each closes the other.
+  Conform returns to its Conform/Cancel footer. Replace has its own culture
+  boxes; none means all, selected box clicks clear it. Choice settings v2
+  import v1. Replacement orders keep their format.
+- Latest log snapshot: `work/tpl12-01112/check-1024/`: 206 runtime guards
+  OK, no logged GUI/font faults, active error/system_error logs empty.
+  Conform and Replace preview opened. No replacement queue/resume/join/
+  detach result in this run; saved-order counts are inventory only.
+- **0.11.7 passed a short gameplay check**, including replacement merge and
+  old-regiment detach (report-tpl-12-replace-1024.md section 9). Strength
+  scale was confirmed. 0.11.8 then passed the user's general short check and supplied capture.
+  Neither acceptance proves the remaining reload/multiplayer cases.
+- **0.11.15 is installed** in `work/Victoria-II-TGC252-own-loader`;
+  immediate 0.11.14 rollback: `work/tpl12-01115/before-01115`;
+  immediate 0.11.13 rollback (with log and settings): `work/tpl12-01114/before-01114`;
+  0.11.12 rollback (with settings): `work/tpl12-01113/before-01113`
+  (restore `tgcx_replace_orders.txt` too: 0.11.12 ignores the v2 file);
+  user-tested 0.11.9 rollback: `work/tpl12-01110/before-01110`;
+  0.11.11 rollback: `work/tpl12-01112/before-01112`.
+  Each has 58 verified hashes.
+  All 48 payload files match; 25,466 protected files and eight settings
+  files unchanged. Main E: install unchanged.
+- All new DLL code is Rust (`rust/tgcx`); C++ only receives generated
+  headers. Do not build a C++ release from these GUI headers.
+- TPL-8 0.11.3 and TPL-11 0.11.6 passed their short player checks.
+  TPL-11 is committed at `4ad923d`; current TPL-12 work is uncommitted.
+- Session-start NEXT archived verbatim in `docs/archive/sessions.md`.
+
+## Next session in order
+
+| Card | Status | Instructions |
+|---|---|---|
+| TPL-12-CHECK | **Passed** (0.11.15, single player, TGC v2.5.2) | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | **Passed** (0.11.16, user 2026-10-25) | `docs/report-tpl-12-namebox-1024.md` |
+| RELEASE-003 | RC prepared and validated; commit sources, then final build, then publish only on the user's word | `docs/report-release-003-1025.md` |
+| TPL-11-CHECK | Rally selector/gather short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+1. TPL-12-CHECK: use `docs/instructions-tpl-12-check.md` steps 1-4, starting
+   with the 9 February save (stranded regiment must resume).
+   Confirm choices/persistence; queue a qualifying replacement, save
+   during construction and again between merge and detach (0.11.13), reload, then follow march/merge and verified detach
+   of the old regiment. Include yellow-pop, culture and land-shortage cases
+   when available. Preserve log/screenshots. Remaining lifetime and native
+   visibility transitions need explicit confirmation where not observed.
+2. TPL-11-CHECK: when selected, finish save/reload of a rally gather.
+3. The Conform long-title visual fix is accepted in 0.11.12.
+   Pale-yellow Changes shortfalls remain a deferred look fix, unselected.
+
+## Parked work
+
+- TPL-9 Autodivide: needs the user's split rule, button place and leader
+  choice before implementation.
+- TPL-10 Carpet siege: depends on TPL-9; user choices still open.
+- RUST-CHECK: full Bill/favour/remaining Conform coverage is separate;
+  `docs/instructions-rust-check.md`.
+- RENAME-026: local ZIP only, publication deferred;
+  `docs/instructions-rename-026.md`.
+
+Installation completed on explicit user instruction with clear process
+gates. No public release, commit/push or game launch/termination.
+Next pitfall is P66.
+
+
+---
+
 # Session80 - 0.11.12 visual short pass and log audit (2026-10-24)
 
 User: it worked, still lacks testing; asks to check logs. Preserved latest
@@ -7824,3 +8771,553 @@ Also asked by a player (2026-10-20), not selected: **mobilisation into a
 template** (mobilised regiments join an army to fill its template). Needs
 its own research: mobilised regiments are created by mobilisation, not
 built, and taking them would partly reverse D13's "Conform always builds".
+
+
+## 2026-10-26 before ARMY-HANDOFF
+
+# NEXT - what comes next
+
+2026-10-25, session 84. **PRU 0.0.1 ModDB profile is live.**
+The unchanged release ZIP awaits staff authorisation. The user requested
+three PRU title cards, uploaded alongside both original screenshots.
+See `docs/report-pru-moddb-live-1025.md`.
+ATCU 0.0.3 remains published on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| PRU-MODDB | Profile live, five images; file moderation pending | `docs/instructions-pru-moddb.md` |
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+PRU profile setup and Go Live are complete. No further publication action
+is needed while ModDB reviews the ZIP. If asked to check approval, follow
+`docs/instructions-pru-moddb.md`; reuse the existing profile/download.
+No new implementation is selected. If further gameplay testing is selected, follow
+`docs/instructions-tpl-11-check.md` for gathering save/reload, or
+`docs/instructions-rust-check.md` for the remaining Rust gameplay scope.
+Keep the release README's testing limits: 0.0.3 features were checked on
+TGC 2.5.2 with the ATCU loader; other bases, V2DLL and multiplayer remain
+outside those new-feature checks.
+
+## Retained decisions
+
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- Test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Never launch or terminate the user's game.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- PRU 0.0.1 is published on GitHub; ModDB publication was authorized this
+  session and remains incomplete for the image requirement and moderation.
+- Use Chrome extension tabs only for this browser task, never whole-PC control.
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+
+## 2026-10-26 before ARMY-HANDOFF revision 2
+
+# NEXT - what comes next
+
+2026-10-26: ARMY-HANDOFF local research ZIP prepared and verified; 21 fresh
+Ghidra exports, partial class maps, country list and command wrappers.
+See `docs/report-army-handoff-1026.md`. No implementation selected. Optional
+follow-up: `docs/instructions-army-handoff.md`. Publication status below retained.
+
+2026-10-25, session 84. **PRU 0.0.1 ModDB profile is live.**
+The unchanged release ZIP awaits staff authorisation. The user requested
+three PRU title cards, uploaded alongside both original screenshots.
+See `docs/report-pru-moddb-live-1025.md`.
+ATCU 0.0.3 remains published on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| PRU-MODDB | Profile live, five images; file moderation pending | `docs/instructions-pru-moddb.md` |
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+PRU profile setup and Go Live are complete. No further publication action
+is needed while ModDB reviews the ZIP. If asked to check approval, follow
+`docs/instructions-pru-moddb.md`; reuse the existing profile/download.
+No new implementation is selected. If further gameplay testing is selected, follow
+`docs/instructions-tpl-11-check.md` for gathering save/reload, or
+`docs/instructions-rust-check.md` for the remaining Rust gameplay scope.
+Keep the release README's testing limits: 0.0.3 features were checked on
+TGC 2.5.2 with the ATCU loader; other bases, V2DLL and multiplayer remain
+outside those new-feature checks.
+
+## Retained decisions
+
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- Test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Never launch or terminate the user's game.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- PRU 0.0.1 is published on GitHub; ModDB publication was authorized this
+  session and remains incomplete for the image requirement and moderation.
+- Use Chrome extension tabs only for this browser task, never whole-PC control.
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+
+## 2026-10-26 before VOLUNTEER-RE
+
+# NEXT - what comes next
+
+2026-10-26: ARMY-HANDOFF revision 2 analysed and verified. 40 function
+exports, expanded partial class maps, exact ABIs, individual evidence files
+and compile-checked byte views. Main ZIP replaced; v1 retained privately.
+See `docs/report-army-handoff-reviewed-1026.md`. No implementation selected.
+Optional follow-up: `docs/instructions-army-handoff.md`. Publication status below retained.
+
+2026-10-25, session 84. **PRU 0.0.1 ModDB profile is live.**
+The unchanged release ZIP awaits staff authorisation. The user requested
+three PRU title cards, uploaded alongside both original screenshots.
+See `docs/report-pru-moddb-live-1025.md`.
+ATCU 0.0.3 remains published on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| PRU-MODDB | Profile live, five images; file moderation pending | `docs/instructions-pru-moddb.md` |
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+PRU profile setup and Go Live are complete. No further publication action
+is needed while ModDB reviews the ZIP. If asked to check approval, follow
+`docs/instructions-pru-moddb.md`; reuse the existing profile/download.
+No new implementation is selected. If further gameplay testing is selected, follow
+`docs/instructions-tpl-11-check.md` for gathering save/reload, or
+`docs/instructions-rust-check.md` for the remaining Rust gameplay scope.
+Keep the release README's testing limits: 0.0.3 features were checked on
+TGC 2.5.2 with the ATCU loader; other bases, V2DLL and multiplayer remain
+outside those new-feature checks.
+
+## Retained decisions
+
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- Test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Never launch or terminate the user's game.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- PRU 0.0.1 is published on GitHub; ModDB publication was authorized this
+  session and remains incomplete for the image requirement and moderation.
+- Use Chrome extension tabs only for this browser task, never whole-PC control.
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+
+## 2026-10-27 before VOL-0 implementation
+
+# NEXT - what comes next
+
+2026-10-26: VOLUNTEER-RE research addendum delivered with five guides,
+201 raw function pairs and verified ZIP. Army control is not a one-hook feature;
+network registration/authority and foreign-pop maintenance remain unresolved.
+See `docs/report-volunteer-re-1026.md`. No feature implementation selected.
+Follow-up order: `docs/instructions-volunteer-re.md`.
+
+
+2026-10-26: ARMY-HANDOFF revision 2 analysed and verified. 40 function
+exports, expanded partial class maps, exact ABIs, individual evidence files
+and compile-checked byte views. Main ZIP replaced; v1 retained privately.
+See `docs/report-army-handoff-reviewed-1026.md`. No implementation selected.
+Optional follow-up: `docs/instructions-army-handoff.md`. Publication status below retained.
+
+2026-10-25, session 84. **PRU 0.0.1 ModDB profile is live.**
+The unchanged release ZIP awaits staff authorisation. The user requested
+three PRU title cards, uploaded alongside both original screenshots.
+See `docs/report-pru-moddb-live-1025.md`.
+ATCU 0.0.3 remains published on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| PRU-MODDB | Profile live, five images; file moderation pending | `docs/instructions-pru-moddb.md` |
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+PRU profile setup and Go Live are complete. No further publication action
+is needed while ModDB reviews the ZIP. If asked to check approval, follow
+`docs/instructions-pru-moddb.md`; reuse the existing profile/download.
+No new implementation is selected. If further gameplay testing is selected, follow
+`docs/instructions-tpl-11-check.md` for gathering save/reload, or
+`docs/instructions-rust-check.md` for the remaining Rust gameplay scope.
+Keep the release README's testing limits: 0.0.3 features were checked on
+TGC 2.5.2 with the ATCU loader; other bases, V2DLL and multiplayer remain
+outside those new-feature checks.
+
+## Retained decisions
+
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- Test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Never launch or terminate the user's game.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- PRU 0.0.1 is published on GitHub; ModDB publication was authorized this
+  session and remains incomplete for the image requirement and moderation.
+- Use Chrome extension tabs only for this browser task, never whole-PC control.
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+
+## 2026-10-27 Volunteers foundation checkpoint before unattended-test constraint
+
+# NEXT - what comes next
+
+2026-10-27: **Volunteers selected by the user**, independent from PRU/ATCU.
+VOL-0 Rust0.0.1 observe-only foundation is built and staged, not installed or
+tested in game. No sending, control changes or recall enabled yet.
+`docs/report-volunteers-foundation-1027.md`; working design `docs/volunteers-design.md`.
+
+2026-10-25, session 84. **PRU 0.0.1 ModDB profile is live.**
+The unchanged release ZIP awaits staff authorisation. The user requested
+three PRU title cards, uploaded alongside both original screenshots.
+See `docs/report-pru-moddb-live-1025.md`.
+ATCU 0.0.3 remains published on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| VOL-0-CHECK | Read-only probe built; user game check next | `docs/instructions-volunteers-check.md` |
+| VOL-1 | Native ownership/control/pop-maintenance adapter open | `docs/instructions-volunteers-commands.md` |
+| PRU-MODDB | Profile live, five images; file moderation pending | `docs/instructions-pru-moddb.md` |
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+1. Review the working volunteer design and checked probe ZIP:
+   `work/volunteers-0001/Volunteers-technical-preview-0.0.1-checked.zip`.
+2. User-run isolated VOL-0 tick/selection/save-load check, following
+   `docs/instructions-volunteers-check.md`. The user controls game launch/exit.
+3. Continue VOL-1 command/control/affiliation research and adapter work with
+   `docs/instructions-volunteers-commands.md`; do not bypass R5 or enable Send
+   from a setting before those prerequisites are proved.
+
+Existing release/publication state is retained. PRU ZIP moderation follow-up,
+if selected, uses `docs/instructions-pru-moddb.md`; reuse the existing entry.
+
+## Retained decisions
+
+- Volunteers is an independent Rust package; single player first (D5). Public
+  name provisional. The first preview only observes; no install or game run yet.
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- Test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Never launch or terminate the user's game.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- PRU 0.0.1 is published on GitHub; ModDB publication was authorized this
+  session and remains incomplete for the image requirement and moderation.
+- Use Chrome extension tabs only for this browser task, never whole-PC control.
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+
+## 2026-10-27 Volunteers checkpoint before desktop test authorization
+
+# NEXT - what comes next
+
+2026-10-27: **Volunteers selected by the user**, independent from PRU/ATCU.
+VOL-0 Rust0.0.1 observe-only foundation is built and staged in a disposable
+workspace game copy, not tested in game. No sending, control or recall enabled.
+`docs/report-volunteers-foundation-1027.md`; working design `docs/volunteers-design.md`.
+
+Latest user constraint: the agent may operate an isolated test itself, but must
+not take over the user's desktop. Background-only work continues. A disposable
+test copy and 19 further static exports are ready; no game acceptance yet.
+`docs/report-volunteers-background-1027.md`.
+
+2026-10-25, session 84. **PRU 0.0.1 ModDB profile is live.**
+The unchanged release ZIP awaits staff authorisation. The user requested
+three PRU title cards, uploaded alongside both original screenshots.
+See `docs/report-pru-moddb-live-1025.md`.
+ATCU 0.0.3 remains published on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| VOL-0-ISOLATED | Agent-operated separate surface needed; no host input | `docs/instructions-volunteers-isolated.md` |
+| VOL-0-CHECK | Read-only probe built; game acceptance open | `docs/instructions-volunteers-check.md` |
+| VOL-1 | Native ownership/control/pop-maintenance adapter open | `docs/instructions-volunteers-commands.md` |
+| PRU-MODDB | Profile live, five images; file moderation pending | `docs/instructions-pru-moddb.md` |
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+1. Review the working volunteer design and checked probe ZIP:
+   `work/volunteers-0001/Volunteers-technical-preview-0.0.1-checked.zip`.
+2. Establish a separate agent-operated test surface per
+   `docs/instructions-volunteers-isolated.md` before any launch/input. The
+   current desktop-control tool shares the host desktop and cannot be used
+   while the user works. The disposable copy already exists at
+   `work/Victoria-II-Volunteers-0001`. No game evidence has been captured.
+3. Continue VOL-1 command/control/affiliation research and adapter work with
+   `docs/instructions-volunteers-commands.md`; do not bypass R5 or enable Send
+   from a setting before those prerequisites are proved.
+
+Existing release/publication state is retained. PRU ZIP moderation follow-up,
+if selected, uses `docs/instructions-pru-moddb.md`; reuse the existing entry.
+
+## Retained decisions
+
+- Volunteers is an independent Rust package; single player first (D5). Public
+  name provisional. The first preview only observes; disposable copy prepared,
+  main installation unchanged and no game run confirmed.
+- A recipient-owned fresh stack keeps recipient affiliation: native Transfer
+  does not copy the donor's affiliation. See the background report before
+  choosing the ownership-command or narrow pop-comparison adapter route.
+- Agent testing is authorized only without taking over the host desktop.
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- ATCU test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Preserve the user's running game and desktop.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- PRU 0.0.1 is published on GitHub; ModDB publication was authorized this
+  session and remains incomplete for the image requirement and moderation.
+- Use Chrome extension tabs only for this browser task, never whole-PC control.
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+
+## 2026-10-27 Volunteers checkpoint before Maxioten cross-reference
+
+# NEXT - what comes next
+
+2026-10-27: **Volunteers selected by the user**, independent from PRU/ATCU.
+VOL-0 Rust0.0.1 observe-only foundation is built and staged in a disposable
+workspace game copy, not tested in game. No sending, control or recall enabled.
+`docs/report-volunteers-foundation-1027.md`; working design `docs/volunteers-design.md`.
+
+Latest user instruction authorizes desktop control if necessary, using the
+same GPT-6.1 Terra/high subagent. Its observer campaign test is now active;
+no separate display/input surface is required. Earlier isolation-only reports
+remain historical. See `docs/instructions-volunteers-desktop.md`.
+
+2026-10-25, session 84. **PRU 0.0.1 ModDB profile is live.**
+The unchanged release ZIP awaits staff authorisation. The user requested
+three PRU title cards, uploaded alongside both original screenshots.
+See `docs/report-pru-moddb-live-1025.md`.
+ATCU 0.0.3 remains published on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| VOL-0-ISOLATED | Earlier surface assessment complete; restriction superseded | `docs/report-volunteers-agent-test-1027.md` |
+| VOL-0-CHECK | Same Terra/high subagent running authorized desktop test; acceptance open | `docs/instructions-volunteers-desktop.md` |
+| VOL-1 | Native ownership/control/pop-maintenance adapter open | `docs/instructions-volunteers-commands.md` |
+| PRU-MODDB | Profile live, five images; file moderation pending | `docs/instructions-pru-moddb.md` |
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+1. Review the working volunteer design and checked probe ZIP:
+   `work/volunteers-0001/Volunteers-technical-preview-0.0.1-checked.zip`.
+2. Continue the same subagent's desktop campaign test per
+   `docs/instructions-volunteers-desktop.md`. Desktop control is now explicitly
+   authorized. Reuse `work/Victoria-II-Volunteers-0001` and preserve existing
+   user game instances. Await actual game evidence before marking acceptance.
+3. Continue VOL-1 command/control/affiliation research and adapter work with
+   `docs/instructions-volunteers-commands.md`; do not bypass R5 or enable Send
+   from a setting before those prerequisites are proved.
+
+Existing release/publication state is retained. PRU ZIP moderation follow-up,
+if selected, uses `docs/instructions-pru-moddb.md`; reuse the existing entry.
+
+## Retained decisions
+
+- Volunteers is an independent Rust package; single player first (D5). Public
+  name provisional. The first preview only observes; disposable copy prepared,
+  main installation unchanged and no game run confirmed.
+- A recipient-owned fresh stack keeps recipient affiliation: native Transfer
+  does not copy the donor's affiliation. See the background report before
+  choosing the ownership-command or narrow pop-comparison adapter route.
+- Agent desktop control is now authorized if necessary for the volunteer test,
+  using the same Terra/high subagent and the disposable game copy.
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- ATCU test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Preserve the user's running game and desktop.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- PRU 0.0.1 is published on GitHub; ModDB publication was authorized this
+  session and remains incomplete for the image requirement and moderation.
+- Use Chrome extension tabs only for this browser task, never whole-PC control.
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.
+
+
+## 2026-10-27 Volunteers checkpoint before donor ownership decision
+
+# NEXT - what comes next
+
+2026-10-27: **Volunteers selected by the user**, independent from PRU/ATCU.
+VOL-0 Rust0.0.1 observe-only foundation ran in a disposable France campaign:
+nine daily samples and two selected armies observed. No sending/control/recall
+enabled; save/reload and normal-exit acceptance remain unverified.
+`docs/report-volunteers-foundation-1027.md`; working design `docs/volunteers-design.md`.
+
+Latest user task: cross-reference work/volunteermaxioten/message (1).txt and
+the supplied C++/GUI against our work. Review complete; full private report
+work/volunteermaxioten/volunteer_brigades_research.md. Donor ownership/costs/
+vision requirements conflict with the earlier recipient-owned design.
+`docs/report-volunteers-maxioten-crossref-1027.md`.
+
+Desktop control remains authorized for the same Terra/high test path if needed;
+no separate surface is required. Native F11 images enabled verified menu/game
+input despite Sky capture timeouts. No game process is currently running.
+
+2026-10-25, session 84. **PRU 0.0.1 ModDB profile is live.**
+The unchanged release ZIP awaits staff authorisation. The user requested
+three PRU title cards, uploaded alongside both original screenshots.
+See `docs/report-pru-moddb-live-1025.md`.
+ATCU 0.0.3 remains published on GitHub and ModDB.
+`docs/report-release-003-published-1025.md` records links, hashes and scope.
+The user-supplied logo and collage are now published; see
+`docs/report-release-003-images-1025.md`.
+
+## Current status
+
+| Card | Status | Evidence or instructions |
+|---|---|---|
+| VOL-0-ISOLATED | Earlier surface assessment complete; restriction superseded | `docs/report-volunteers-agent-test-1027.md` |
+| VOL-MAXIOTEN | Supplied message/source/GUI compared; design conflict and concrete blockers documented | `docs/instructions-volunteers-maxioten.md` |
+| VOL-0-CHECK | Nine ticks/two armies observed; save/reload/normal exit unverified | `docs/instructions-volunteers-desktop.md` |
+| VOL-1 | Native ownership/control/pop-maintenance adapter open | `docs/instructions-volunteers-commands.md` |
+| PRU-MODDB | Profile live, five images; file moderation pending | `docs/instructions-pru-moddb.md` |
+| RELEASE-003 | Published, beta; ZIP and checksum verified | `docs/report-release-003-published-1025.md` |
+| TPL-12-CHECK | Passed on 0.11.15, single player, TGC 2.5.2 | `docs/report-tpl-12-passed-1024.md` |
+| TPL-12-NAMEBOX | Passed on 0.11.16, user 2026-10-25 | `docs/report-tpl-12-namebox-1024.md` |
+| TPL-11-CHECK | Gathering/rally short check passed; save/reload open | `docs/instructions-tpl-11-check.md` |
+
+## Next session
+
+1. Read the Maxioten cross-reference and reconcile the supplied donor-owned
+   specification with the earlier recipient-owned design before implementing
+   gameplay: `docs/instructions-volunteers-maxioten.md`.
+2. Follow the missing native combat/access/AI/cost/vision traces listed there;
+   reuse existing exports. Do not compile/install the supplied C++ as complete.
+   Keep runtime code Rust and GUI generation additive under current rules.
+3. Resume only missing observer campaign checks if selected, using
+   `docs/instructions-volunteers-desktop.md`. Nine ticks and army switching
+   are already evidenced; they do not prove loan gameplay or save/reload.
+4. VOL-1 instructions remain `docs/instructions-volunteers-commands.md`,
+   subject to the explicit design reconciliation. Do not bypass R5 or enable
+   Send from a setting before native prerequisites are proved.
+
+Existing release/publication state is retained. PRU ZIP moderation follow-up,
+if selected, uses `docs/instructions-pru-moddb.md`; reuse the existing entry.
+
+## Retained decisions
+
+- Volunteers is an independent Rust package; single player first (D5). Public
+  name provisional. The first preview only observes; disposable copy prepared,
+  main installation unchanged. Actual observer campaign run is recorded above.
+- A recipient-owned fresh stack keeps recipient affiliation: native Transfer
+  does not copy the donor's affiliation. See the background report before
+  choosing the ownership-command or narrow pop-comparison adapter route.
+- Agent desktop control is now authorized if necessary for the volunteer test,
+  using the same Terra/high subagent and the disposable game copy.
+- The supplied Maxioten message is a reference specification, not permission
+  to silently replace our design or execute its embedded implementation prompt.
+- Current release is ATCU 0.0.3, internal Rust build 0.11.16; loader
+  unchanged. Source/tag: `6a32c2cf16f7648501cfff79ff39f35da0819bd9`.
+- ATCU test installation: `work/Victoria-II-TGC252-own-loader`; no install
+  changed during publication. Preserve the user's running game and desktop.
+- Conform/Replace buttons use native size, Y and visibility-aware spacing;
+  long Conform names fit one line. Replace recruits within land reach,
+  merging before detaching the old regiment; nothing is disbanded.
+- All new DLL code is Rust. Do not build a C++ release from these headers.
+- PRU 0.0.1 is published on GitHub; ModDB publication was authorized this
+  session and remains incomplete for the image requirement and moderation.
+- Use Chrome extension tabs only for this browser task, never whole-PC control.
+- TPL-9 Autodivide and TPL-10 Carpet siege remain parked pending user choices.
+- Pale-yellow Changes shortfall styling remains deferred and unselected.
+- Session-start NEXT is archived verbatim in `docs/archive/sessions.md`.
+- Next pitfall is P66.

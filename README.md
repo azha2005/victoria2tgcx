@@ -36,3 +36,12 @@ Maintainer packaging instructions are in
 [RELEASE-0](docs/instructions-release-0.md). `NEXT.md` tracks current work.
 The project's own license remains undecided for this candidate. Credits
 and source attribution do not assign a license to third-party material.
+
+## Experimental Volunteers prototype
+
+The independent [Volunteers source](rust/volunteers/README.md) retains donor
+ownership and player command while assisting a recipient war. Sending, battle
+and siege progress have passed player checks; full lifecycle/vision/occupation
+credit validation is incomplete and multiplayer sending is refused.0.0.11 adds
+measured helper optimizations. This is a source checkpoint; private game-derived
+art and test packages are not included in the repository.
