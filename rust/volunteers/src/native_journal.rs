@@ -17,9 +17,17 @@ extern "C" fn committed(command: u32) {
     let n = Native {
         base: BASE.load(Ordering::Acquire),
     };
-    if n.u32(command) != Some(n.base + 0xA0121C)
-        || n.string(command + 0x44, 96).as_deref() != Some(crate::engine_store::HEAD)
-    {
+    if n.u32(command) != Some(n.base + 0xA0121C) {
+        return;
+    }
+    let Some(key) = n.string(command + 0x44, 96) else {
+        return;
+    };
+    if key.starts_with(crate::mp_sync::PROBE_PREFIX) {
+        crate::native_mp::probe_executed(n, command, &key);
+        return;
+    }
+    if key != crate::engine_store::HEAD {
         return;
     }
     let Some(country) = n.field(command, 0x40) else {
@@ -33,6 +41,7 @@ extern "C" fn committed(command: u32) {
     };
     match crate::engine_store::load(epoch, |key| n.variable(country, key)) {
         Ok(Some(loaded)) => {
+            crate::native_mp::journal(n, country, &loaded);
             crate::runtime::diagnostic(&format!(
                 "journal_commit country={country} head={} sha256={} date={:?} session={:?} (native execute observed; no gameplay admission)",
                 loaded.head,

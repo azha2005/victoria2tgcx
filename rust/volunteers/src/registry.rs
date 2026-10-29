@@ -56,6 +56,9 @@ pub enum Effect {
 }
 
 impl Registry {
+    pub fn sequence(&self, country: u32) -> u64 {
+        self.sequences.get(&country).copied().unwrap_or(0)
+    }
     pub fn new(campaign: Campaign, epoch: u64) -> Self {
         Self {
             campaign,
@@ -530,6 +533,7 @@ impl Registry {
                 sample_every_days: 1,
                 ui_preview: false,
                 prototype: false,
+                mp_probe: false,
             };
             let plan = DeploymentPlan::new(
                 event.key,

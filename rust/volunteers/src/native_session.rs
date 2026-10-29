@@ -16,6 +16,20 @@ pub struct Session {
 fn field(m: &impl Memory, object: u32, offset: u32) -> Option<u32> {
     m.read32(object.checked_add(offset)?)
 }
+/// Network-only posting gate. Slot 6 is ECX=queue, one stack command, RET 4.
+/// VAs A62EA0 (server.cpp) and A66B30 (client) were inspected independently.
+pub fn probe_queue(m: &impl Memory, base: u32) -> Option<Session> {
+    let session = capture(m, base)?;
+    if session.mode != SessionMode::Multiplayer {
+        return None;
+    }
+    let expected = match m.read32(session.queue)?.checked_sub(base)? {
+        0xA42728 => 0x662EA0,
+        0xA427C8 => 0x666B30,
+        _ => return None,
+    };
+    (field(m, m.read32(session.queue)?, 6 * 4)? == base.checked_add(expected)?).then_some(session)
+}
 pub fn capture(m: &impl Memory, base: u32) -> Option<Session> {
     let world_global = base.checked_add(0xE588E8)?;
     let world = m.read32(world_global)?;
@@ -148,5 +162,16 @@ mod tests {
         let mut data = fixture(2, 0xA42840);
         data.0.remove(&(0x2600000 + 0x180));
         assert!(capture(&data, 0x80000).is_none());
+    }
+    #[test]
+    fn mp_probe_uses_only_the_exact_host_or_client_post_slot() {
+        for (kind, table, post) in [(1, 0xA42728, 0x662EA0), (0, 0xA427C8, 0x666B30)] {
+            let mut data = fixture(kind, table);
+            data.0.insert(0x80000 + table + 24, 0x80000 + post);
+            assert!(probe_queue(&data, 0x80000).is_some());
+            data.0.insert(0x80000 + table + 24, 0x80000 + 0x668560);
+            assert!(probe_queue(&data, 0x80000).is_none());
+        }
+        assert!(probe_queue(&fixture(2, 0xA42840), 0x80000).is_none());
     }
 }

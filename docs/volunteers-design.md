@@ -1,3 +1,10 @@
+2026-10-29 MP implementation attempt:0.0.14 adds an opt-in native network
+variable-command probe and read-only all-country journal mirror. It does not
+activate multiplayer volunteer rules or issue troop commands. Complete peer/
+sender authority, deterministic policy activation and one order coordinator
+remain open. See report-volunteers-mp-sync-1029.md and instructions-volunteers-mp-sync.md.
+No UI layout/mechanic change to the SP0.0.13 reference.
+
 2026-10-29 tester-feedback candidate0.0.13: native layout retained with two
 history controls in existing forces-panel space; completed rows hidden by default,
 expired records pruned without removing wartime sight. Chooser lists route-verified

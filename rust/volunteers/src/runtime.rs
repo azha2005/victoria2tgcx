@@ -211,6 +211,9 @@ extern "C" fn after_tick() {
     let depth = DEPTH.fetch_sub(1, Ordering::Relaxed);
     if depth == 1 {
         let report = observe();
+        if let Some(context) = CONTEXT.get() {
+            crate::native_mp::tick(crate::native::Native { base: context.base });
+        }
         crate::native_gui::day_tick();
         if report {
             crate::native_hooks::diagnostics();
@@ -335,7 +338,7 @@ fn initialize_once(api: &V2ModApi) -> bool {
     };
     let _ = writeln!(
         log,
-        "TGCX Volunteers 0.0.13 development; explicit prototype mode and all native admission gates required"
+        "TGCX Volunteers 0.0.14 development; MP sync probe available; volunteer gameplay remains SP-gated"
     );
     if exe_hash(&exe).as_deref() != Some(EXE_SHA) {
         let _ = writeln!(
@@ -425,6 +428,17 @@ fn initialize_once(api: &V2ModApi) -> bool {
     // No inline instructions changed, so no instruction-cache flush is needed.
     if installed && restored {
         let prototype = gui_settings.prototype;
+        let mp_probe = gui_settings.mp_probe;
+        if let Some(digest) = exe_hash(&package.join("v2dll_mod.dll"))
+            .and_then(|digest| crate::mp_sync::fingerprint(&digest, gui_settings.max_brigades))
+        {
+            diagnostic(&format!(
+                "mp_sync_initialized fingerprint={digest} probe_requested={mp_probe} (journal mirror only; no MP gameplay authority)"
+            ));
+            crate::native_mp::initialize(mp_probe, digest);
+        } else {
+            diagnostic("MP sync diagnostic fingerprint unavailable; no MP probe initialized");
+        }
         let gui_installed =
             gui_settings.ui_preview && crate::native_gui::install(base, gui_settings);
         let load_fence = gui_installed && crate::native_lifecycle::install(base);

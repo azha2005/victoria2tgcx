@@ -9,7 +9,7 @@ from tgcx_pe import PE
 from tgcx_volunteers_gui import generate
 
 ROOT=Path(__file__).resolve().parent.parent
-VERSION='0.0.13'
+VERSION='0.0.14'
 FOLDER='tgcx_volunteers'
 SETTINGS='''# Conservative audit default: retain only the observer.
 # mode=preview explicitly opts into the untested diplomacy UI.
@@ -20,7 +20,11 @@ max_brigades=5
 # Log sampling cadence in executed tick commands, 1..30.
 sample_every_days=7
 '''
-README='''Volunteers - experimental SP prototype 0.0.13 - GAME CHECK PENDING
+README='''Volunteers - experimental SP prototype / MP sync probe 0.0.14 - GAME CHECK PENDING
+
+0.0.14: mode=mp_probe opts into a real native-network variable-command probe
+and read-only all-country journal comparison. It does not enable MP Send/Recall
+or combat. Use the dedicated plain MP sync-probe ZIP and its paired instructions.
 
 0.0.13: tester-feedback candidate. Retried journal binding and reset load/day
 state; hide completed history with Show/Clear controls, prune expired terminal

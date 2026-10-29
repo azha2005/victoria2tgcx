@@ -31,6 +31,7 @@ pub fn current_epoch() -> Option<u64> {
 extern "C" fn before(_: u32) {
     let _error = crate::native::LastError::preserve();
     LOADED.store(0, Ordering::Release);
+    crate::native_mp::invalidate();
     crate::native_hooks::publish(None, None);
     if DEPTH.fetch_add(1, Ordering::AcqRel) != 0
         || EPOCH

@@ -142,6 +142,7 @@ impl Native {
         let mut batch = Batch {
             native: *self,
             queue: self.queue()?,
+            probe_epoch: None,
             commands: Vec::new(),
         };
         for write in writes {
@@ -595,6 +596,7 @@ impl Native {
         let mut batch = Batch {
             native: *self,
             queue,
+            probe_epoch: None,
             commands: Vec::new(),
         };
         if plan.destination() == plan.source() {
@@ -675,6 +677,7 @@ impl Native {
         Some(Batch {
             native: *self,
             queue,
+            probe_epoch: None,
             commands: vec![command],
         })
     }
@@ -697,6 +700,50 @@ impl Native {
     pub fn local_queue_ready(&self) -> bool {
         self.queue().is_some()
     }
+    fn mp_probe_queue(&self, epoch: u64) -> Option<u32> {
+        let session = crate::native_session::probe_queue(self, self.base)?;
+        (crate::native_lifecycle::epoch(session.context) == Some(epoch) && epoch != 0)
+            .then_some(session.queue)
+    }
+    /// Restricted MP diagnostic command, deliberately separate from SP permits.
+    /// It can only write this protocol's fingerprint marker for the local player.
+    pub fn prepare_mp_probe(
+        &self,
+        epoch: u64,
+        donor: u32,
+        key: &str,
+        sequence: u32,
+    ) -> Option<Batch> {
+        let raw = sequence.checked_mul(1000)?;
+        crate::mp_sync::probe_value(key, raw)?;
+        let session = crate::native_session::probe_queue(self, self.base)?;
+        if self.field(session.world, 0xB60)? != donor {
+            return None;
+        }
+        let queue = self.mp_probe_queue(epoch)?;
+        let country = self.country(donor)?;
+        let tag = self.field(country, 0x1C)?;
+        if self.u32(country + 0x1DC)? != self.base + 0x9FBB60 {
+            return None;
+        }
+        let name = GameString::new(key);
+        let allocation = self.allocate(0x64)?;
+        type Create = unsafe extern "system" fn(u32, u32, u32, *const GameString, i32) -> u32;
+        let command = call(|| unsafe {
+            std::mem::transmute::<usize, Create>((self.base + 0x183900) as usize)(
+                allocation, tag, donor, &name, raw as i32,
+            )
+        })?;
+        if self.u32(command)? != self.base + 0xA0121C {
+            return None;
+        }
+        Some(Batch {
+            native: *self,
+            queue,
+            probe_epoch: Some(epoch),
+            commands: vec![command],
+        })
+    }
     pub fn receipt(
         &self,
         campaign: crate::mission::Campaign,
@@ -709,6 +756,7 @@ impl Native {
 pub struct Batch {
     native: Native,
     queue: u32,
+    probe_epoch: Option<u64>,
     commands: Vec<u32>,
 }
 impl Batch {
@@ -716,8 +764,39 @@ impl Batch {
     /// are posted together, never delayed across days while the target is empty.
     pub fn post(mut self) -> bool {
         // A permit captured earlier cannot cross a session replacement.
-        if self.native.queue() != Some(self.queue) {
+        let current_queue = self.probe_epoch.map_or_else(
+            || self.native.queue(),
+            |epoch| self.native.mp_probe_queue(epoch),
+        );
+        if current_queue != Some(self.queue) {
             return false;
+        }
+        if self.probe_epoch.is_some() {
+            let Some(command) = self
+                .commands
+                .first()
+                .copied()
+                .filter(|_| self.commands.len() == 1)
+            else {
+                return false;
+            };
+            let Some(session) = crate::native_session::probe_queue(&self.native, self.native.base)
+            else {
+                return false;
+            };
+            let Some(key) = self.native.string(command + 0x44, 96) else {
+                return false;
+            };
+            if self.native.u32(command) != Some(self.native.base + 0xA0121C)
+                || self.native.field(command, 0x40) != self.native.field(session.world, 0xB60)
+                || self
+                    .native
+                    .field(command, 0x60)
+                    .and_then(|raw| crate::mp_sync::probe_value(&key, raw))
+                    .is_none()
+            {
+                return false;
+            }
         }
         let Some(post) = self
             .native

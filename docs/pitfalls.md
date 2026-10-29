@@ -1349,3 +1349,26 @@ distance cap or teleport follows from a no-route result. Search advances on the
 existing callbacks/ticks, so pause responsiveness and many-army work still need
 runtime checks. Reopen on access changes; don't claim a cache alone authorizes
 deployment or an unmeasured performance gain. Same report.
+
+
+### P83 - A native network Post is not multiplayer volunteer authority
+
+2026-10-29. Host/client slot6 accepts native serialized commands, but its use
+does not synchronize a local registry or prove sender-country/peer membership.
+The0.0.14 probe posts only an own-country fingerprint variable and observes
+execution. It never mints a SinglePlayerPermit, publishes MP combat/access scope
+or posts unit orders. Treat command+34 as observed source metadata until mapping
+and authority are established in instructions. Fingerprints/mirrors cannot stand
+in for shared simulation-thread activation and one authority for derived orders.
+Read-only bootstrap must not replay saved intents. Raw ABI evidence and tests
+are in report-volunteers-mp-sync-1029.md; actual paired execution remains untested.
+
+### P84 - Comparing the wrong load or observation boundary invents OOS evidence
+
+2026-10-29. Logs can contain repeated dates and journal generations from several
+loads; one date can contain multiple committed states. Extract the last explicit
+load, require complete bootstrap with zero refused/missed observations, and
+flag differing same-date samples as ambiguous. Missing samples/receipts are
+unknown. A journal digest is not the engine CRC, and identical empty mirrors
+do not establish volunteer gameplay. Compare matching saves/runs/native logs
+before attributing the original OOS. Collector fixtures cover these exclusions.

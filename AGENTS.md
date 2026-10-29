@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P83**).
+number (**the next one is P85**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -502,6 +502,8 @@ number (**the next one is P83**).
 - **P80** Terminal history can retain wartime sight; prune only expired records, preserve monotonic IDs and refuse journal overflow before accepting an intent.
 - **P81** Rejecting one invalid province must not erase independent valid local-vision grants; keep global session checks and never guess unknown sight.
 - **P82** A route chooser must bound/fairly schedule native queries and treat cached results as UI-only; Send must revalidate current native permissions.
+- **P83** Native MP posting and matching marker fingerprints do not prove sender-country authority, complete peer membership or deterministic volunteer-policy activation.
+- **P84** OOS diagnostics must separate loads and ambiguous same-date samples; journal mirrors are not full native CRCs and missing receipts are not agreement.
 
 
 ## 9. Decisions

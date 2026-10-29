@@ -1,7 +1,13 @@
 # Volunteers prototype
 
+0.0.14: mode=mp_probe exercises native MP variable-command delivery, records
+execution receipts and mirrors all-country journals for OOS diagnosis. MP troop
+gameplay remains refused. It is not an OOS fix; paired execution is untested.
+See ../../docs/report-volunteers-mp-sync-1029.md and the corresponding instructions.
+SP0.0.13 ZIP and the accepted installed0.0.12 copy remain unchanged.
+
 Independent Rust Win32/x86 V2DLL plugin for the reference Victoria II3.04 EXE.
-Current source:0.0.13 feedback candidate (not yet tested in game). Donor owns/commands/supplies selected land brigades while
+Current source:0.0.14 MP sync probe (not tested in an actual MP game). Donor owns/commands/supplies selected land brigades while
 borrowing recipient war context only for registered volunteer operations. Native
 GUI, unit commands, save-backed mission journal, scoped combat/siege/access and
 local display vision are implemented. User checks confirm sending, battle and

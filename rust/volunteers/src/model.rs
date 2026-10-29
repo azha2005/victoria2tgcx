@@ -20,6 +20,7 @@ pub struct Settings {
     pub sample_every_days: u32,
     pub ui_preview: bool,
     pub prototype: bool,
+    pub mp_probe: bool,
 }
 
 impl Default for Settings {
@@ -29,6 +30,7 @@ impl Default for Settings {
             sample_every_days: 7,
             ui_preview: false,
             prototype: false,
+            mp_probe: false,
         }
     }
 }
@@ -54,9 +56,13 @@ impl Settings {
                     result.ui_preview = true;
                     result.prototype = true;
                 }
+                "mode" if value == "mp_probe" => {
+                    result.ui_preview = true;
+                    result.mp_probe = true;
+                }
                 "mode" => {
                     return Err(
-                        "mode must be observe, preview or prototype; native admission gates always apply"
+                        "mode must be observe, preview, prototype or mp_probe; native admission gates always apply"
                             .into(),
                     );
                 }
@@ -252,6 +258,8 @@ mod tests {
     }
     #[test]
     fn settings_cannot_enable_writes() {
+        let probe = Settings::parse("mode=mp_probe").unwrap();
+        assert!(probe.mp_probe && probe.ui_preview && !probe.prototype);
         for text in [
             "mode=send",
             "mode=observe\nmode=observe",

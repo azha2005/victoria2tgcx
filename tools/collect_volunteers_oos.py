@@ -11,6 +11,52 @@ WORK = (ROOT / 'work').resolve()
 MAX_FILE = 32 * 1024 * 1024
 
 
+def mp_trace(text):
+    """Last explicit load only. Raw receipts are evidence, not peer admission."""
+    text = text.rsplit('native_load_completed ', 1)[-1]
+    probes = [{'date': int(d), 'country': int(c), 'sequence': int(s),
+               'fingerprint': h, 'matches_local': same == 'true'}
+              for d,c,s,h,same in re.findall(
+                  r'mp_probe_execute date=Some\((\d+)\) country=(\d+) sequence=(\d+) '
+                  r'fingerprint=([0-9a-f]{64}) matches_local=(true|false)', text)]
+    samples = [{'date': int(d), 'journals': int(n), 'digest': h,
+                'bootstrap_complete': complete == 'true',
+                'refused': int(refused), 'missed': int(missed)}
+               for d,n,h,complete,refused,missed in re.findall(
+                   r'mp_sync_sample date=(\d+) journals=(\d+) digest=([0-9a-f]{64}) '
+                   r'bootstrap_complete=(true|false) refused=(\d+) missed=(\d+)', text)]
+    return {'probes': probes, 'samples': samples}
+
+
+def compare_mp(a, b):
+    def receipts(report):
+        return {(r['country'],r['sequence'],r['fingerprint']) for trace in report.get('mp_traces', {}).values()
+                for r in trace['probes']}
+    def samples(report):
+        result = {}
+        for trace in report.get('mp_traces', {}).values():
+            for row in trace['samples']:
+                if row['bootstrap_complete'] and row['refused'] == row['missed'] == 0:
+                    result.setdefault(row['date'], set()).add((row['journals'], row['digest']))
+        return result
+    left,right = receipts(a),receipts(b)
+    sa,sb = samples(a),samples(b)
+    common = sorted(set(sa) & set(sb))
+    unambiguous = [day for day in common if len(sa[day]) == len(sb[day]) == 1]
+    mismatch = [day for day in unambiguous if sa[day] != sb[day]]
+    return {'common_execution_receipts': len(left & right),
+            'receipts_only_host': [list(row) for row in sorted(left-right)],
+            'receipts_only_client': [list(row) for row in sorted(right-left)],
+            'fingerprint_refusals': {label: [r for trace in report.get('mp_traces', {}).values()
+                                             for r in trace['probes'] if not r['matches_local']]
+                                     for label,report in [('host',a),('client',b)]},
+            'comparable_sample_dates': len(unambiguous),
+            'ambiguous_sample_dates': [d for d in common if d not in unambiguous],
+            'first_mirror_digest_mismatch': mismatch[0] if mismatch else None,
+            'mirror_digest_mismatch_dates': mismatch,
+            'limits': 'Compare the same save/run and exact dates. These are plugin journal digests, not full engine CRCs or multiplayer gameplay approval.'}
+
+
 def sha(path):
     with path.open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
@@ -55,7 +101,7 @@ def collect(game, output, profile=None, save=None):
     output.mkdir(parents=True)
     report = {'game': str(game), 'coverage': 'listed binaries/descriptors/settings/logs only, not a full mod checksum',
               'private': True, 'files': {}, 'skipped': [], 'registry_records': {},
-              'journal_commits': []}
+              'journal_commits': [], 'mp_traces': {}}
     for source, name in sorted(sources, key=lambda item: item[1]):
         size = source.stat().st_size
         if size > MAX_FILE:
@@ -80,6 +126,8 @@ def collect(game, output, profile=None, save=None):
             report['registry_records'][name] = sorted(rows)
         if source.name.lower() == 'tgcx_volunteers.log':
             text = source.read_text(encoding='utf-8', errors='replace')
+            report['mp_traces'][name] = mp_trace(text)
+            text = text.rsplit('native_load_completed ', 1)[-1]
             report['journal_commits'].extend(
                 {'country': int(c), 'head': int(h), 'sha256': digest}
                 for c, h, digest in re.findall(
@@ -115,6 +163,7 @@ def compare(host, client):
     jb, cb = journal(b)
     common = sorted(set(ja) & set(jb))
     return {'artifact_differences': differences,
+            'mp_sync': compare_mp(a,b),
             'both_have_local_registry_evidence': registry_available,
             'local_registry_records_match': (left == right) if registry_available else None,
             'common_journal_commits': len(common),

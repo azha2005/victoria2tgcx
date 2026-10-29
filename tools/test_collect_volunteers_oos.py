@@ -7,6 +7,25 @@ import collect_volunteers_oos as collector
 
 
 class CollectorTests(unittest.TestCase):
+    def test_mp_receipts_and_first_unambiguous_mismatch_exclude_failed_or_old_loads(self):
+        a,b='a'*64,'b'*64
+        def sample(day,digest,extra=''):
+            return f'mp_sync_sample date={day} journals=1 digest={digest} bootstrap_complete=true refused=0 missed=0 {extra}\n'
+        receipt=f'mp_probe_execute date=Some(24) country=1 sequence=2 fingerprint={a} matches_local=true\n'
+        old=sample(1,b)+'native_load_completed valid=true\n'
+        host=collector.mp_trace(old+receipt+sample(24,a)+sample(48,a)+sample(48,b)+sample(72,a))
+        client=collector.mp_trace(receipt+sample(24,a)+sample(48,a)+sample(72,b))
+        result=collector.compare_mp({'mp_traces':{'one':host}}, {'mp_traces':{'two':client}})
+        self.assertEqual(result['common_execution_receipts'],1)
+        self.assertEqual(result['ambiguous_sample_dates'],[48])
+        self.assertEqual(result['first_mirror_digest_mismatch'],72)
+        self.assertEqual(result['comparable_sample_dates'],2)
+        self.assertEqual(collector.compare_mp({}, {})['first_mirror_digest_mismatch'],None)
+        bad=collector.mp_trace(receipt.replace('matches_local=true','matches_local=false')+
+                               sample(24,a).replace('refused=0','refused=1'))
+        result=collector.compare_mp({'mp_traces':{'x':bad}}, {'mp_traces':{'x':client}})
+        self.assertEqual(result['comparable_sample_dates'],0)
+        self.assertEqual(len(result['fingerprint_refusals']['host']),1)
     def test_current_core_plugins_and_logs_are_not_confused_with_legacy(self):
         collector.WORK.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=collector.WORK) as temp:

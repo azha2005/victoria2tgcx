@@ -7,6 +7,7 @@ pub mod engine_store;
 pub mod lifecycle;
 pub mod mission;
 pub mod model;
+pub mod mp_sync;
 pub mod native_combat;
 pub mod native_session;
 pub mod native_vision;
@@ -37,6 +38,8 @@ mod native_journal;
 #[cfg(all(windows, target_arch = "x86"))]
 mod native_lifecycle;
 #[cfg(all(windows, target_arch = "x86"))]
+mod native_mp;
+#[cfg(all(windows, target_arch = "x86"))]
 mod native_route;
 #[cfg(all(windows, target_arch = "x86"))]
 mod native_signatures;
@@ -54,5 +57,5 @@ mod sha256;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn tgcx_VolunteersVersion() -> *const std::ffi::c_char {
-    c"TGCX Volunteers 0.0.13 development".as_ptr()
+    c"TGCX Volunteers 0.0.14 development".as_ptr()
 }

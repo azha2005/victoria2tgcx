@@ -1,5 +1,11 @@
 # VOL-OOS: diagnose the reported divergence
 
+2026-10-29 current follow-up: the user explicitly requests MP/OOS work.
+The0.0.14 native network probe is ready for paired testing under
+instructions-volunteers-mp-sync.md. Only this restricted diagnostic command is
+admitted in MP; volunteer Send/Recall/scopes remain refused. The original OOS
+remains unreproduced. Historical steps below retain their investigative value.
+
 2026-10-29. Source finding: report-volunteers-oos-1029.md; pitfall P69.
 
 1. Preserve original Maxioten source/state/config. Do not change a live MP game,
