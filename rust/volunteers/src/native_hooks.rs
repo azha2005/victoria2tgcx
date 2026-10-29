@@ -30,6 +30,9 @@ static SIEGE_JOIN_GRANTED: AtomicU32 = AtomicU32::new(0);
 static VISION_REFUSED: AtomicU32 = AtomicU32::new(0);
 static VISION_EMPTY: AtomicU32 = AtomicU32::new(0);
 static READY: AtomicBool = AtomicBool::new(false);
+// Assembly reads this aligned word only to skip the plugin when no scope is
+// published. A nonzero value never grants permission; Rust retains every gate.
+static ACTIVE: AtomicU32 = AtomicU32::new(0);
 struct Published {
     registry: Registry,
     permit: SinglePlayerPermit,
@@ -37,6 +40,7 @@ struct Published {
 }
 static SCOPE: OnceLock<RwLock<Option<Published>>> = OnceLock::new();
 pub fn publish(registry: Option<&Registry>, permit: Option<SinglePlayerPermit>) {
+    ACTIVE.store(0, Ordering::Release);
     if let Ok(mut scope) = SCOPE.get_or_init(|| RwLock::new(None)).try_write() {
         *scope = registry
             .filter(|r| r.has_native_scope())
@@ -46,6 +50,7 @@ pub fn publish(registry: Option<&Registry>, permit: Option<SinglePlayerPermit>) 
                 permit: p,
                 thread: unsafe { crate::native::GetCurrentThreadId() },
             });
+        ACTIVE.store(u32::from(scope.is_some()), Ordering::Release);
     }
 }
 fn with_scope<R>(f: impl FnOnce(Native, &Registry, SinglePlayerPermit) -> Option<R>) -> Option<R> {
@@ -91,6 +96,9 @@ fn result(native: u32, decision: Decision) -> u32 {
 }
 extern "C" fn pair(left: u32, right: u32, province: u32, native: u32) -> u32 {
     let _error = crate::native::LastError::preserve();
+    let _timing = crate::timing::PAIR.begin();
+    #[cfg(test)]
+    tests::PAIR_CALLBACKS.fetch_add(1, Ordering::Relaxed);
     with_filtered_scope(
         |n, r| crate::native_combat::pair_references_loan(&n, r, left, right) == Some(true),
         |n, r, p| {
@@ -113,6 +121,7 @@ unsafe fn side_native(header: *const u32, army: u32) -> u32 {
 }
 extern "C" fn side(header: u32, candidate: u32, native: u32) -> u32 {
     let _error = crate::native::LastError::preserve();
+    let _timing = crate::timing::SIDE.begin();
     with_filtered_scope(
         |n, r| {
             if crate::native_combat::references_loan(&n, r, candidate) == Some(true) {
@@ -159,6 +168,7 @@ extern "C" fn side(header: u32, candidate: u32, native: u32) -> u32 {
 }
 extern "C" fn access(army: u32, province: u32, native: u32) -> u32 {
     let _error = crate::native::LastError::preserve();
+    let _timing = crate::timing::ACCESS.begin();
     if native as u8 != 0 {
         return native;
     }
@@ -254,6 +264,7 @@ extern "C" fn exile_access(edi: u32, esi: u32, province: u32, caller: u32, nativ
     #[cfg(test)]
     tests::capture_args(edi, esi, province, caller);
     let _error = crate::native::LastError::preserve();
+    let _timing = crate::timing::EXILE.begin();
     let base = BASE.load(Ordering::Acquire);
     let army = match caller.wrapping_sub(base) {
         0x1C8288 | 0x1C8314 => edi,
@@ -281,6 +292,7 @@ extern "C" fn exile_access(edi: u32, esi: u32, province: u32, caller: u32, nativ
 #[unsafe(naked)]
 unsafe extern "C" fn exile_access_hook() {
     std::arch::naked_asm!(
+    "pushfd","cmp dword ptr [{active}],0","jne 9f","popfd","jmp dword ptr [{original}]","9:","popfd",
     "pushfd","push eax","mov eax,[{base}]","add eax,0x1C8288","cmp [esp+8],eax","je 5f",
     "mov eax,[{base}]","add eax,0x1C8314","cmp [esp+8],eax","je 5f",
     "mov eax,[{base}]","add eax,0x1DBE62","cmp [esp+8],eax","je 5f",
@@ -292,12 +304,13 @@ unsafe extern "C" fn exile_access_hook() {
     "pushfd","pushad","mov ebx,esp","sub esp,528","and esp,-16","fxsave [esp]","fninit","mov dword ptr [esp+512],0x1F80","ldmxcsr [esp+512]","cld",
     "push dword ptr [ebx+28]","push dword ptr [ebx+48]","push dword ptr [ebx+36]","push dword ptr [ebx+40]","push dword ptr [ebx+44]","call {callback}","add esp,20","mov [ebx+28],eax",
     "fxrstor [esp]","mov esp,ebx","popad","popfd","lea esp,[esp+12]","ret 4",
-    base=sym BASE,original=sym EXILE_ACCESS,callback=sym exile_access);
+    base=sym BASE,active=sym ACTIVE,original=sym EXILE_ACCESS,callback=sym exile_access);
 }
 extern "C" fn siege_permission(army: u32, province: u32, native: u32) -> u32 {
     #[cfg(test)]
     tests::capture_args(army, province, 0, 0);
     let _error = crate::native::LastError::preserve();
+    let _timing = crate::timing::SIEGE.begin();
     if native as u8 != 0 {
         return native;
     }
@@ -329,14 +342,16 @@ extern "C" fn siege_permission(army: u32, province: u32, native: u32) -> u32 {
 #[unsafe(naked)]
 unsafe extern "C" fn siege_hook() {
     std::arch::naked_asm!(
+    "pushfd","cmp dword ptr [{active}],0","jne 9f","popfd","jmp dword ptr [{original}]","9:","popfd",
     "push esi","push dword ptr [esp+8]","call dword ptr [{original}]",
     "pushfd","pushad","mov ebx,esp","sub esp,528","and esp,-16","fxsave [esp]","fninit","mov dword ptr [esp+512],0x1F80","ldmxcsr [esp+512]","cld",
     "push dword ptr [ebx+28]","push dword ptr [ebx+36]","push dword ptr [ebx+44]","call {callback}","add esp,12","mov [ebx+28],eax",
     "fxrstor [esp]","mov esp,ebx","popad","popfd","lea esp,[esp+4]","ret 4",
-    original=sym SIEGE,callback=sym siege_permission);
+    active=sym ACTIVE,original=sym SIEGE,callback=sym siege_permission);
 }
 extern "C" fn siege_join(side: u32, army: u32, native: u32) -> u32 {
     let _error = crate::native::LastError::preserve();
+    let _timing = crate::timing::JOIN.begin();
     if native as u8 != 0 {
         return native;
     }
@@ -404,11 +419,12 @@ extern "C" fn siege_join(side: u32, army: u32, native: u32) -> u32 {
 #[unsafe(naked)]
 unsafe extern "C" fn siege_join_hook() {
     std::arch::naked_asm!(
+    "pushfd","cmp dword ptr [{active}],0","jne 9f","popfd","jmp dword ptr [{original}]","9:","popfd",
     "push ecx","push dword ptr [esp+8]","call dword ptr [{original}]",
     "pushfd","pushad","mov ebx,esp","sub esp,528","and esp,-16","fxsave [esp]","fninit","mov dword ptr [esp+512],0x1F80","ldmxcsr [esp+512]","cld",
     "push dword ptr [ebx+28]","push dword ptr [ebx+44]","push dword ptr [ebx+36]","call {callback}","add esp,12","mov [ebx+28],eax",
     "fxrstor [esp]","mov esp,ebx","popad","popfd","lea esp,[esp+4]","ret 4",
-    original=sym SIEGE_JOIN,callback=sym siege_join);
+    active=sym ACTIVE,original=sym SIEGE_JOIN,callback=sym siege_join);
 }
 pub fn diagnostics() {
     crate::runtime::diagnostic(&format!(
@@ -423,6 +439,11 @@ pub fn diagnostics() {
         SIEGE_JOIN_GRANTED.load(Ordering::Relaxed),
         VISION_REFUSED.load(Ordering::Relaxed),
         VISION_EMPTY.load(Ordering::Relaxed)
+    ));
+    crate::runtime::diagnostic(&format!(
+        "plugin_timing active={} {} (cumulative; sampled Rust callback wall time, excludes native originals and assembly save/restore)",
+        ACTIVE.load(Ordering::Acquire),
+        crate::timing::report()
     ));
 }
 pub fn ready() -> bool {
@@ -456,6 +477,7 @@ fn write_ui(address: u32, bytes: &[u8]) -> bool {
 }
 extern "C" fn vision(world: u32) {
     let _error = crate::native::LastError::preserve();
+    let _timing = crate::timing::VISION.begin();
     let _ = with_scope(|n, r, p| {
         VISION_RUNS.fetch_add(1, Ordering::Relaxed);
         let fronts = r
@@ -511,11 +533,12 @@ extern "C" fn vision(world: u32) {
 #[unsafe(naked)]
 unsafe extern "C" fn vision_hook() {
     std::arch::naked_asm!(
+    "pushfd","cmp dword ptr [{active}],0","jne 9f","popfd","jmp dword ptr [{original}]","9:","popfd",
     "push dword ptr [esp+4]","call dword ptr [{original}]",
     "pushfd","pushad","mov ebx,esp","sub esp,528","and esp,-16","fxsave [esp]","fninit","mov dword ptr [esp+512],0x1F80","ldmxcsr [esp+512]","cld",
     "push dword ptr [ebx+40]","call {callback}","add esp,4",
     "fxrstor [esp]","mov esp,ebx","popad","popfd","ret 4",
-    original=sym VISION,callback=sym vision);
+    active=sym ACTIVE,original=sym VISION,callback=sym vision);
 }
 
 // FUN_005CBF60: ECX=left,EAX=right,stack=province,AL result,RET4.
@@ -524,31 +547,34 @@ unsafe extern "C" fn vision_hook() {
 #[unsafe(naked)]
 unsafe extern "C" fn pair_hook() {
     std::arch::naked_asm!(
+    "pushfd","cmp dword ptr [{active}],0","jne 9f","popfd","jmp dword ptr [{original}]","9:","popfd",
     "push ecx","push eax","push dword ptr [esp+12]","call dword ptr [{original}]",
     "pushfd","pushad","mov ebx,esp","sub esp,528","and esp,-16","fxsave [esp]","fninit","mov dword ptr [esp+512],0x1F80","ldmxcsr [esp+512]","cld",
     "push dword ptr [ebx+28]","push dword ptr [ebx+48]","push dword ptr [ebx+36]","push dword ptr [ebx+40]","call {callback}","add esp,16","mov [ebx+28],eax",
     "fxrstor [esp]","mov esp,ebx","popad","popfd","lea esp,[esp+8]","ret 4",
-    original=sym PAIR,callback=sym pair);
+    active=sym ACTIVE,original=sym PAIR,callback=sym pair);
 }
 // FUN_005DBB50: EAX=list header,stack=candidate,AL result,RET4.
 #[unsafe(naked)]
 unsafe extern "C" fn side_hook() {
     std::arch::naked_asm!(
+    "pushfd","cmp dword ptr [{active}],0","jne 9f","popfd","jmp dword ptr [{original}]","9:","popfd",
     "push eax","push dword ptr [esp+8]","call dword ptr [{original}]",
     "pushfd","pushad","mov ebx,esp","sub esp,528","and esp,-16","fxsave [esp]","fninit","mov dword ptr [esp+512],0x1F80","ldmxcsr [esp+512]","cld",
     "push dword ptr [ebx+28]","push dword ptr [ebx+44]","push dword ptr [ebx+36]","call {callback}","add esp,12","mov [ebx+28],eax",
     "fxrstor [esp]","mov esp,ebx","popad","popfd","lea esp,[esp+4]","ret 4",
-    original=sym SIDE,callback=sym side);
+    active=sym ACTIVE,original=sym SIDE,callback=sym side);
 }
 // FUN_005D5E30: ECX=army,stack=province,AL result,RET4.
 #[unsafe(naked)]
 unsafe extern "C" fn access_hook() {
     std::arch::naked_asm!(
+    "pushfd","cmp dword ptr [{active}],0","jne 9f","popfd","jmp dword ptr [{original}]","9:","popfd",
     "push ecx","push dword ptr [esp+8]","call dword ptr [{original}]",
     "pushfd","pushad","mov ebx,esp","sub esp,528","and esp,-16","fxsave [esp]","fninit","mov dword ptr [esp+512],0x1F80","ldmxcsr [esp+512]","cld",
     "push dword ptr [ebx+28]","push dword ptr [ebx+44]","push dword ptr [ebx+36]","call {callback}","add esp,12","mov [ebx+28],eax",
     "fxrstor [esp]","mov esp,ebx","popad","popfd","lea esp,[esp+4]","ret 4",
-    original=sym ACCESS,callback=sym access);
+    active=sym ACTIVE,original=sym ACCESS,callback=sym access);
 }
 
 #[link(name = "kernel32")]
@@ -718,6 +744,7 @@ mod tests {
     use super::*;
     use std::sync::Mutex;
     static LOCK: Mutex<()> = Mutex::new(());
+    pub(super) static PAIR_CALLBACKS: AtomicU32 = AtomicU32::new(0);
     static SPY_COUNT: AtomicU32 = AtomicU32::new(0);
     static SPY_PROVINCE: AtomicU32 = AtomicU32::new(0);
     static SPY_COUNTRY: AtomicU32 = AtomicU32::new(0);
@@ -726,6 +753,76 @@ mod tests {
     static SPY_CALLBACK_PROVINCE: AtomicU32 = AtomicU32::new(0);
     static SPY_CALLBACK_CALLER: AtomicU32 = AtomicU32::new(0);
     static SPY_FLAGS: AtomicU32 = AtomicU32::new(0);
+    #[unsafe(naked)]
+    unsafe extern "C" fn pair_timing_spy() {
+        std::arch::naked_asm!("mov eax,0xAABBCC01", "cmp eax,eax", "ret 4");
+    }
+    #[test]
+    fn inactive_wrappers_keep_native_results_flags_and_skip_callbacks() {
+        let _lock = LOCK.lock().unwrap();
+        let active = ACTIVE.swap(0, Ordering::AcqRel);
+        let old_pair = PAIR.swap(pair_timing_spy as *const () as usize, Ordering::AcqRel);
+        let before = PAIR_CALLBACKS.load(Ordering::Relaxed);
+        // Invalid fake pointers must never be read on the inactive route.
+        for switch in [0, 1, 0] {
+            ACTIVE.store(switch, Ordering::Release);
+            let result: u32;
+            let flags: u32;
+            unsafe {
+                std::arch::asm!("push 3", "call {hook}", "pushfd", "pop edx",
+                    hook=sym pair_hook, inlateout("eax") 2u32 => result,
+                    in("ecx") 1u32, lateout("edx") flags, clobber_abi("C"));
+            }
+            assert_eq!(result, 0xAABBCC01);
+            assert_ne!(flags & 0x40, 0);
+        }
+        assert_eq!(PAIR_CALLBACKS.load(Ordering::Relaxed) - before, 1);
+        let idle_slots = [
+            (&SIDE, side_hook as *const () as usize),
+            (&ACCESS, access_hook as *const () as usize),
+            (&SIEGE, siege_hook as *const () as usize),
+            (&SIEGE_JOIN, siege_join_hook as *const () as usize),
+            (&EXILE_ACCESS, exile_access_hook as *const () as usize),
+            (&VISION, vision_hook as *const () as usize),
+        ];
+        for (slot, hook) in idle_slots {
+            let old = slot.swap(pair_timing_spy as *const () as usize, Ordering::AcqRel);
+            let result: u32;
+            let flags: u32;
+            unsafe {
+                std::arch::asm!("push 3", "call {hook}", "pushfd", "pop edx",
+                    hook=in(reg) hook, inlateout("eax") 2u32 => result,
+                    in("ecx") 1u32, lateout("edx") flags, clobber_abi("C"));
+            }
+            assert_eq!(result, 0xAABBCC01);
+            assert_ne!(flags & 0x40, 0);
+            slot.store(old, Ordering::Release);
+        }
+        PAIR.store(old_pair, Ordering::Release);
+        ACTIVE.store(active, Ordering::Release);
+    }
+    #[test]
+    #[ignore = "explicit full-wrapper benchmark on a fake native function"]
+    fn idle_pair_wrapper_benchmark() {
+        let _lock = LOCK.lock().unwrap();
+        let old = PAIR.swap(pair_timing_spy as *const () as usize, Ordering::AcqRel);
+        let started = std::time::Instant::now();
+        for _ in 0..1_000_000 {
+            let result: u32;
+            unsafe {
+                std::arch::asm!("push 0x55556666", "call {hook}", hook=sym pair_hook,
+                    inlateout("eax") 0x33334444u32 => result,
+                    in("ecx") 0x11112222u32, clobber_abi("C"));
+            }
+            std::hint::black_box(result);
+            assert_eq!(result, 0xAABBCC01);
+        }
+        println!(
+            "IDLE_PAIR_WRAPPER loops=1000000 elapsed_ns={}",
+            started.elapsed().as_nanos()
+        );
+        PAIR.store(old, Ordering::Release);
+    }
     pub(super) fn capture_args(edi: u32, esi: u32, province: u32, caller: u32) {
         SPY_EDI.store(edi, Ordering::Relaxed);
         SPY_ESI.store(esi, Ordering::Relaxed);
@@ -781,6 +878,7 @@ mod tests {
     #[test]
     fn exile_wrapper_keeps_register_arguments_native_result_flags_and_ret4() {
         let _lock = LOCK.lock().unwrap();
+        let old_active = ACTIVE.swap(1, Ordering::AcqRel);
         let old = EXILE_ACCESS.swap(exile_spy as *const () as usize, Ordering::AcqRel);
         let old_base = BASE.load(Ordering::Acquire);
         let value = unsafe { invoke_exile() };
@@ -799,6 +897,7 @@ mod tests {
         assert_ne!(SPY_FLAGS.load(Ordering::Relaxed) & 0x40, 0); // native ZF
         BASE.store(old_base, Ordering::Release);
         EXILE_ACCESS.store(old, Ordering::Release);
+        ACTIVE.store(old_active, Ordering::Release);
     }
     #[unsafe(naked)]
     unsafe extern "C" fn siege_spy() {
@@ -816,6 +915,7 @@ mod tests {
     #[test]
     fn siege_wrapper_preserves_esi_province_stack_army_and_ret4() {
         let _lock = LOCK.lock().unwrap();
+        let old_active = ACTIVE.swap(1, Ordering::AcqRel);
         let old = SIEGE.swap(siege_spy as *const () as usize, Ordering::AcqRel);
         let result = unsafe { invoke_siege() };
         assert_eq!(result, 0xEEFFAA01);
@@ -824,6 +924,7 @@ mod tests {
         assert_eq!(SPY_EDI.load(Ordering::Relaxed), 0x55556666);
         assert_eq!(SPY_ESI.load(Ordering::Relaxed), 0x77778888);
         SIEGE.store(old, Ordering::Release);
+        ACTIVE.store(old_active, Ordering::Release);
     }
     #[unsafe(naked)]
     unsafe extern "C" fn fortress_spy() {
@@ -835,6 +936,7 @@ mod tests {
     #[test]
     fn fortress_join_wrapper_preserves_ecx_side_stack_army_and_ret4() {
         let _lock = LOCK.lock().unwrap();
+        let old_active = ACTIVE.swap(1, Ordering::AcqRel);
         let old = SIEGE_JOIN.swap(fortress_spy as *const () as usize, Ordering::AcqRel);
         let result: u32;
         unsafe {
@@ -845,5 +947,6 @@ mod tests {
         assert_eq!(SPY_PROVINCE.load(Ordering::Relaxed), 0x77778888);
         assert_eq!(SPY_COUNTRY.load(Ordering::Relaxed), 0x55556666);
         SIEGE_JOIN.store(old, Ordering::Release);
+        ACTIVE.store(old_active, Ordering::Release);
     }
 }

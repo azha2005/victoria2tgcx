@@ -26,7 +26,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             max_brigades: 5,
-            sample_every_days: 1,
+            sample_every_days: 7,
             ui_preview: false,
             prototype: false,
         }

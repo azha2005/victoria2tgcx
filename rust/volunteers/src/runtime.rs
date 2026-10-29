@@ -64,6 +64,7 @@ struct Observation {
     settings: Settings,
     calls: u64,
     last: Option<Snapshot>,
+    last_stamp: Option<(u32, u32)>,
     first_thread: Option<u32>,
 }
 pub(crate) fn diagnostic(message: &str) {
@@ -209,47 +210,64 @@ extern "C" fn after_tick() {
     let error = unsafe { GetLastError() };
     let depth = DEPTH.fetch_sub(1, Ordering::Relaxed);
     if depth == 1 {
-        observe();
+        let report = observe();
         crate::native_gui::day_tick();
-        crate::native_hooks::diagnostics();
+        if report {
+            crate::native_hooks::diagnostics();
+        }
     } else {
         SKIPPED.fetch_add(1, Ordering::Relaxed);
     }
     unsafe { SetLastError(error) };
 }
-fn observe() {
+fn observe() -> bool {
+    let _timing = crate::timing::OBSERVER.begin();
     let Some(context) = CONTEXT.get() else {
-        return;
+        return false;
     };
     let Ok(mut s) = context.state.try_lock() else {
         SKIPPED.fetch_add(1, Ordering::Relaxed);
-        return;
+        return false;
     };
     s.calls = s.calls.saturating_add(1);
     let thread = unsafe { GetCurrentThreadId() };
     let changed_thread = s.first_thread.is_some_and(|t| t != thread);
     s.first_thread.get_or_insert(thread);
-    let Some(sample) = snapshot::capture(&LiveMemory, context.base) else {
+    let memory = crate::native::Native { base: context.base };
+    let stamp = memory
+        .u32(context.base + 0xE588E8)
+        .and_then(|world| Some((world, memory.field(world, 0xB0C)?)));
+    let transition =
+        s.last_stamp
+            .zip(stamp)
+            .is_some_and(|((old_world, old_date), (world, date))| {
+                old_world != world || i64::from(date) - i64::from(old_date) != 24
+            });
+    s.last_stamp = stamp;
+    let should_log = s.calls == 1
+        || s.calls % u64::from(s.settings.sample_every_days) == 0
+        || transition
+        || changed_thread;
+    if !should_log {
+        return false;
+    }
+    // Diagnostic snapshots never authorize gameplay. Only sampled days build
+    // the country/selection inventory, using the existing bounded SEH adapter.
+    let Some(sample) = snapshot::capture(&memory, context.base) else {
         let calls = s.calls;
         let _ = writeln!(
             s.log,
             "sample_unavailable command={calls} thread={thread} (world/UI transition or bounded-read refusal)"
         );
         let _ = s.log.flush();
-        return;
+        return true;
     };
     let previous = s.last.as_ref();
     let date_delta = previous
         .filter(|p| p.world == sample.world)
         .map(|p| i64::from(sample.date) - i64::from(p.date));
-    let transition =
-        previous.is_some_and(|p| p.world != sample.world) || date_delta.is_some_and(|d| d != 24);
-    let should_log = s.calls == 1
-        || s.calls % u64::from(s.settings.sample_every_days) == 0
-        || transition
-        || changed_thread;
     if should_log {
-        let session = crate::native_session::capture(&LiveMemory, context.base);
+        let session = crate::native_session::capture(&memory, context.base);
         let calls = s.calls;
         let max = MAX_DEPTH.load(Ordering::Relaxed);
         let skipped = SKIPPED.load(Ordering::Relaxed);
@@ -283,6 +301,7 @@ fn observe() {
         let _ = s.log.flush();
     }
     s.last = Some(sample);
+    true
 }
 
 fn initialize(api: &V2ModApi) -> bool {
@@ -316,7 +335,7 @@ fn initialize_once(api: &V2ModApi) -> bool {
     };
     let _ = writeln!(
         log,
-        "TGCX Volunteers 0.0.11 development; explicit prototype mode and all native admission gates required"
+        "TGCX Volunteers 0.0.12 development; explicit prototype mode and all native admission gates required"
     );
     if exe_hash(&exe).as_deref() != Some(EXE_SHA) {
         let _ = writeln!(
@@ -377,6 +396,7 @@ fn initialize_once(api: &V2ModApi) -> bool {
                 settings,
                 calls: 0,
                 last: None,
+                last_stamp: None,
                 first_thread: None,
             }),
         })

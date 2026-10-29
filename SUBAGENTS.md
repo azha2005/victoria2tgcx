@@ -1,5 +1,7 @@
 # SUBAGENTS.md — The project, in cards
 
+2026-10-29 VOL-OPT follow-up: user rejects 0.0.11 performance. 0.0.12 installed; V2DLL state/RNG probes disabled only in test copy (25.35 MB latest state log), inactive assembly bypass and sampled timings added. 45 Rust/six package checks and 96 guards pass; actual game timing pending. `docs/report-volunteers-performance-probes-1029.md`; steps `docs/instructions-volunteers-performance-probes.md`.
+
 2026-10-29 VOL-OPT checkpoint: implementation `decd3cd` committed and pushed to origin/master; remote hash verified. Optimized0.0.11 installed, game timing pending. `docs/report-volunteers-checkpoint-1029.md`.
 
 2026-10-29 VOL-OPT:0.0.10 siege progress accepted.0.0.11 negative callback filters and compact closed-panel snapshots installed with rollback.43 Rust/five package checks and96 guards pass; controlled helper medians improve10.7x/176.5x, not game FPS. Relevant fresh gates retained; source commit/push requested. `docs/report-volunteers-optimization-1029.md`; steps `docs/instructions-volunteers-optimization.md`.

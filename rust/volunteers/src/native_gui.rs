@@ -30,6 +30,8 @@ fn fresh_campaign() -> Option<crate::mission::Campaign> {
 }
 
 struct Binding {
+    host: u32,
+    name: String,
     button: u32,
     _glue: Box<[u8; 44]>,
 }
@@ -399,7 +401,8 @@ impl Ui {
                     )
                 });
             }
-        } else if !show && n.expected_slot(object, 9, 0x5E4030) {
+        } else if !show && n.byte(object + 0x67) != Some(0) && n.expected_slot(object, 9, 0x5E4030)
+        {
             let _ = call(|| unsafe {
                 std::mem::transmute::<usize, Zero>((n.base + 0x5E4030) as usize)(object, 0)
             });
@@ -422,12 +425,13 @@ impl Ui {
                 std::mem::transmute::<usize, Zero>((n.base + 0x5E2FC0) as usize)(window, 0)
             });
         }
+        let packed = x as u32 | ((y as u32) << 16);
+        // Native position is read afresh; no cached layout/visibility authority.
+        if n.field(window, 0x250) == Some(packed) {
+            return;
+        }
         let _ = call(|| unsafe {
-            std::mem::transmute::<usize, Set>((n.base + 0x5E3BA0) as usize)(
-                window,
-                0,
-                x as u32 | ((y as u32) << 16),
-            )
+            std::mem::transmute::<usize, Set>((n.base + 0x5E3BA0) as usize)(window, 0, packed)
         });
     }
     fn screen(&self) -> Option<(f32, f32, i32, i32)> {
@@ -507,6 +511,16 @@ impl Ui {
         }
     }
     fn bind(&mut self, host: u32, name: &str, callback: usize) {
+        // Our immutable factory subtree is retired as a unit. An existing
+        // binding needs no native name search or second AddObserver every frame.
+        if self.live_window(host)
+            && self
+                .bindings
+                .iter()
+                .any(|b| b.host == host && b.name == name)
+        {
+            return;
+        }
         let Some(button) = self.find(host, 13, 0x5E4C80, name) else {
             return;
         };
@@ -531,6 +545,8 @@ impl Ui {
         // Retain even if AddObserver faults after registering the pointer.
         let pointer = glue.as_ptr();
         self.bindings.push(Binding {
+            host,
+            name: name.to_owned(),
             button,
             _glue: glue,
         });
@@ -994,6 +1010,7 @@ fn sync_checkpoint(native: Native, permit: crate::session::SinglePlayerPermit) -
 }
 extern "C" fn updated(view: u32) {
     let _error = crate::native::LastError::preserve();
+    let _timing = crate::timing::GUI.begin();
     if let Some(lock) = UI.get()
         && let Ok(mut ui) = lock.try_lock()
     {
@@ -1030,6 +1047,7 @@ extern "C" fn destroyed(view: u32) {
 
 pub fn day_tick() {
     let _error = crate::native::LastError::preserve();
+    let _timing = crate::timing::DAY.begin();
     if !READY.load(Ordering::Acquire) || crate::native_call::faulted() {
         return;
     }

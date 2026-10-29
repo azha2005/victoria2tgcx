@@ -45,11 +45,13 @@ mod native_string;
 mod patch;
 #[cfg(all(windows, target_arch = "x86"))]
 mod runtime;
+#[cfg(all(windows, target_arch = "x86"))]
+mod timing;
 
 #[path = "../../tgcx/src/sha256.rs"]
 mod sha256;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn tgcx_VolunteersVersion() -> *const std::ffi::c_char {
-    c"TGCX Volunteers 0.0.11 development".as_ptr()
+    c"TGCX Volunteers 0.0.12 development".as_ptr()
 }

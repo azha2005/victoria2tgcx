@@ -1,5 +1,7 @@
 # ROADMAP.md — Status, decisions and session close for the TGCX submod
 
+2026-10-29 VOL-OPT follow-up: user rejects 0.0.11 performance. 0.0.12 installed; V2DLL state/RNG probes disabled only in test copy (25.35 MB latest state log), inactive assembly bypass and sampled timings added. 45 Rust/six package checks and 96 guards pass; actual game timing pending. `docs/report-volunteers-performance-probes-1029.md`; steps `docs/instructions-volunteers-performance-probes.md`.
+
 2026-10-29 VOL-OPT checkpoint: implementation `decd3cd` committed and pushed to origin/master; remote hash verified. Optimized0.0.11 installed, game timing pending. `docs/report-volunteers-checkpoint-1029.md`.
 
 2026-10-26 ARMY-HANDOFF complete: local research ZIP with 21 targeted decompilations/disassembly, partial CArmy/CRegiment fields and country list. No new runtime validation. `docs/report-army-handoff-1026.md`.
@@ -29,7 +31,7 @@
    §11.
 2. Work on **one card at a time**; the next one does not start while the
    previous one is red. New pitfall: `Pnn` in `docs/pitfalls.md` and in the
-   index in `AGENTS.md` §8 (the next one is **P77**).
+   index in `AGENTS.md` §8 (the next one is **P78**).
 3. **When closing the session: §7** (required).
 
 **Process rules (not negotiable):**

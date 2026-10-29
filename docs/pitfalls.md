@@ -1262,3 +1262,22 @@ admission. Tests cover wrong membership, fresh MP transport changes and equal
 orders/journal under service, peace and donor war. Benchmarks demonstrate helper
 cost only; in-game timing/save-load acceptance still required. See
 report-volunteers-optimization-1029.md and instructions-volunteers-optimization.md.
+
+
+### P77 - Diagnostic probes can dominate a supposedly normal performance test
+
+2026-10-29. User says 0.0.11 is slightly faster but still poor. The isolated
+V2DLL 5.98 copy inherited ENABLE_STATE_PROBE=1 and ENABLE_RNG_PROBE=1. Its own
+startup log confirms active daily state inventories and random/event wrappers;
+the latest January 1..27 state log is 25351284 bytes, older runs hundreds of MB.
+Plugin helper speedups did not measure that whole-run workload. Inspect the
+actual configuration, installed-probe messages and log growth before blaming a
+specific hook or extrapolating fixture ratios to game FPS. In the backed-up test
+copy only, disable these two diagnostic probes and retain normal OOS/crash logs
+and simulation settings. Preserve logs; their mere continued existence after a
+restart does not prove active dumping. Compare same-save timings and separate
+DLL versus configuration effects before claiming causality. Use sampled callback
+timings/call counts for the next change; microsecond sample zeros do not measure
+sub-microsecond paths or native-original work. Inactive assembly shortcuts are
+negative-only and must preserve flags, registers, RET cleanup and fresh positive
+admission. See report-volunteers-performance-probes-1029.md and its instructions.

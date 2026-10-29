@@ -8,14 +8,25 @@ import tempfile
 import unittest
 import zipfile
 import prepare_volunteers as package
+from volunteers_test_diagnostics import light_settings
 from tgcx_pe import PE
 
 ROOT=Path(__file__).resolve().parent.parent
 DLL=ROOT/'rust/volunteers/target/i686-pc-windows-msvc/release/tgcx_volunteers.dll'
 PROBE=DLL.parent/'tgcx_volunteers_probe.exe'
-WORK=ROOT/'work/volunteers-0011'
+WORK=ROOT/'work/volunteers-0012'
 
 class VolunteersTests(unittest.TestCase):
+    def test_light_diagnostics_changes_only_two_probe_values(self):
+        source=(b'LOCAL_MOD_CONFIG=0\r\nENABLE_LOG=1\r\nDEBUG_LOG=0\r\n'
+                b'ENABLE_OOS_LOG=1\r\nENABLE_STATE_PROBE=1\r\n'
+                b'ENABLE_RNG_PROBE=1\r\nENABLE_CRASH_LOG=1\r\n'
+                b'PATCH_STATE_SAVINGS_CAP=1\r\nSTATE_SAVINGS_CAP_POUNDS=60000\r\n')
+        expected=source.replace(b'ENABLE_STATE_PROBE=1',b'ENABLE_STATE_PROBE=0').replace(b'ENABLE_RNG_PROBE=1',b'ENABLE_RNG_PROBE=0')
+        self.assertEqual(light_settings(source),expected)
+        self.assertEqual(light_settings(expected),expected)
+        with self.assertRaises(ValueError):light_settings(source+b'ENABLE_STATE_PROBE=1\r\n')
+        with self.assertRaises(ValueError):light_settings(source.replace(b'ENABLE_RNG_PROBE=1',b'ENABLE_RNG_PROBE=2'))
     def test_additive_package_and_exact_manifest(self):
         with tempfile.TemporaryDirectory(dir=WORK) as temp:
             dest=Path(temp)/'candidate';result=package.build(dest,DLL)

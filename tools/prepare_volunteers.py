@@ -9,7 +9,7 @@ from tgcx_pe import PE
 from tgcx_volunteers_gui import generate
 
 ROOT=Path(__file__).resolve().parent.parent
-VERSION='0.0.11'
+VERSION='0.0.12'
 FOLDER='tgcx_volunteers'
 SETTINGS='''# Conservative audit default: retain only the observer.
 # mode=preview explicitly opts into the untested diplomacy UI.
@@ -18,14 +18,16 @@ mode=observe
 # Policy limit; configuration cannot override a failed native gate.
 max_brigades=5
 # Log sampling cadence in executed tick commands, 1..30.
-sample_every_days=1
+sample_every_days=7
 '''
-README='''Volunteers - experimental SP prototype 0.0.11 - GAME CHECK PENDING
+README='''Volunteers - experimental SP prototype 0.0.12 - GAME CHECK PENDING
 
 STATUS: sending, combat and siege progress are confirmed by the user on0.0.10.
-0.0.11 optimizes negative filters for unrelated units and closed-panel mission
-snapshots. Fresh SP/load/ownership/receipt checks remain for relevant units.
-Controlled Win32/x86 helper benchmarks improve; real game FPS/timing, completed
+0.0.11 improves performance slightly in the user's test but remains too slow.
+0.0.12 bypasses inactive hooks before CPU-state saves and Rust, reduces repeated
+GUI calls, samples observer inventories weekly and adds sampled callback timings.
+Fresh SP/load/ownership/receipt checks remain for relevant units.
+Controlled Win32/x86 benchmarks improve; real game FPS/timing, completed
 capture credit, save/reload and multiplayer acceptance are not established.
 MP sending remains refused.
 
@@ -87,6 +89,15 @@ Commit logs include country, generation and SHA256 for OOS comparison.
 No local orders file or unsynchronized maintenance-skip hook is used.
 
 PERFORMANCE / DIAGNOSTICS:
+With no published scope, unit/vision hooks tail-call the native original before
+FXSAVE or Rust. Load immediately clears this negative-only switch; an active
+switch still needs every fresh admission gate. No positive permission is cached.
+Full observer inventories and scope/timing logs default to every seven ticks;
+gameplay still checks every native day. Set sample_every_days=1 for daily reports.
+plugin_timing logs cumulative calls, samples, sampled microseconds and maximum.
+Hot callbacks sample 1/1024; GUI 1/64; observer/day/vision sample every call.
+These times exclude original native routines and assembly save/restore. Compare
+same-save game-day wall time separately; absent timing cannot prove absence of lag.
 The shared country-vector hook bypasses unrelated callers before Rust/FXSAVE.
 Scalar reads use a tested SEH boundary without heap allocations/kernel calls.
 Visibility bulk-reads the province pointer table and only writes local display data.
