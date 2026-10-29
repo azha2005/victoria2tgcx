@@ -8,6 +8,11 @@ local display vision are implemented. User checks confirm sending, battle and
 siege progress on the isolated TGC2.5.2/V2DLL5.98 setup. Full prototype acceptance
 is incomplete; MP sending is deliberately refused.
 
+2026-10-29 loader update: the isolated copy now has CreatineCore 6.36, with
+Volunteers 0.0.12 unchanged. Proxy/API fixtures and settings migration pass;
+actual game startup and performance under that loader remain unverified. See
+../../docs/report-volunteers-loader-636-1029.md and its acceptance instructions.
+
 Read ../../NEXT.md and ../../docs/volunteers-design.md before changing behavior.
 The guide ../../docs/report-volunteers-performance-probes-1029.md records the
 remaining lag, idle-wrapper measurements and expensive V2DLL diagnostics found

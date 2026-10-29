@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P78**).
+number (**the next one is P79**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -497,6 +497,7 @@ number (**the next one is P78**).
 
 - **P76** Optimization filters are negative-only; preserve fresh positive gates and use full snapshots on player/load rebind so new journal recipients are not omitted.
 - **P77** A copied V2DLL configuration can enable costly state/RNG diagnostics; inspect actual probe settings and log growth before attributing all lag to the plugin or declaring optimization successful.
+- **P78** CreatineCore loader migration separates core/performance settings and writes defines into the FIRST active mod; preserve settings and use an additive first-mod carrier to prevent TGC rename/append side effects.
 
 
 ## 9. Decisions

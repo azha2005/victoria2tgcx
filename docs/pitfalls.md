@@ -1281,3 +1281,25 @@ timings/call counts for the next change; microsecond sample zeros do not measure
 sub-microsecond paths or native-original work. Inactive assembly shortcuts are
 negative-only and must preserve flags, registers, RET cleanup and fresh positive
 admission. See report-volunteers-performance-probes-1029.md and its instructions.
+
+
+### P78 - A loader upgrade can change settings, plugin layout and the first mod's files
+
+2026-10-29. CreatineCore 6.36 replaces the V2DLL 5.98 root proxy/core path with
+dinput8.dll -> z_CreatineCore/creatinecore.dll. Performance options moved into
+dll_Submods/ccore_performance_patch.ini; its distributed DEBUG_LOG is 1, and the
+core still distributes enabled state/RNG probes and new gameplay defaults. Migrate
+by reviewed keys, keep probes/verbose logs off, and don't silently enable unrelated
+features. Upstream now defaults FIX_ARMY_WINDOW_LAG off after an incomplete stutter
+fix. Retain core API1/28-byte layout and per-active-mod plugin compatibility.
+
+The source ResolveModFolder picks the FIRST -mod= descriptor for generated data.
+EnsureCCoreDefines can rename common/defines_v2dll.txt and append missing keys.
+Merely replacing the DLL while TGC is first would therefore modify its tree at
+startup. The isolated migration uses a tiny tgcx_loader_data carrier first, then
+TGC and Volunteers; all expected physical defines keys are generated there.
+Don't reverse TGC/Volunteers to fix the generated-file destination: TGC's
+replace_path would wipe earlier submod content. Do not copy bundled topbar/menu
+files over a mod. Preserve rollback, full TGC/Volunteers hashes and explicit
+launchers. A non-game proxy/API fixture is not game startup or performance proof.
+See report-volunteers-loader-636-1029.md and instructions-volunteers-loader-636.md.

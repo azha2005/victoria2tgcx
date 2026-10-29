@@ -1,5 +1,7 @@
 # SUBAGENTS.md — The project, in cards
 
+2026-10-29 VOL-LOADER: user explicitly requested replacement. Official CreatineCore 6.36 installed only in the isolated copy; Volunteers 0.0.12 and 16412 TGC files unchanged. Settings migrated, probes/stutter option off, additive first-mod data carrier prevents TGC auto-edits. Four migration tests, x86 proxy/API fixture and 96 signatures pass; actual startup/game speed pending. `docs/report-volunteers-loader-636-1029.md`; steps `docs/instructions-volunteers-loader-636.md`.
+
 2026-10-29 VOL-OPT follow-up: user rejects 0.0.11 performance. 0.0.12 installed; V2DLL state/RNG probes disabled only in test copy (25.35 MB latest state log), inactive assembly bypass and sampled timings added. 45 Rust/six package checks and 96 guards pass; actual game timing pending. `docs/report-volunteers-performance-probes-1029.md`; steps `docs/instructions-volunteers-performance-probes.md`.
 
 2026-10-29 VOL-OPT checkpoint: implementation `decd3cd` committed and pushed to origin/master; remote hash verified. Optimized0.0.11 installed, game timing pending. `docs/report-volunteers-checkpoint-1029.md`.
