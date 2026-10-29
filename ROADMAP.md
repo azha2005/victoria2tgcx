@@ -1,5 +1,7 @@
 # ROADMAP.md — Status, decisions and session close for the TGCX submod
 
+2026-10-29 VOL-OPT checkpoint: implementation `decd3cd` committed and pushed to origin/master; remote hash verified. Optimized0.0.11 installed, game timing pending. `docs/report-volunteers-checkpoint-1029.md`.
+
 2026-10-26 ARMY-HANDOFF complete: local research ZIP with 21 targeted decompilations/disassembly, partial CArmy/CRegiment fields and country list. No new runtime validation. `docs/report-army-handoff-1026.md`.
 
 > **What this file is.** The project's status (what is done, with which

@@ -3,8 +3,8 @@
 2026-10-29. **User tests optimized Volunteers0.0.11.**
 Sending/battle and0.0.10 siege progress are confirmed by user/log.0.0.11 retains
 those paths and reduces unrelated callback/closed-panel snapshot work. User also
-explicitly requested commit and push after optimization; source checkpoint pending
-verification of the staged scope and normal remote push at the time of this note.
+explicitly requested commit and push after optimization. Implementation checkpoint
+`decd3cd` is pushed to origin/master and the remote hash was verified.
 
 ## Current verified state
 
@@ -37,3 +37,6 @@ Evidence: docs/report-volunteers-optimization-1029.md and work/volunteers-0011.
 User retains desktop testing. No new subagents, publication/release upload or memory
 edits. Commit/push source only; preserve unrelated release-document changes and
 exclude private game art, logs/saves, Ghidra project/raw exports and built binaries.
+
+Delivery: docs/report-volunteers-checkpoint-1029.md. Remaining cards and their
+step-by-step instructions above are unchanged; in-game timing remains pending.

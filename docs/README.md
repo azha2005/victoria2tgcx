@@ -1,5 +1,7 @@
 # Index of `docs/`
 
+2026-10-29 VOL-OPT checkpoint: implementation `decd3cd` committed and pushed to origin/master; remote hash verified. Optimized0.0.11 installed, game timing pending. `docs/report-volunteers-checkpoint-1029.md`.
+
 2026-10-29 VOL-OPT:0.0.10 siege progress accepted.0.0.11 negative callback filters and compact closed-panel snapshots installed with rollback.43 Rust/five package checks and96 guards pass; controlled helper medians improve10.7x/176.5x, not game FPS. Relevant fresh gates retained; source commit/push requested. `docs/report-volunteers-optimization-1029.md`; steps `docs/instructions-volunteers-optimization.md`.
 
 
