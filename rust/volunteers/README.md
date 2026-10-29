@@ -10,7 +10,8 @@ is incomplete; MP sending is deliberately refused.
 
 2026-10-29 loader update: the isolated copy now has CreatineCore 6.36, with
 Volunteers 0.0.12 unchanged. Proxy/API fixtures and settings migration pass;
-actual game startup and performance under that loader remain unverified. See
+startup is now confirmed in logs and the user accepts general operation/speed.
+Full prototype acceptance remains open. See
 ../../docs/report-volunteers-loader-636-1029.md and its acceptance instructions.
 
 Read ../../NEXT.md and ../../docs/volunteers-design.md before changing behavior.
@@ -49,3 +50,12 @@ ignored; no game assets, executables, raw Ghidra exports or release binaries are
 part of this source checkpoint. Build/byte guards refuse unsupported executables.
 Install only into a backed-up prepared copy after normal game exit; the package
 README gives its explicit observe/preview/prototype modes and native-loader setup.
+
+Plain player-shareable package (no installer/launch scripts):
+
+    python tools/test_volunteers_share.py
+    python tools/prepare_volunteers_share.py <new output folder>
+
+This uses the immutable accepted candidate and generated carrier; see
+../../docs/report-volunteers-share-1029.md. No loader distribution or private
+logs/saves are included. DLL/game-derived UI pixels remain outside git.

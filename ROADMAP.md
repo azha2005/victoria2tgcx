@@ -1,5 +1,7 @@
 # ROADMAP.md — Status, decisions and session close for the TGCX submod
 
+2026-10-29 VOL-SHARE: user accepts 6.36 setup as working well enough; plain 0.0.12 SP beta ZIP prepared (421453 bytes, 20 files), no installer/scripts. Accepted DLL/UI retained; normal launcher display names plus additive carrier and README. Two package tests/CRC/manifest pass; recipient launch and full prototype/MP acceptance open. `docs/report-volunteers-share-1029.md`; steps `docs/instructions-volunteers-share.md`.
+
 2026-10-29 VOL-LOADER: user explicitly requested replacement. Official CreatineCore 6.36 installed only in the isolated copy; Volunteers 0.0.12 and 16412 TGC files unchanged. Settings migrated, probes/stutter option off, additive first-mod data carrier prevents TGC auto-edits. Four migration tests, x86 proxy/API fixture and 96 signatures pass; actual startup/game speed pending. `docs/report-volunteers-loader-636-1029.md`; steps `docs/instructions-volunteers-loader-636.md`.
 
 2026-10-29 VOL-OPT follow-up: user rejects 0.0.11 performance. 0.0.12 installed; V2DLL state/RNG probes disabled only in test copy (25.35 MB latest state log), inactive assembly bypass and sampled timings added. 45 Rust/six package checks and 96 guards pass; actual game timing pending. `docs/report-volunteers-performance-probes-1029.md`; steps `docs/instructions-volunteers-performance-probes.md`.
