@@ -243,6 +243,127 @@ fn returned_whole_army_can_be_sent_again_without_old_scope_shadowing_it() {
 }
 
 #[test]
+fn history_cleanup_releases_slots_retains_wartime_sight_and_never_reuses_serials() {
+    let (mut app, mut world) = setup(5);
+    select(&mut app, &world, 5);
+    let (first, receipt) = deploy(&mut app, &world, None);
+    let r = app.registry.as_mut().unwrap();
+    assert!(r.receipt(first, &receipt));
+    assert!(r.request_return(first, 2348));
+    r.return_posted(first, true, true);
+    assert!(r.return_receipt(first, &receipt, 625));
+    assert_eq!(r.deployed(625), 0);
+    assert_eq!(r.clear_completed(), 0); // War still grants vision.
+    assert!(r.sees(625, 648, false));
+    assert!(app.presentation(&world).missions.is_empty());
+    app.action(UiAction::ToggleHistory, &world, None);
+    assert_eq!(app.presentation(&world).missions.len(), 1);
+    app.action(UiAction::ClearHistory, &world, None);
+    assert_eq!(app.registry.as_ref().unwrap().entries().count(), 1);
+    let r = app.registry.as_mut().unwrap();
+    r.observe_day(200, |_| RecipientWar::AtPeace);
+    assert_eq!(r.clear_completed(), 1);
+    let next = r.next_serial().unwrap();
+    assert!(next > first);
+    let loaded = Registry::decode(&r.encode().unwrap(), receipt.campaign, 2).unwrap();
+    assert_eq!(loaded.next_serial(), Some(next));
+    assert_eq!(loaded.deployed(625), 0);
+    app.bind_registry(loaded);
+    world.epoch = 2;
+    world.date = 50;
+    app.action(UiAction::Open(648), &world, None);
+    select(&mut app, &world, 5);
+    let (second, _) = deploy(&mut app, &world, None);
+    assert!(second > first);
+}
+
+#[test]
+fn restored_terminal_records_do_not_count_as_active_brigades_and_old_day_is_reset() {
+    let (mut app, mut world) = setup(1);
+    select(&mut app, &world, 1);
+    let (serial, receipt) = deploy(&mut app, &world, None);
+    world.date = 1000;
+    app.day(&world, |_| Some((receipt.clone(), 2348, 625, false)));
+    app.registry.as_mut().unwrap().destroyed(serial);
+    let loaded = Registry::decode(
+        &app.registry.as_ref().unwrap().encode().unwrap(),
+        receipt.campaign,
+        2,
+    )
+    .unwrap();
+    assert_eq!(loaded.deployed(625), 0); // NeedsReview carries saved Lost phase.
+    app.bind_registry(loaded);
+    world.epoch = 2;
+    world.date = 100;
+    app.day(&world, |_| panic!("terminal stack cannot issue a command"));
+    assert_eq!(
+        app.registry
+            .as_ref()
+            .unwrap()
+            .entry(serial)
+            .unwrap()
+            .last_processed_date,
+        Some(100)
+    );
+}
+
+#[test]
+fn multiplayer_and_unknown_sessions_report_distinct_reasons_without_outbox_work() {
+    let (mut app, mut world) = setup(1);
+    let before = app.registry.as_ref().unwrap().encode().unwrap();
+    for (mode, expected) in [
+        (SessionMode::Multiplayer, "Multiplayer"),
+        (SessionMode::Unknown, "recognized game session"),
+    ] {
+        world.mode = mode;
+        select(&mut app, &world, 1);
+        assert!(app.action(UiAction::Send, &world, None).is_empty());
+        assert!(app.presentation(&world).status.contains(expected));
+        assert_eq!(app.registry.as_ref().unwrap().encode().unwrap(), before);
+    }
+}
+
+#[test]
+fn many_terminal_wartime_missions_refuse_full_journal_without_half_accepting() {
+    let (mut app, world) = setup(5);
+    let mut previous_bytes = Vec::new();
+    for _ in 0..256 {
+        app.action(UiAction::Open(648), &world, None);
+        select(&mut app, &world, 5);
+        let before = app.registry.as_ref().unwrap().encode().unwrap();
+        let work = app.action(UiAction::Send, &world, None);
+        if work.is_empty() {
+            assert!(app.presentation(&world).status.contains("journal is full"));
+            assert_eq!(app.registry.as_ref().unwrap().encode().unwrap(), before);
+            assert!(!previous_bytes.is_empty());
+            return;
+        }
+        let [Work::Detach { serial, plan }] = work.as_slice() else {
+            panic!("unexpected work")
+        };
+        let receipt = StackReceipt {
+            campaign: world.campaign.unwrap(),
+            army: plan.destination(),
+            owner: 625,
+            affiliation: 625,
+            regiments: plan
+                .selected_regiments()
+                .iter()
+                .map(|id| (*id, 625))
+                .collect(),
+        };
+        let r = app.registry.as_mut().unwrap();
+        r.deployment_posted(*serial, true);
+        assert!(r.receipt(*serial, &receipt));
+        assert!(r.request_return(*serial, 2348));
+        r.return_posted(*serial, true, true);
+        assert!(r.return_receipt(*serial, &receipt, 625));
+        previous_bytes = r.encode().unwrap();
+    }
+    panic!("fixture never reached bounded journal size");
+}
+
+#[test]
 fn visibility_uses_recipient_knowledge_and_bulk_world_table() {
     use crate::snapshot::Memory;
     use std::cell::Cell;
@@ -312,6 +433,8 @@ fn visibility_uses_recipient_knowledge_and_bulk_world_table() {
             (0x2800000 + 2360 * 4, 0x3000000),
             // This foreign province is seen by the recipient, not owned by it.
             (0x3000000 + 0x12C, 123),
+            (0x3000000 + 0x134, 123),
+            (0x3000000 + 0x130, 0),
             (0x3000000 + 0x58, 2360),
             (0x3000000 + 0x5C, 0x3100000),
             (0x3000000 + 0x174, 0x3200000),
@@ -354,6 +477,9 @@ fn visibility_uses_recipient_knowledge_and_bulk_world_table() {
     for (address, value) in [
         (0x2800000 + 2361 * 4, 0x3010000),
         (0x3010000 + 0x174, 0x3210000),
+        (0x3010000 + 0x12C, 123),
+        (0x3010000 + 0x134, 123),
+        (0x3010000 + 0x130, 0),
         (0x3010000 + 0x178, 700),
         (0x3210000 + 648 * 4, 0),
         (0x3010000 + 0x58, 2361),
@@ -372,6 +498,24 @@ fn visibility_uses_recipient_knowledge_and_bulk_world_table() {
     assert_eq!(with_fronts.grants.len(), 2);
     assert!(with_fronts.grants.iter().all(|g| g.requested_level == 2));
     assert_eq!(memory.data[&(0x3210000 + 648 * 4)], 0); // simulation knowledge untouched
+    // One short/bad/dummy knowledge array must not erase other provinces.
+    memory.data.insert(0x3020000 + 0x178, 8000);
+    let partial =
+        crate::native_vision::plan_with_fronts(&memory, base, registry, permit, &[0x3000000])
+            .unwrap();
+    assert_eq!(partial.grants.len(), 2);
+    assert_eq!(partial.skipped_provinces, 1);
+    // Direct native controller sight is available even if this recipient has
+    // no entry in a short knowledge array. Occupied enemy land isn't guessed.
+    memory.data.insert(0x3010000 + 0x134, 648);
+    memory.data.insert(0x3010000 + 0x178, 1);
+    let controlled = crate::native_vision::plan(&memory, base, registry, permit).unwrap();
+    assert!(
+        controlled
+            .grants
+            .iter()
+            .any(|g| g.province == 2361 && g.requested_level == 2)
+    );
     memory.data.insert(0x2310000 + 0x67C, 0);
     assert!(
         crate::native_vision::plan_with_fronts(&memory, base, registry, permit, &[0x3000000])

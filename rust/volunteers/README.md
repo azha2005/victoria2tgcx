@@ -1,7 +1,7 @@
 # Volunteers prototype
 
 Independent Rust Win32/x86 V2DLL plugin for the reference Victoria II3.04 EXE.
-Current source:0.0.12. Donor owns/commands/supplies selected land brigades while
+Current source:0.0.13 feedback candidate (not yet tested in game). Donor owns/commands/supplies selected land brigades while
 borrowing recipient war context only for registered volunteer operations. Native
 GUI, unit commands, save-backed mission journal, scoped combat/siege/access and
 local display vision are implemented. User checks confirm sending, battle and
@@ -59,3 +59,8 @@ Plain player-shareable package (no installer/launch scripts):
 This uses the immutable accepted candidate and generated carrier; see
 ../../docs/report-volunteers-share-1029.md. No loader distribution or private
 logs/saves are included. DLL/game-derived UI pixels remain outside git.
+
+Tester feedback changes and exact retest steps: ../../docs/report-volunteers-feedback-1029.md
+and ../../docs/instructions-volunteers-feedback.md. Current plain ZIP uses the
+checked0.0.13 candidate, while the accepted local game remains0.0.12. No MP Send
+unlock; mode=preview is a read-only multiplayer baseline only.

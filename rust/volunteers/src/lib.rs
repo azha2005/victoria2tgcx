@@ -16,6 +16,7 @@ pub mod persistence;
 pub mod protocol;
 pub mod registry;
 pub mod replication;
+mod route_chooser;
 #[cfg(test)]
 mod send_tests;
 pub mod session;
@@ -53,5 +54,5 @@ mod sha256;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn tgcx_VolunteersVersion() -> *const std::ffi::c_char {
-    c"TGCX Volunteers 0.0.12 development".as_ptr()
+    c"TGCX Volunteers 0.0.13 development".as_ptr()
 }

@@ -1,3 +1,11 @@
+2026-10-29 tester-feedback candidate0.0.13: native layout retained with two
+history controls in existing forces-panel space; completed rows hidden by default,
+expired records pruned without removing wartime sight. Chooser lists route-verified
+idle armies in bounded batches; Send rechecks. Rebind/earlier-date and independent
+province-vision corrections built, not tested in game. Updated own SVG/PNG; no
+hosted artifact republish. Global five-brigade limit stays; no one-war/distance
+policy added. MP Send remains refused. report-volunteers-feedback-1029.md.
+
 2026-10-29 correction0.0.8: selecting a complete army retains that army and its
 leader; partial selection still uses Create+Transfer. This preserves the accepted
 native layout. Exact complete membership is mandatory before scope. Unchanged daily

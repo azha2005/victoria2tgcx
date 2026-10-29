@@ -1303,3 +1303,49 @@ replace_path would wipe earlier submod content. Do not copy bundled topbar/menu
 files over a mod. Preserve rollback, full TGC/Volunteers hashes and explicit
 launchers. A non-game proxy/API fixture is not game startup or performance proof.
 See report-volunteers-loader-636-1029.md and instructions-volunteers-loader-636.md.
+
+
+### P79 - Failed journal binding and old daily cursors can strand a loaded UI
+
+2026-10-29. observe_world stored bound player/epoch before a journal read. A
+failed read left registry=None but the same binding wasn't retried. Loaded
+registries were also assigned directly, preserving an old last_day that could
+make all earlier reloaded dates wait forever. Retry when registry is absent and
+bind via the reset path. Malformed nonzero journals still refuse; never create a
+new campaign over corrupt saved data or replay unit commands. Distinguish mode,
+queue, epoch and journal errors in UI/logs. This is a concrete source correction,
+not proof of the tester screenshot's exact cause. report-volunteers-feedback-1029.md.
+
+### P80 - Terminal history needs lifetime, serial and journal-capacity invariants
+
+2026-10-29. Loaded records temporarily use NeedsReview, so cap accounting must
+inspect their saved terminal phase. Hide completed rows without dropping retained
+wartime vision. Prune only returned/lost records without active/suspended sight,
+after known peace. Serial allocation must survive removal of the greatest/all
+records; retained per-country sequences form the high-water. Refuse journal
+overflow atomically before publishing an accepted Send, preserving old missions
+and sequence state. A 16-KiB journal can fill before the 256-row record ceiling.
+Tests cover repeated wartime returns, load, cleanup and atomic capacity refusal;
+the tester's unspecified many-send symptom remains unknown. Same report.
+
+### P81 - Local visibility grants can fail independently per province
+
+2026-10-29. The old planner returned None for the entire world after one bad map,
+array or level. Skip that province and report it, retaining separately validated
+grants. Native controller+134/tag+130 with REB owner+12C fallback is established
+by FUN_0068C040 VA68C1EA..68C2B9; read recipient knowledge to share foreign fronts.
+Never grant unknown data, write simulation knowledge or skip global torn-world/
+session/epoch checks. Fixture success isn't actual recipient-wide game sight;
+new grant/skipped counters and a runtime retest are required. Same report.
+
+### P82 - Reachability previews need bounded fairness and fresh Send validation
+
+2026-10-29. Checking only first-owned-land can reject a reachable recipient.
+Enumerate owned land destinations and round-robin armies in bounded query batches
+so an unreachable candidate cannot starve another. Cache only IDs/UI targets,
+not native pointers or permissions; fresh mode/epoch gates precede work and Send
+rechecks current destination ownership/native route. No arbitrary country-count/
+distance cap or teleport follows from a no-route result. Search advances on the
+existing callbacks/ticks, so pause responsiveness and many-army work still need
+runtime checks. Reopen on access changes; don't claim a cache alone authorizes
+deployment or an unmeasured performance gain. Same report.

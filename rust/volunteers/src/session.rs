@@ -31,6 +31,20 @@ pub enum Unavailable {
     Vision,
     Persistence,
 }
+impl Unavailable {
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::SessionUnknown => "Waiting for a recognized game session.",
+            Self::MultiplayerUnsupported => "Multiplayer sending is not supported in this build.",
+            Self::CampaignUnbound => "Waiting for the saved volunteer journal to bind.",
+            Self::NativeCommands => "Waiting for the native command queue.",
+            Self::Combat => "Volunteer combat hook is unavailable; check the log.",
+            Self::Access => "Volunteer access hook is unavailable; check the log.",
+            Self::Vision => "Volunteer vision hook is unavailable; check the log.",
+            Self::Persistence => "Waiting for the saved volunteer journal.",
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct SinglePlayerPermit {

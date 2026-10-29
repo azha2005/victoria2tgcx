@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P79**).
+number (**the next one is P83**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -498,6 +498,10 @@ number (**the next one is P79**).
 - **P76** Optimization filters are negative-only; preserve fresh positive gates and use full snapshots on player/load rebind so new journal recipients are not omitted.
 - **P77** A copied V2DLL configuration can enable costly state/RNG diagnostics; inspect actual probe settings and log growth before attributing all lag to the plugin or declaring optimization successful.
 - **P78** CreatineCore loader migration separates core/performance settings and writes defines into the FIRST active mod; preserve settings and use an additive first-mod carrier to prevent TGC rename/append side effects.
+- **P79** A failed journal read must retry without minting a replacement campaign; loaded registries must reset daily/page cursors before processing earlier dates.
+- **P80** Terminal history can retain wartime sight; prune only expired records, preserve monotonic IDs and refuse journal overflow before accepting an intent.
+- **P81** Rejecting one invalid province must not erase independent valid local-vision grants; keep global session checks and never guess unknown sight.
+- **P82** A route chooser must bound/fairly schedule native queries and treat cached results as UI-only; Send must revalidate current native permissions.
 
 
 ## 9. Decisions

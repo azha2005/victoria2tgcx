@@ -94,11 +94,18 @@ impl Registry {
         })
     }
     pub fn next_serial(&self) -> Option<u64> {
+        // Sequences survive history pruning and are advanced by every accepted
+        // deployment/recall. They bound prior serials even after the last row goes.
+        let high_water = self
+            .sequences
+            .values()
+            .try_fold(0u64, |n, v| n.checked_add(*v))?;
         self.entries
             .keys()
             .next_back()
             .copied()
             .unwrap_or(0)
+            .max(high_water)
             .checked_add(1)
     }
     pub fn next_sequence(&self, donor: u32) -> Option<u64> {
@@ -113,12 +120,42 @@ impl Registry {
             .values()
             .filter(|e| {
                 e.deployment.key.donor == donor
-                    && !matches!(e.mission.state(), State::Returned | State::Lost)
+                    && !matches!(e.mission.saved().0, State::Returned | State::Lost)
             })
             .map(|e| e.mission.remaining().len())
             .sum()
     }
+    /// Only terminal records with no retained vision may leave the save journal.
+    /// Completion alone cannot revoke a recipient entitlement while war continues.
+    pub fn clear_completed(&mut self) -> usize {
+        let before = self.entries.len();
+        self.entries.retain(|_, e| {
+            let (phase, vision) = e.mission.saved();
+            !matches!(phase, State::Returned | State::Lost) || !matches!(vision, 0 | 3)
+        });
+        before - self.entries.len()
+    }
     pub fn accept(
+        &mut self,
+        permit: SinglePlayerPermit,
+        issuer: u32,
+        event: Envelope,
+        request: Option<&SendRequest>,
+        settings: &Settings,
+    ) -> Result<Effect, Error> {
+        let mut candidate = self.clone();
+        let effect = candidate.accept_inner(permit, issuer, event, request, settings)?;
+        // Reject a new intent before publishing it if its save-backed journal
+        // would overflow. Existing missions keep running; no half-accepted Send.
+        if candidate.encode().map_err(|_| Error::Invalid)?.len() + 12 + 64
+            > crate::engine_store::MAX_BYTES
+        {
+            return Err(Error::Full);
+        }
+        *self = candidate;
+        Ok(effect)
+    }
+    fn accept_inner(
         &mut self,
         permit: SinglePlayerPermit,
         issuer: u32,

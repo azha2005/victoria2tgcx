@@ -24,6 +24,53 @@ unsafe fn query(base: u32, start: u32, stack: u32, destination: u32, path: *mut 
     result
 }
 impl Native {
+    /// All recipient-owned land destinations, preferring the current/adjacent
+    /// province. There is no country-count or distance threshold. Native access
+    /// and route queries still decide each candidate in bounded UI batches.
+    pub fn deployment_candidates(&self, army: u32, recipient: u32) -> Option<Vec<u32>> {
+        let country = self.country(recipient)?;
+        let start = self.field(country, 0x9D8)?;
+        let end = self.field(country, 0x9DC)?;
+        let bytes = end.checked_sub(start)?;
+        if bytes % 4 != 0 || bytes / 4 > 65536 {
+            return None;
+        }
+        let world = self.u32(self.base + 0xE588E8)?;
+        let provinces = self.field(world, 0xACC)?;
+        let count = self.field(world, 0xAD0)?.checked_sub(provinces)? / 4;
+        if count > 65536 {
+            return None;
+        }
+        let source = self.field(army, 0xDC)?;
+        let current = self.field(source, 0x58)?;
+        let map = self.field(source, 0x5C)?;
+        let edges = self.field(map, 0xC8)?;
+        let edge_end = self.field(map, 0xCC)?;
+        let edge_bytes = edge_end.checked_sub(edges)?;
+        if edge_bytes % 0x24 != 0 || edge_bytes / 0x24 > 256 {
+            return None;
+        }
+        let mut near = std::collections::BTreeSet::from([current]);
+        for offset in (0..edge_bytes).step_by(0x24) {
+            near.insert(self.field(edges, offset + 4)?);
+        }
+        let mut candidates = std::collections::BTreeSet::new();
+        for offset in (0..bytes).step_by(4) {
+            let id = self.field(start, offset)?;
+            if id == 0 || id >= count {
+                continue;
+            }
+            let province = self.field(provinces, id * 4)?;
+            if self.field(province, 0x12C)? == recipient
+                && self.byte(self.field(province, 0x5C)? + 0x2A)? != 0
+            {
+                candidates.insert(id);
+            }
+        }
+        let mut result = candidates.into_iter().collect::<Vec<_>>();
+        result.sort_by_key(|id| (u8::from(!near.contains(id)), *id));
+        Some(result)
+    }
     pub fn return_destination(&self, army: u32, donor: u32, preferred: u32) -> Option<u32> {
         if self.land_route(army, preferred, None) == Some(true) {
             return Some(preferred);

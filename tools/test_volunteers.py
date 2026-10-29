@@ -14,7 +14,7 @@ from tgcx_pe import PE
 ROOT=Path(__file__).resolve().parent.parent
 DLL=ROOT/'rust/volunteers/target/i686-pc-windows-msvc/release/tgcx_volunteers.dll'
 PROBE=DLL.parent/'tgcx_volunteers_probe.exe'
-WORK=ROOT/'work/volunteers-0012'
+WORK=ROOT/'work/volunteers-0013'
 
 class VolunteersTests(unittest.TestCase):
     def test_light_diagnostics_changes_only_two_probe_values(self):

@@ -9,7 +9,7 @@ PREFIX='tgcx_vl_'
 ROOT=Path(__file__).resolve().parent.parent
 DEFAULT_GAME=Path('E:/Victoria-II-Volunteers-0004')
 BUTTONS=['open','close','cancel','send','army_prev','army_next','recipient_prev','recipient_next',
-         'page_prev','page_next','row0','row1','mission_prev','mission_next','recall']
+         'page_prev','page_next','row0','row1','mission_prev','mission_next','recall','history','clear_history']
 
 def artwork(game=DEFAULT_GAME):
     game=Path(game);base=Base(game,game/'mod/TGC_v2.5.2.mod');table=sprites(game,base)
@@ -71,6 +71,8 @@ def layout():
     forces=[ft('forces_title','Volunteer forces',12,7,300,22,'vic_18'),
         ft('mission0','No active volunteers',16,52,299,48,'Arial12_black'),ft('mission1','',16,127,299,48,'Arial12_black'),
         btn('mission_prev',9,231,window='forces'),btn('mission_next',37,231,'right',window='forces'),ft('mission_page','1',67,235,60,18,'Arial12_black','centre'),
+        btn('history',12,194,'button',window='forces'),ft('history_label','Show history',12,200,148,18,'vic_18_black','centre'),
+        btn('clear_history',172,194,'button',window='forces'),ft('clear_history_label','Clear history',172,200,148,18,'vic_18_black','centre'),
         btn('recall',172,230,'button',window='forces'),ft('recall_label','Recall selected',172,236,148,18,'vic_18_black','centre')]
     entry=[btn('open',0,0,'entry',window='entry'),text('open_label','Send volunteers',0,2,160,20,'vic_18_black','centre',window='entry')]
     gui=['guiTypes={',*window('chooser',332,378,'chooser',chooser),*window('forces',332,266,'forces',forces),

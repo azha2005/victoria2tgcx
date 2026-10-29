@@ -75,6 +75,8 @@ pub enum UiAction {
     PreviousMission,
     NextMission,
     Recall,
+    ToggleHistory,
+    ClearHistory,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Work {
@@ -109,6 +111,7 @@ pub struct Presentation {
     pub missions: Vec<String>,
     pub recall_enabled: bool,
     pub mission_page: String,
+    pub history_label: String,
 }
 
 pub struct App {
@@ -125,6 +128,7 @@ pub struct App {
     pub last_unavailable: Option<Unavailable>,
     last_day: Option<u32>,
     unreadable: BTreeMap<u64, u8>,
+    show_history: bool,
 }
 impl App {
     pub fn new(settings: Settings) -> Self {
@@ -142,10 +146,13 @@ impl App {
             last_unavailable: None,
             last_day: None,
             unreadable: BTreeMap::new(),
+            show_history: false,
         }
     }
     pub fn bind_registry(&mut self, registry: Registry) {
         self.registry = Some(registry);
+        self.page = 0;
+        self.mission_index = 0;
         self.chosen.clear();
         self.status.clear();
         self.last_day = None;
@@ -158,6 +165,21 @@ impl App {
     }
     fn recipient<'a>(&self, w: &'a WorldView) -> Option<&'a CountryView> {
         w.countries.iter().find(|c| c.index == self.recipient)
+    }
+    pub fn selected_recipient(&self) -> u32 {
+        self.recipient
+    }
+    pub fn reconcile_armies(&mut self, w: &WorldView) {
+        if self.army(w).is_none() {
+            self.army = w.armies.iter().find(|a| a.owner == w.player).map(|a| a.id);
+            self.chosen.clear();
+            self.page = 0;
+        }
+    }
+    fn mission_rows(&self) -> impl Iterator<Item = &crate::registry::Entry> {
+        self.registry.iter().flat_map(|r| r.entries()).filter(|e| {
+            self.show_history || !matches!(e.mission.saved().0, State::Returned | State::Lost)
+        })
     }
     fn gate(&self, w: &WorldView) -> Result<session::SinglePlayerPermit, Unavailable> {
         let permit = session::admit(w.mode, self.capabilities, w.epoch)?;
@@ -302,15 +324,27 @@ impl App {
             }
             UiAction::PreviousMission => self.mission_index = self.mission_index.saturating_sub(1),
             UiAction::NextMission => {
-                let count = self.registry.as_ref().map_or(0, |r| r.entries().count());
+                let count = self.mission_rows().count();
                 self.mission_index = (self.mission_index + 1).min(count.saturating_sub(1));
+            }
+            UiAction::ToggleHistory => {
+                self.show_history = !self.show_history;
+                self.mission_index = 0;
+            }
+            UiAction::ClearHistory => {
+                if self.gate(w).is_ok() {
+                    let count = self.registry.as_mut().map_or(0, Registry::clear_completed);
+                    self.mission_index = 0;
+                    self.status =
+                        format!("Cleared {count} completed records; wartime vision is retained.");
+                }
             }
             UiAction::Send => {
                 let permit = match self.gate(w) {
                     Ok(p) => p,
                     Err(e) => {
                         self.last_unavailable = Some(e);
-                        self.status = "Volunteers are unavailable in this session.".into();
+                        self.status = e.message().into();
                         return work;
                     }
                 };
@@ -389,6 +423,11 @@ impl App {
                         });
                         self.status = "Preparing volunteer brigades.".into();
                         self.chosen.clear();
+                        self.page = 0;
+                    }
+                    Err(crate::registry::Error::Full) => {
+                        self.status =
+                            "Volunteer journal is full; clear completed history after peace.".into()
                     }
                     _ => self.status = "The volunteer request could not be accepted.".into(),
                 }
@@ -398,7 +437,7 @@ impl App {
                     Ok(p) => p,
                     Err(e) => {
                         self.last_unavailable = Some(e);
-                        self.status = "Recall is unavailable in this session.".into();
+                        self.status = e.message().into();
                         return work;
                     }
                 };
@@ -410,13 +449,16 @@ impl App {
                 else {
                     return work;
                 };
+                let selected_key = self
+                    .mission_rows()
+                    .nth(self.mission_index)
+                    .map(|e| e.deployment.key);
                 let Some(registry) = self.registry.as_mut() else {
                     return work;
                 };
-                let Some(entry) = registry.entries().nth(self.mission_index) else {
+                let Some(key) = selected_key else {
                     return work;
                 };
-                let key = entry.deployment.key;
                 let Some(sequence) = registry.next_sequence(w.player) else {
                     return work;
                 };
@@ -458,44 +500,38 @@ impl App {
             .unwrap_or_default();
         let ready = self.gate(w).is_ok();
         let missions = self
-            .registry
-            .as_ref()
-            .map(|r| {
-                r.entries()
-                    .skip(self.mission_index)
-                    .take(2)
-                    .map(|e| {
-                        let assembly = w
-                            .armies
+            .mission_rows()
+            .skip(self.mission_index)
+            .take(2)
+            .map(|e| {
+                let assembly = w
+                    .armies
+                    .iter()
+                    .find(|a| a.id == e.mission.plan().destination());
+                let phase = if e.mission.state() == State::NeedsReview && !e.assembly_verified {
+                    assembly.map(|a| {
+                        let present = a
+                            .regiments
                             .iter()
-                            .find(|a| a.id == e.mission.plan().destination());
-                        let phase =
-                            if e.mission.state() == State::NeedsReview && !e.assembly_verified {
-                                assembly.map(|a| {
-                                    let present = a
-                                        .regiments
-                                        .iter()
-                                        .filter(|member| e.mission.remaining().contains(&member.id))
-                                        .count();
-                                    format!(
-                                        "assembly incomplete: {present}/{}",
-                                        e.mission.remaining().len()
-                                    )
-                                })
-                            } else {
-                                None
-                            };
+                            .filter(|member| e.mission.remaining().contains(&member.id))
+                            .count();
                         format!(
-                            "{} -> {} | {} brigades | {}",
-                            caption(w, e.deployment.key.donor),
-                            caption(w, e.deployment.key.recipient),
-                            e.mission.remaining().len(),
-                            phase.unwrap_or_else(|| self::phase(e.mission.state()).into())
+                            "assembly incomplete: {present}/{}",
+                            e.mission.remaining().len()
                         )
                     })
-                    .collect()
+                } else {
+                    None
+                };
+                format!(
+                    "{} -> {} | {} brigades | {}",
+                    caption(w, e.deployment.key.donor),
+                    caption(w, e.deployment.key.recipient),
+                    e.mission.remaining().len(),
+                    phase.unwrap_or_else(|| self::phase(e.mission.state()).into())
+                )
             })
-            .unwrap_or_default();
+            .collect();
         Presentation {
             open: self.open,
             donor: caption(w, w.player),
@@ -524,7 +560,10 @@ impl App {
             status: if !self.status.is_empty() {
                 self.status.clone()
             } else if !ready {
-                "Volunteers are unavailable in this session.".into()
+                self.gate(w)
+                    .err()
+                    .map_or("Volunteers unavailable.", Unavailable::message)
+                    .into()
             } else {
                 String::new()
             },
@@ -535,9 +574,8 @@ impl App {
             missions,
             recall_enabled: ready
                 && self
-                    .registry
-                    .as_ref()
-                    .and_then(|r| r.entries().nth(self.mission_index))
+                    .mission_rows()
+                    .nth(self.mission_index)
                     .is_some_and(|e| {
                         e.deployment.key.donor == w.player
                             && matches!(
@@ -546,6 +584,12 @@ impl App {
                             )
                     }),
             mission_page: format!("{}", self.mission_index + 1),
+            history_label: if self.show_history {
+                "Hide history"
+            } else {
+                "Show history"
+            }
+            .into(),
         }
     }
     pub fn update_receipt(&mut self, serial: u64, receipt: &StackReceipt) -> bool {
@@ -582,6 +626,7 @@ impl App {
                 .find(|c| c.index == country)
                 .map_or(RecipientWar::Unknown, |c| c.war)
         });
+        registry.clear_completed();
         let entries = registry.entries().cloned().collect::<Vec<_>>();
         let mut work = Vec::new();
         for old in entries {
@@ -659,6 +704,9 @@ impl App {
                 });
             }
         }
+        self.mission_index = self
+            .mission_index
+            .min(self.mission_rows().count().saturating_sub(1));
         work
     }
 }

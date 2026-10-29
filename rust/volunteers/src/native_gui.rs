@@ -42,6 +42,13 @@ struct WindowLease {
     context: u32,
     renderer: u32,
 }
+#[derive(PartialEq, Eq)]
+struct RouteKey {
+    epoch: u64,
+    player: u32,
+    recipient: u32,
+    armies: Vec<(crate::model::Identity, u32, bool, bool)>,
+}
 struct Ui {
     native: Native,
     thread: Option<u32>,
@@ -67,9 +74,105 @@ struct Ui {
     pending_checkpoint: Option<(u32, String)>,
     saved_registry: Option<Vec<u8>>,
     loss_reads: BTreeMap<u64, (u32, u8)>,
+    route_key: Option<RouteKey>,
+    route_armies: Vec<crate::app::ArmyView>,
+    route_chooser: crate::route_chooser::Chooser,
 }
 impl Ui {
+    fn refresh_routes(&mut self) {
+        if !self.app.open || self.disabled {
+            return;
+        }
+        if let Err(reason) =
+            crate::session::admit(self.world.mode, self.app.capabilities, self.world.epoch)
+        {
+            self.app.refuse(reason.message());
+            return;
+        }
+        if !crate::native_session::capture(&self.native, self.native.base).is_some_and(|s| {
+            s.mode == crate::session::SessionMode::SinglePlayer
+                && crate::native_lifecycle::epoch(s.context) == Some(self.world.epoch)
+        }) {
+            self.world.armies.clear();
+            self.app
+                .refuse("Waiting for a current single-player session and load epoch.");
+            return;
+        }
+        let recipient = self.app.selected_recipient();
+        let key = RouteKey {
+            epoch: self.world.epoch,
+            player: self.world.player,
+            recipient,
+            armies: self
+                .route_armies
+                .iter()
+                .map(|a| (a.id, a.province, a.combat, a.moving))
+                .collect(),
+        };
+        if self.route_key.as_ref() != Some(&key) {
+            let eligible = self
+                .route_armies
+                .iter()
+                .filter(|a| {
+                    a.owner == self.world.player
+                        && a.affiliation == self.world.player
+                        && !a.combat
+                        && !a.moving
+                        && !a.regiments.is_empty()
+                        && a.regiments.iter().all(|r| r.owner == self.world.player)
+                        && self
+                            .app
+                            .registry
+                            .as_ref()
+                            .is_some_and(|r| r.live_army(a.id).is_none())
+                })
+                .collect::<Vec<_>>();
+            let destinations = eligible
+                .first()
+                .and_then(|a| self.native.army(a.id))
+                .and_then(|p| self.native.deployment_candidates(p, recipient))
+                .unwrap_or_default();
+            self.route_chooser =
+                crate::route_chooser::Chooser::start(eligible.into_iter().map(|a| {
+                    let mut targets = destinations.clone();
+                    targets.sort_by_key(|id| u8::from(*id != a.province));
+                    (a.id, targets)
+                }));
+            self.route_key = Some(key);
+        }
+        // This cache is a UI shortlist only. Send rereads current session,
+        // ownership, membership, recipient province and native route below.
+        if crate::session::admit(self.world.mode, self.app.capabilities, self.world.epoch).is_ok()
+            && !self.world.player_at_war
+            && self.world.countries.iter().any(|c| {
+                c.index == recipient
+                    && c.war == crate::mission::RecipientWar::AtWar
+                    && !c.hostile_to_player
+            })
+        {
+            let n = self.native;
+            self.route_chooser.advance(8, |id, target| {
+                n.army(id)
+                    .and_then(|army| n.land_route(army, target, Some(recipient)))
+            });
+        }
+        self.world.armies = self
+            .route_armies
+            .iter()
+            .filter(|a| self.route_chooser.targets.contains_key(&a.id))
+            .cloned()
+            .collect();
+        self.app.reconcile_armies(&self.world);
+        if self.world.armies.is_empty() {
+            self.app.refuse(if self.route_chooser.pending() != 0 {
+                "Checking reachable armies; let a game tick pass."
+            } else {
+                "No idle army has a verified land route to this recipient."
+            });
+        }
+    }
     fn observe_world(&mut self, mut world: WorldView) {
+        self.route_armies = world.armies.clone();
         let prototype = self.app.settings.prototype
             && crate::native_hooks::ready()
             && crate::native_journal::ready()
@@ -96,6 +199,7 @@ impl Ui {
             return;
         } else if self.bound_epoch != epoch
             || self.bound_player != world.player
+            || self.app.registry.is_none()
             || self.app.registry.as_ref().is_some_and(|r| r.epoch != epoch)
         {
             self.app.registry = None;
@@ -124,7 +228,7 @@ impl Ui {
                     }
                     self.store_head = Some(loaded.head);
                     self.saved_registry = loaded.registry.encode().ok();
-                    self.app.registry = Some(loaded.registry);
+                    self.app.bind_registry(loaded.registry);
                     self.app.capabilities.campaign_binding = true;
                     crate::runtime::diagnostic(
                         "Engine-saved volunteer registry loaded suspended; no pending commands replayed",
@@ -142,9 +246,13 @@ impl Ui {
                     }
                 }
                 Ok(None) => (),
-                Err(error) => crate::runtime::diagnostic(&format!(
-                    "Engine-saved volunteer registry refused: {error:?}"
-                )),
+                Err(error) => {
+                    let message = format!(
+                        "Saved volunteers unavailable: {error:?}; retry after a game tick."
+                    );
+                    self.app.refuse(&message);
+                    crate::runtime::diagnostic(&message);
+                }
             }
         }
         world.epoch = epoch;
@@ -315,7 +423,14 @@ impl Ui {
                 "row0",
                 "row1",
             ],
-            "tgcx_vl_forces" => &["forces_bg", "mission_prev", "mission_next", "recall"],
+            "tgcx_vl_forces" => &[
+                "forces_bg",
+                "mission_prev",
+                "mission_next",
+                "recall",
+                "history",
+                "clear_history",
+            ],
             _ => return None,
         };
         // P59/P60: resolve buttons in their owning CWindowType registry before
@@ -675,6 +790,7 @@ impl Ui {
             return;
         }
         if self.app.open {
+            self.refresh_routes();
             self.render();
         }
     }
@@ -751,7 +867,9 @@ impl Ui {
         }
         self.text(self.forces, "tgcx_vl_forces_title", "Volunteer forces");
         self.text(self.forces, "tgcx_vl_recall_label", "Recall selected");
+        self.text(self.forces, "tgcx_vl_clear_history_label", "Clear history");
         let p = self.app.presentation(&self.world);
+        self.text(self.forces, "tgcx_vl_history_label", &p.history_label);
         for (key, value) in [
             ("donor", format!("From: {}", p.donor)),
             ("recipient", p.recipient),
@@ -797,7 +915,8 @@ impl Ui {
             return Vec::new();
         };
         self.observe_world(world);
-        if matches!(action, 3 | 14) && self.pending_checkpoint.is_some() {
+        self.refresh_routes();
+        if matches!(action, 3 | 14 | 16) && self.pending_checkpoint.is_some() {
             self.app
                 .refuse("Waiting for the previous engine checkpoint.");
             self.render();
@@ -818,23 +937,37 @@ impl Ui {
             12 => UiAction::PreviousMission,
             13 => UiAction::NextMission,
             14 => UiAction::Recall,
+            15 => UiAction::ToggleHistory,
+            16 => UiAction::ClearHistory,
             _ => return Vec::new(),
         };
+        if matches!(action, UiAction::Open(_)) {
+            self.route_key = None;
+        }
         let new_id = if matches!(action, UiAction::Send) && self.app.can_submit(&self.world) {
             let route = self.app.request(&self.world).and_then(|request| {
                 let army = self.native.army(request.source)?;
-                let target = self
+                let target = *self.route_chooser.targets.get(&request.source)?;
+                let recipient = self.native.country(request.recipient)?;
+                let candidates = self.native.deployment_candidates(army, request.recipient)?;
+                if self.native.byte(recipient + 0x67C)? == 0 || !candidates.contains(&target) {
+                    return None;
+                }
+                if let Some(country) = self
                     .world
                     .countries
-                    .iter()
-                    .find(|c| c.index == request.recipient)?
-                    .landing_province?;
+                    .iter_mut()
+                    .find(|c| c.index == request.recipient)
+                {
+                    country.landing_province = Some(target);
+                }
                 self.native
                     .land_route(army, target, Some(request.recipient))
             });
             if route != Some(true) {
+                self.route_key = None;
                 self.app
-                    .refuse("No verified land route. Move the army closer first.");
+                    .refuse("Route changed or is unavailable; choose a reachable idle army.");
                 self.render();
                 return Vec::new();
             }
@@ -850,6 +983,7 @@ impl Ui {
         };
         let work = self.app.action(action, &self.world, new_id);
         if self.app.open {
+            self.refresh_routes();
             self.render();
         } else {
             self.close();
@@ -1148,6 +1282,7 @@ pub fn day_tick() {
             ))
         });
         ui.world = world;
+        ui.refresh_routes();
         crate::native_hooks::publish(ui.app.registry.as_ref(), Some(permit));
         (n, work, permit)
     };
@@ -1201,6 +1336,8 @@ button!(row1, 11);
 button!(mission_prev, 12);
 button!(mission_next, 13);
 button!(recall, 14);
+button!(history, 15);
+button!(clear_history, 16);
 const CHOOSER_BUTTONS: &[(&str, unsafe extern "C" fn())] = &[
     ("tgcx_vl_close", close),
     ("tgcx_vl_cancel", cancel),
@@ -1218,6 +1355,8 @@ const FORCE_BUTTONS: &[(&str, unsafe extern "C" fn())] = &[
     ("tgcx_vl_mission_prev", mission_prev),
     ("tgcx_vl_mission_next", mission_next),
     ("tgcx_vl_recall", recall),
+    ("tgcx_vl_history", history),
+    ("tgcx_vl_clear_history", clear_history),
 ];
 
 #[unsafe(naked)]
@@ -1263,6 +1402,9 @@ pub fn install(base: u32, settings: Settings) -> bool {
             pending_checkpoint: None,
             saved_registry: None,
             loss_reads: BTreeMap::new(),
+            route_key: None,
+            route_armies: Vec::new(),
+            route_chooser: crate::route_chooser::Chooser::default(),
         }))
         .is_err()
     {

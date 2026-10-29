@@ -335,7 +335,7 @@ fn initialize_once(api: &V2ModApi) -> bool {
     };
     let _ = writeln!(
         log,
-        "TGCX Volunteers 0.0.12 development; explicit prototype mode and all native admission gates required"
+        "TGCX Volunteers 0.0.13 development; explicit prototype mode and all native admission gates required"
     );
     if exe_hash(&exe).as_deref() != Some(EXE_SHA) {
         let _ = writeln!(

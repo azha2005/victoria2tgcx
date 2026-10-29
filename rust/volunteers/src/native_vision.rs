@@ -20,6 +20,7 @@ pub struct Plan {
     pub viewer: u32,
     pub epoch: u64,
     pub grants: Vec<Grant>,
+    pub skipped_provinces: u32,
 }
 fn field(m: &impl Memory, p: u32, offset: u32) -> Option<u32> {
     m.read32(p.checked_add(offset)?)
@@ -84,6 +85,7 @@ pub fn plan_with_fronts(
             viewer,
             epoch: registry.epoch,
             grants,
+            skipped_provinces: 0,
         });
     }
     // The global pointer table is one bounded bulk read, not one allocation and
@@ -106,50 +108,72 @@ pub fn plan_with_fronts(
             }
         }
     }
+    let mut skipped_provinces = 0;
     for (id, &province) in provinces.iter().enumerate() {
         if province == 0 {
             continue;
         }
-        let levels = field(m, province, 0x174)?;
-        let length = field(m, province, 0x178)?;
-        if length > 4096 || (length != 0 && levels == 0) {
-            return None;
-        }
-        let mut requested = u32::from(near.contains(&(id as u32))) * 2;
-        for &recipient in &recipients {
-            // Native recompute explicitly permits empty per-country arrays
-            // (dummy/uninitialized provinces). One such province must not
-            // discard valid grants for the entire world.
-            if length == 0 {
-                continue;
-            }
-            if recipient >= length {
+        // A malformed/dummy province cannot discard independently validated
+        // grants elsewhere. Skip only that province, never force unknown data.
+        let grant = (|| -> Option<Option<Grant>> {
+            let levels = field(m, province, 0x174)?;
+            let length = field(m, province, 0x178)?;
+            if length > 4096 || (length != 0 && levels == 0) {
                 return None;
             }
-            let value = field(m, levels, recipient.checked_mul(4)?)?;
-            if value > 2 {
-                return None;
+            let mut requested = u32::from(near.contains(&(id as u32))) * 2;
+            // Native alliance sight reveals recipient-controlled land too. The
+            // REB controller special case follows FUN_0068C040 VA68C1EA..68C231.
+            let owner = field(m, province, 0x12C)?;
+            let mut controller = field(m, province, 0x134)?;
+            if field(m, province, 0x130)? & 0xFFFFFF == u32::from_le_bytes(*b"REB\0") & 0xFFFFFF {
+                controller = owner;
             }
-            requested = requested.max(value);
-        }
-        if requested != 0 {
-            let map = field(m, province, 0x5C)?;
-            if ![base.checked_add(0x9FD310)?, base.checked_add(0x9FD338)?].contains(&m.read32(map)?)
-            {
-                return None;
+            if recipients.contains(&controller) {
+                requested = 2;
             }
-            let level = field(m, map, 0x360)?;
-            if level > 2 {
-                return None;
+            for &recipient in &recipients {
+                // Native recompute explicitly permits empty per-country arrays
+                // (dummy/uninitialized provinces). One such province must not
+                // discard valid grants for the entire world.
+                if length == 0 {
+                    continue;
+                }
+                if recipient >= length {
+                    continue;
+                }
+                let value = field(m, levels, recipient.checked_mul(4)?)?;
+                if value > 2 {
+                    return None;
+                }
+                requested = requested.max(value);
             }
-            if level < requested {
-                grants.push(Grant {
-                    province: field(m, province, 0x58)?,
-                    map,
-                    native_level: level,
-                    requested_level: requested,
-                });
+            if requested != 0 {
+                let map = field(m, province, 0x5C)?;
+                if ![base.checked_add(0x9FD310)?, base.checked_add(0x9FD338)?]
+                    .contains(&m.read32(map)?)
+                {
+                    return None;
+                }
+                let level = field(m, map, 0x360)?;
+                if level > 2 {
+                    return None;
+                }
+                if level < requested {
+                    return Some(Some(Grant {
+                        province: field(m, province, 0x58)?,
+                        map,
+                        native_level: level,
+                        requested_level: requested,
+                    }));
+                }
             }
+            Some(None)
+        })();
+        match grant {
+            Some(Some(grant)) => grants.push(grant),
+            Some(None) => (),
+            None => skipped_provinces += 1,
         }
     }
     if m.read32(base.checked_add(0xE588E8)?)? != world || field(m, world, 0xB60)? != viewer {
@@ -160,5 +184,6 @@ pub fn plan_with_fronts(
         viewer,
         epoch: registry.epoch,
         grants,
+        skipped_provinces,
     })
 }

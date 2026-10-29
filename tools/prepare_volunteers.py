@@ -9,7 +9,7 @@ from tgcx_pe import PE
 from tgcx_volunteers_gui import generate
 
 ROOT=Path(__file__).resolve().parent.parent
-VERSION='0.0.12'
+VERSION='0.0.13'
 FOLDER='tgcx_volunteers'
 SETTINGS='''# Conservative audit default: retain only the observer.
 # mode=preview explicitly opts into the untested diplomacy UI.
@@ -20,7 +20,16 @@ max_brigades=5
 # Log sampling cadence in executed tick commands, 1..30.
 sample_every_days=7
 '''
-README='''Volunteers - experimental SP prototype 0.0.12 - GAME CHECK PENDING
+README='''Volunteers - experimental SP prototype 0.0.13 - GAME CHECK PENDING
+
+0.0.13: tester-feedback candidate. Retried journal binding and reset load/day
+state; hide completed history with Show/Clear controls, prune expired terminal
+records, preserve monotonic IDs and refuse an overflowing journal atomically.
+Chooser filters idle reachable armies in bounded route batches, trying recipient
+land destinations rather than only the first province. Send rechecks the route.
+Visibility skips invalid individual province data and includes native controller
+sight; full runtime acceptance is pending. Session errors distinguish MP refusal.
+MP Send remains unsupported. Use the plain share ZIP for handoff, no launch scripts.
 
 STATUS: sending, combat and siege progress are confirmed by the user on0.0.10.
 0.0.11 improves performance slightly in the user's test but remains too slow.
@@ -33,7 +42,7 @@ MP sending remains refused.
 
 INSTALL:
 Use the isolated E:/Victoria-II-Volunteers-0004 copy with TGC2.5.2 and
-V2DLL5.98. The game must be closed normally before updating the package.
+CreatineCore6.36. The game must be closed normally before updating the package.
 Keep the previous package backup. This ZIP itself does not install anything.
 For another prepared copy, put mod/tgcx_volunteers.mod and mod/tgcx_volunteers/
 under its mod folder. V2DLL LOAD_DLL_FROM_MOD_FOLDER=1 loads v2dll_mod.dll.

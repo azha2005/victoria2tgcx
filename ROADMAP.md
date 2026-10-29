@@ -1,5 +1,7 @@
 # ROADMAP.md — Status, decisions and session close for the TGCX submod
 
+2026-10-29 VOL-FEEDBACK:0.0.13 SP candidate for tester reports. Journal rebind/day reset, history cleanup/capacity guard, bounded reachable-army chooser and partial/controller vision corrections built.51 Rust/six package/two share/one collector checks and96 guards pass. Script-free ZIP ready; not installed or tested in game. MP Send remains refused; screenshot root causes unconfirmed. `docs/report-volunteers-feedback-1029.md`; `docs/instructions-volunteers-feedback.md`.
+
 2026-10-29 VOL-SHARE: user accepts 6.36 setup as working well enough; plain 0.0.12 SP beta ZIP prepared (421453 bytes, 20 files), no installer/scripts. Accepted DLL/UI retained; normal launcher display names plus additive carrier and README. Two package tests/CRC/manifest pass; recipient launch and full prototype/MP acceptance open. `docs/report-volunteers-share-1029.md`; steps `docs/instructions-volunteers-share.md`.
 
 2026-10-29 VOL-LOADER: user explicitly requested replacement. Official CreatineCore 6.36 installed only in the isolated copy; Volunteers 0.0.12 and 16412 TGC files unchanged. Settings migrated, probes/stutter option off, additive first-mod data carrier prevents TGC auto-edits. Four migration tests, x86 proxy/API fixture and 96 signatures pass; actual startup/game speed pending. `docs/report-volunteers-loader-636-1029.md`; steps `docs/instructions-volunteers-loader-636.md`.
@@ -35,7 +37,7 @@
    §11.
 2. Work on **one card at a time**; the next one does not start while the
    previous one is red. New pitfall: `Pnn` in `docs/pitfalls.md` and in the
-   index in `AGENTS.md` §8 (the next one is **P79**).
+   index in `AGENTS.md` §8 (the next one is **P83**).
 3. **When closing the session: §7** (required).
 
 **Process rules (not negotiable):**

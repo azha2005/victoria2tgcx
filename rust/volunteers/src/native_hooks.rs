@@ -29,6 +29,7 @@ static SIEGE_GRANTED: AtomicU32 = AtomicU32::new(0);
 static SIEGE_JOIN_GRANTED: AtomicU32 = AtomicU32::new(0);
 static VISION_REFUSED: AtomicU32 = AtomicU32::new(0);
 static VISION_EMPTY: AtomicU32 = AtomicU32::new(0);
+static VISION_SKIPPED: AtomicU32 = AtomicU32::new(0);
 static READY: AtomicBool = AtomicBool::new(false);
 // Assembly reads this aligned word only to skip the plugin when no scope is
 // published. A nonzero value never grants permission; Rust retains every gate.
@@ -441,6 +442,10 @@ pub fn diagnostics() {
         VISION_EMPTY.load(Ordering::Relaxed)
     ));
     crate::runtime::diagnostic(&format!(
+        "vision_skipped_provinces={}",
+        VISION_SKIPPED.load(Ordering::Relaxed)
+    ));
+    crate::runtime::diagnostic(&format!(
         "plugin_timing active={} {} (cumulative; sampled Rust callback wall time, excludes native originals and assembly save/restore)",
         ACTIVE.load(Ordering::Acquire),
         crate::timing::report()
@@ -500,6 +505,7 @@ extern "C" fn vision(world: u32) {
             VISION_REFUSED.fetch_add(1, Ordering::Relaxed);
             return None;
         };
+        VISION_SKIPPED.fetch_add(plan.skipped_provinces, Ordering::Relaxed);
         if plan.world != world || plan.grants.is_empty() {
             VISION_EMPTY.fetch_add(1, Ordering::Relaxed);
             return Some(());

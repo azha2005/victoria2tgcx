@@ -1,6 +1,6 @@
 """Plain, player-shareable Volunteers ZIP. No setup executable or launch scripts.
 
-Reuses the accepted 0.0.12 payload; never installs, launches, downloads or publishes.
+Reuses the checked 0.0.13 candidate; never installs, launches, downloads or publishes.
 Game-derived UI pixels remain outside git, like the ATCU/PRU candidate packages.
 """
 import argparse
@@ -11,12 +11,12 @@ from pathlib import Path
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.0.12'
-ACCEPTED_DLL = '08de457c5b49c12ce990d562a3c9ab1dc87be6ee766f7aa253702c768a00a1a3'
-ACCEPTED_PACKAGE = ROOT / 'work/volunteers-0012/Volunteers-0.0.12-SP-light-diagnostics-private'
+VERSION = '0.0.13'
+ACCEPTED_DLL = '156a02d2ff2551bf90d4acaae0dd2d7c87d73149ee1567e01bc611e068b9721b'
+ACCEPTED_PACKAGE = ROOT / 'work/volunteers-0013/candidate-r2/Volunteers-0.0.13-SP-feedback-private'
 ACCEPTED_CARRIER = ROOT / 'work/volunteers-loader-636/stage-636/mod/tgcx_loader_data/common/defines_ccore.txt'
 
-README = '''VOLUNTEERS 0.0.12 - SINGLE-PLAYER BETA
+README = '''VOLUNTEERS 0.0.13 - SINGLE-PLAYER BETA / TESTER-FEEDBACK CANDIDATE
 ========================================
 
 Send up to five brigades to help a country at war while your own country stays
@@ -67,7 +67,11 @@ USE
 1. Use a disposable copy of a save for your first test.
 2. Your country must be at peace. Open Diplomacy and choose a recipient at war.
 3. Click Send volunteers beside the normal diplomatic action buttons.
-4. Pick an idle donor army and check up to five brigades, then Send volunteers.
+4. The chooser lists idle donor armies with a verified land route. It searches
+   in small batches; let game ticks pass while it says Checking reachable armies.
+   Reopen or change recipient to refresh the search. Multiple recipient land
+   destinations are tried, with current/nearby provinces prioritized.
+   Pick an army and check up to five brigades, then Send volunteers.
    A native LAND ROUTE must exist to recipient territory. No teleport/sea
    deployment is implemented. Unreachable recipients are refused.
 5. Unpause. Assembly verification and the movement order happen through native
@@ -76,12 +80,31 @@ USE
 6. Select and command the donor-owned army normally. The forces panel displays
    the mission. Recall selected requests a physical return when the army can move.
    Recipient peace or donor entry into war also requests return.
+7. Completed missions are hidden by default. Show history / Hide history toggles
+   them; Clear history removes completed records whose retained vision expired.
+   Terminal records are automatically pruned after known recipient peace. They
+   never consume the active brigade limit, including immediately after load.
+
+0.0.13 CHANGES FOR RETEST
+- Saved-journal binding retries after transient read failure; restoring a journal
+  resets the daily date/page state. Specific session messages replace the generic
+  unavailable text. Exact cause of the tester's save/reload report is unconfirmed.
+- New Send intents are rejected atomically if the save journal would overflow;
+  existing missions remain intact. Cleared records do not reuse mission IDs.
+- Vision now keeps independently valid province grants if another province is
+  malformed, and includes native recipient-controller sight. It edits only local
+  display data, never simulation knowledge. Full in-game sharing needs retesting.
+- No artificial country-count/distance cap is added. Sea deployment is still absent.
 
 KNOWN LIMITS
 - SINGLE PLAYER ONLY. Multiplayer Send is deliberately refused. This is not an
   OOS-safe multiplayer release; matching DLL files alone do not make it one.
+  For a read-only MP loading/UI baseline, both peers may set mode=preview in
+  mod/tgcx_volunteers/tgcx_volunteers.cfg. Send/Recall stay unavailable. This does
+  not test volunteer combat synchronization or establish multiplayer safety.
 - Sending, player control, battles and siege progress were observed in earlier
   tests. The user accepted the CreatineCore 6.36 setup as working well enough.
+  This 0.0.13 feedback candidate has passed automated checks, not a new game run.
   Completed occupation credit, full return/loss/load coverage and accounting
   acceptance are not established. Recipient-wide fog sharing is still incomplete.
 - Existing exiled armies can need a normal return to accessible territory.
@@ -92,7 +115,7 @@ KNOWN LIMITS
   commands are not automatically replayed. Keep a pre-mod save backup.
 
 LOGS / TROUBLESHOOTING
-- Logs/tgcx_volunteers.log: build 0.0.12 and native_gui_installed,
+- Logs/tgcx_volunteers.log: build 0.0.13 and native_gui_installed,
   native_load_fence, native_journal_observer, scoped_hooks all true.
 - z_CreatineCore/Logs/v2dll.log: version 6.36, v2dll_mod.dll -> ok,
   ccore_performance_patch.dll -> ok, state/RNG probes disabled.
@@ -120,14 +143,20 @@ targeted native evidence and symbols. See the source repository for attribution:
 https://github.com/azha2005/victoria2tgcx
 '''
 
-CHANGELOG = '''Volunteers 0.0.12 SP beta - 2026-10-29
+CHANGELOG = '''Volunteers 0.0.13 SP beta feedback candidate - 2026-10-29
+- Rebind retry and reset runtime day/page state on loading a saved journal.
+- Hidden/clearable completed history, post-peace pruning and monotonic IDs.
+- Atomic journal-size refusal instead of partially accepting an overflowing Send.
+- Batched reachable idle-army chooser with multiple destination checks.
+- Independently validated province vision; controller sight; clearer session errors.
+- New features require in-game retesting. No multiplayer Send unlock.
 - Donor-owned/player-controlled volunteer prototype; native command journal.
 - Scoped combat/access, initial/existing siege permission and war attribution.
 - Native diplomacy entry and army-style chooser/forces windows.
 - Reduced idle hook, observer and repeated GUI overhead; sampled timing logs.
 - Packaged for the user-accepted CreatineCore 6.36 setup, installed separately.
 - Plain mod ZIP, no installer or command/launcher scripts. Internal DLL version
-  remains 0.0.12, byte-identical to the accepted test copy.
+  is 0.0.13, byte-identical to the regression-checked feedback candidate.
 - Full recipient vision, completed capture credit/lifecycle and MP remain open.
 '''
 

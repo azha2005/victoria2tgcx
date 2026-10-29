@@ -27,18 +27,21 @@ def collect(game, output, profile=None, save=None):
         raise ValueError('evidence output must be separate from the game')
     artifacts = set()
     for name in ('v2game.exe', 'lua51.dll', 'lua5.1.dll', 'dinput8.dll',
-                 'V2DLL/v2dll_core.dll', 'V2DLL/v2dll_settings.ini'):
+                 'V2DLL/v2dll_core.dll', 'V2DLL/v2dll_settings.ini',
+                 'z_CreatineCore/creatinecore.dll', 'z_CreatineCore/creatinecore_settings.ini'):
         if (game / name).is_file():
             artifacts.add(game / name)
     for pattern in ('mod/*.mod', 'mod/*/*.dll', 'V2DLL/Mods/*.dll',
                     'mod/*/tgcx_package.txt', 'mod/*/tgcx_volunteers.cfg',
-                    'mod/*/v2dll_mod_volunteers.ini', 'mod/*/v2dll_mod_volunteers.state'):
+                    'mod/*/v2dll_mod_volunteers.ini', 'mod/*/v2dll_mod_volunteers.state',
+                    'z_CreatineCore/dll_Submods/*.dll', 'z_CreatineCore/dll_Submods/*.ini'):
         artifacts.update(p for p in game.glob(pattern) if p.is_file())
     if len(artifacts) > 1024:
         raise ValueError('artifact inventory exceeds the bounded collector')
     sources = [(p, 'game/' + p.relative_to(game).as_posix()) for p in artifacts]
     for folder, label in ((game / 'Logs', 'game-logs'),
                           (game / 'V2DLL/Logs', 'loader-logs'),
+                          (game / 'z_CreatineCore/Logs', 'creatinecore-logs'),
                           ((profile / 'logs') if profile else None, 'profile-logs')):
         if folder and folder.is_dir():
             logs = sorted(p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in ('.log', '.txt'))
