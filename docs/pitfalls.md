@@ -1443,3 +1443,22 @@ matching files or synthetic layouts are not real paired compatibility. Two local
 processes writing the same fixed log can interleave/truncate traces; use separate
 install directories and profiles. Preserve clean full logs from both peers before
 claiming an OOS cause or fix. See report-volunteers-coexistence-1030.md.
+
+### P90 - Passing hook checks doesn't establish roster capture or HELLO execution
+
+2026-10-30. Tester0.0.17 accepts the third-party role hook and every native gate,
+yet has no HELLO post/receipt. Silent native roster/queue returns cannot be diagnosed
+as a missing peer plugin.0.0.18 reports initializer status, exact refused capture
+stage/raw values or accepted peer/source list. UI names local roster refusal.
+
+FUN_00680450 constructs parallel WORLD country/controller vectors ADC/AE0 and
+AEC/AF0. Their mutual lengths, active identity/pointer/source checks and complete
+human set matter; the independent global manager size is an index bound, not their
+length invariant. Correct the source model without inventing controller/source
+fallbacks. Actual tester first refusal is not established by the old silent log.
+
+Failed roster capture withdraws current receipt authority; successful recapture
+requires fresh native HELLOs and a new issuer round. Saved markers or old permits
+cannot replace admission. Canonical PID logs preserve each process independently
+of a shared legacy file. Later SP Send in mixed traces isn't MP acceptance. Select
+matching PID/save/load before comparing. See report-volunteers-roster-1030.md.

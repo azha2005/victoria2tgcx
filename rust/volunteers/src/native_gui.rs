@@ -979,7 +979,12 @@ impl Ui {
         self.text(self.forces, "tgcx_vl_forces_title", "Volunteer forces");
         self.text(self.forces, "tgcx_vl_recall_label", "Recall selected");
         self.text(self.forces, "tgcx_vl_clear_history_label", "Clear history");
-        let p = self.app.presentation(&self.world);
+        let mut p = self.app.presentation(&self.world);
+        if p.status == crate::session::Unavailable::MultiplayerHandshake.message()
+            && let Some(wait) = crate::native_mp_play::waiting(self.native)
+        {
+            p.status = wait;
+        }
         self.text(self.forces, "tgcx_vl_history_label", &p.history_label);
         for (key, value) in [
             ("donor", format!("From: {}", p.donor)),

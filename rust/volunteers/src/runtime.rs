@@ -60,7 +60,7 @@ struct Context {
     state: Mutex<Observation>,
 }
 struct Observation {
-    log: File,
+    log: crate::logging::Log,
     settings: Settings,
     calls: u64,
     last: Option<Snapshot>,
@@ -340,12 +340,18 @@ fn initialize_once(api: &V2ModApi) -> bool {
     if std::fs::create_dir_all(&logs).is_err() {
         return false;
     }
-    let Ok(mut log) = File::create(logs.join("tgcx_volunteers.log")) else {
+    let Ok(mut log) = crate::logging::Log::create(&logs, std::process::id()) else {
         return false;
     };
     let _ = writeln!(
         log,
-        "TGCX Volunteers 0.0.17 development; experimental MP whole-army gameplay; current-load peer admission required"
+        "TGCX Volunteers 0.0.18 development; experimental MP whole-army gameplay; current-load peer admission required"
+    );
+    let _ = writeln!(
+        log,
+        "process_id={} canonical_log=Logs/tgcx_volunteers_{}.log",
+        std::process::id(),
+        std::process::id()
     );
     if exe_hash(&exe).as_deref() != Some(EXE_SHA) {
         let _ = writeln!(

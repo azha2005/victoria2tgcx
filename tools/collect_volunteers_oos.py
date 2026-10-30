@@ -98,6 +98,8 @@ def collect(game, output, profile=None, save=None):
         if not save.is_file():
             raise ValueError('save path does not exist')
         sources.append((save, 'save/' + save.name))
+    canonical_parents = {p.parent for p, _ in sources
+                         if re.fullmatch(r'tgcx_volunteers_\d+\.log', p.name.lower())}
     output.mkdir(parents=True)
     report = {'game': str(game), 'coverage': 'listed binaries/descriptors/settings/logs only, not a full mod checksum',
               'private': True, 'files': {}, 'skipped': [], 'registry_records': {},
@@ -124,7 +126,9 @@ def collect(game, output, profile=None, save=None):
             rows = [line.split() for line in source.read_text(encoding='cp1252').splitlines()
                     if line.strip() and not line.lstrip().startswith(';')]
             report['registry_records'][name] = sorted(rows)
-        if source.name.lower() == 'tgcx_volunteers.log':
+        volunteer_log = re.fullmatch(r'tgcx_volunteers(?:_\d+)?\.log', source.name.lower())
+        if volunteer_log and (source.name.lower() != 'tgcx_volunteers.log'
+                              or source.parent not in canonical_parents):
             text = source.read_text(encoding='utf-8', errors='replace')
             report['mp_traces'][name] = mp_trace(text)
             text = text.rsplit('native_load_completed ', 1)[-1]

@@ -1,4 +1,4 @@
-# Volunteers 0.0.17
+# Volunteers 0.0.18
 
 Experimental SP and whole-army MP prototypes. Use `mode=mp` for explicit MP
 admission; `mp_probe` remains diagnostic only. No unknown session becomes SP.
@@ -27,3 +27,11 @@ with no installer, EXE, command files or scripts. Read its README for paired tes
 Startup and source fixtures are separate from actual multiplayer acceptance.
 No claim that the original OOS is fixed until paired movement/battle/siege/return,
 save/reload and engine OOS traces agree. No local maintenance or CRC bypass.
+
+0.0.18 validates the engine's parallel world country/controller vectors against
+one another, with the global country manager checked independently. Structured
+roster refusal stages/values and accepted peers are logged before HELLO. Failed
+captures withdraw cached receipt authority; successful recapture needs fresh
+HELLOs and a new issuer round. Per-process logs avoid interleaved local instances.
+Native startup, roster capture and HELLO execution are separately observable.
+Actual cause of the0.0.17 tester roster refusal still needs the new trace.

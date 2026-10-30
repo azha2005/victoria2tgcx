@@ -1,5 +1,7 @@
 # Index of `docs/`
 
+2026-10-30 VOL-MP-ROSTER: new0.0.17 log verifies compatible third-party Core hook/all native gates but no MP HELLO attempts; later Send is explicitly SP.0.0.18 corrects global/world roster-length coupling, adds exact refusal stages/UI and per-process logs, retains full peer/command gates.80 Rust/six stage/two MP-package/three collector checks pass;115 guards. Plain ZIP ready, not installed or paired-tested. `docs/report-volunteers-roster-1030.md`; `docs/instructions-volunteers-roster.md`.
+
 2026-10-30 VOL-COEXIST: user requires coexistence.0.0.17 replaces exact Core hash/private RVAs with bounded transparent role-probe instruction and original-continuation checks; preserves existing hooks. Clear native-compatibility UI refusal and owner/path/hash diagnostics.76 Rust tests and six stage/two MP-package checks pass;114 EXE guards unchanged. Plain MP ZIP ready, not installed/launched or paired-tested. `docs/report-volunteers-coexistence-1030.md`; `docs/instructions-volunteers-coexistence.md`.
 
 2026-10-30 VOL-MP:0.0.16 explicit whole-army MP prototype built. Native execution admission, per-donor orders and shared committed policy implemented; Core6.36 host-role signature conflict corrected and verified in an isolated real startup.70 Rust, six package, two MP-package and two collector tests pass;114 guards. Plain ZIP ready. User takes over the game; no paired gameplay/OOS acceptance yet. `docs/report-volunteers-mp-gameplay-1030.md`; `docs/instructions-volunteers-mp-gameplay.md`.

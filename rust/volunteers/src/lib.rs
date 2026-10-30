@@ -9,6 +9,7 @@ mod entry_visibility;
 pub mod lifecycle;
 #[cfg(any(test, all(windows, target_arch = "x86")))]
 mod loader_compat;
+mod logging;
 pub mod mission;
 pub mod model;
 pub mod mp_authority;
@@ -67,5 +68,5 @@ mod sha256;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn tgcx_VolunteersVersion() -> *const std::ffi::c_char {
-    c"TGCX Volunteers 0.0.17 development".as_ptr()
+    c"TGCX Volunteers 0.0.18 development".as_ptr()
 }

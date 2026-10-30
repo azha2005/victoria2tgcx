@@ -21,6 +21,7 @@ class MPProbePackageTests(unittest.TestCase):
                 self.assertIn(b'WHOLE EXISTING ARMIES ONLY',z.read('README.txt'))
                 self.assertIn(b'No exact loader hash or private DLL RVA',z.read('README.txt'))
                 self.assertIn(b'Existing\n  hooks are left in place',z.read('README.txt'))
+                self.assertIn(b'tgcx_volunteers_<PID>.log',z.read('README.txt'))
                 self.assertNotIn(b'NOT MP VOLUNTEER GAMEPLAY',z.read('README.txt'))
                 self.assertFalse(any(Path(p).suffix.lower() in {'.exe','.bat','.cmd','.ps1','.py','.js','.vbs','.lnk'} for p in z.namelist()))
 

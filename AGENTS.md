@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P90**).
+number (**the next one is P91**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -604,3 +604,5 @@ The project is for **personal use** (D6): V2DLL code may be used, marked
 - **P88** Native CSetVariableCommand Clone rebuilds source metadata; our MP clone wrapper must preserve namespaced sender IDs and the inspected seven-word RET1C ABI. Shared MP policy must not depend on UI thread/lock scheduling.
 
 - **P89** Coexistence checks should verify bounded transparent hook contracts rather than private loader RVAs/hashes; preserve existing hooks, and report local compatibility failure before waiting for MP peers.
+
+- **P90** A silent roster capture can block MP before any HELLO; compare parallel world vectors rather than an independent global size, log exact refusal stages, and use per-process logs to avoid mixed evidence.

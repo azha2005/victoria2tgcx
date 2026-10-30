@@ -8,49 +8,106 @@ use std::collections::BTreeSet;
 fn field(m: &impl Memory, p: u32, o: u32) -> Option<u32> {
     m.read32(p.checked_add(o)?)
 }
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Refusal {
+    pub stage: &'static str,
+    pub values: Vec<u32>,
+}
+fn refuse(stage: &'static str, values: &[u32]) -> Refusal {
+    Refusal {
+        stage,
+        values: values.to_vec(),
+    }
+}
+fn read(m: &impl Memory, p: u32, o: u32, stage: &'static str) -> Result<u32, Refusal> {
+    field(m, p, o).ok_or_else(|| refuse(stage, &[p, o]))
+}
 pub fn capture(m: &impl Memory, base: u32) -> Option<Roster> {
-    let session = crate::native_session::probe_queue(m, base)?;
+    capture_checked(m, base).ok()
+}
+pub fn capture_checked(m: &impl Memory, base: u32) -> Result<Roster, Refusal> {
+    let session = crate::native_session::probe_queue(m, base)
+        .ok_or_else(|| refuse("native_queue", &[base]))?;
     let world = session.world;
-    let local_country = field(m, world, 0xB60)?;
-    let local_source = u16::try_from(field(m, session.manager, 0x54)?).ok()?;
-    if local_source > 0x7FFF {
-        return None;
+    let local_country = read(m, world, 0xB60, "local_country")?;
+    let raw_source = read(m, session.manager, 0x54, "local_source")?;
+    let local_source = u16::try_from(raw_source)
+        .ok()
+        .filter(|s| *s <= 0x7FFF)
+        .ok_or_else(|| refuse("local_source_range", &[raw_source, local_country]))?;
+    let countries = read(m, base, 0xE587E4, "country_manager")?;
+    let count = read(m, countries, 0, "country_count")?;
+    if count == 0 || count > 4096 {
+        return Err(refuse("country_count", &[count]));
     }
-    let countries = m.read32(base.checked_add(0xE587E4)?)?;
-    let count = m.read32(countries)?;
-    if count > 4096 {
-        return None;
+    let country_table = read(m, countries, 4, "country_table")?;
+    let start = read(m, world, 0xAEC, "controller_vector")?;
+    let end = read(m, world, 0xAF0, "controller_vector")?;
+    let world_start = read(m, world, 0xADC, "world_country_vector")?;
+    let world_end = read(m, world, 0xAE0, "world_country_vector")?;
+    let len = end
+        .checked_sub(start)
+        .filter(|n| *n > 0 && *n <= 4096 * 4 && n % 4 == 0)
+        .ok_or_else(|| refuse("controller_bounds", &[start, end, count]))?;
+    // FUN_00680450 constructs these parallel WORLD vectors. The global manager
+    // is a separate index bound; its size is not their allocation/length proof.
+    if start == 0 || world_start == 0 || world_end.checked_sub(world_start) != Some(len) {
+        return Err(refuse(
+            "parallel_world_vectors",
+            &[start, end, world_start, world_end, count],
+        ));
     }
-    let country_table = field(m, countries, 4)?;
-    let start = field(m, world, 0xAEC)?;
-    let end = field(m, world, 0xAF0)?;
-    let len = end.checked_sub(start)?;
-    if start == 0 || len % 4 != 0 || len / 4 != count {
-        return None;
-    }
-    let head = field(m, world, 0x18)?;
-    let tail = field(m, world, 0x1C)?;
-    let size = field(m, world, 0x20)?;
+    let slots = len / 4;
+    let head = read(m, world, 0x18, "human_list")?;
+    let tail = read(m, world, 0x1C, "human_list")?;
+    let size = read(m, world, 0x20, "human_list")?;
     if !(2..=32).contains(&size) {
-        return None;
+        return Err(refuse(
+            "human_list_size",
+            &[size, head, tail, local_country, raw_source],
+        ));
     }
     let mut node = head;
     let mut previous = 0;
     let mut seen = BTreeSet::new();
     let mut peers = Vec::new();
     while node != 0 {
-        if peers.len() >= size as usize || !seen.insert(node) || field(m, node, 0x38)? != previous {
-            return None;
+        if peers.len() >= size as usize || !seen.insert(node) {
+            return Err(refuse("human_list_cycle", &[node, size]));
         }
-        let source = u16::try_from(field(m, node, 0x1C)?).ok()?;
-        let country = field(m, node, 0x24)?;
-        let tag = field(m, node, 0x20)?;
-        if country == 0 || country >= count || field(m, start, country.checked_mul(4)?)? == 0 {
-            return None;
+        let back = read(m, node, 0x38, "human_backlink")?;
+        if back != previous {
+            return Err(refuse("human_backlink", &[node, back, previous]));
         }
-        let p = field(m, country_table, country * 4)?;
-        if field(m, p, 0x20)? != country || field(m, p, 0x1C)? != tag {
-            return None;
+        let raw = read(m, node, 0x1C, "human_source")?;
+        let source = u16::try_from(raw)
+            .ok()
+            .filter(|s| *s <= 0x7FFF)
+            .ok_or_else(|| refuse("human_source_range", &[node, raw]))?;
+        let country = read(m, node, 0x24, "human_country")?;
+        let tag = read(m, node, 0x20, "human_tag")?;
+        if country == 0 || country >= count || country >= slots {
+            return Err(refuse(
+                "human_country_bounds",
+                &[node, country, count, slots],
+            ));
+        }
+        let flag = read(m, start, country * 4, "human_controller")?;
+        if flag == 0 {
+            return Err(refuse(
+                "human_controller_missing",
+                &[node, country, source.into()],
+            ));
+        }
+        let ptr = read(m, country_table, country * 4, "country_pointer")?;
+        let world_ptr = read(m, world_start, country * 4, "world_country_pointer")?;
+        let index = read(m, ptr, 0x20, "country_index")?;
+        let actual_tag = read(m, ptr, 0x1C, "country_tag")?;
+        if ptr == 0 || ptr != world_ptr || index != country || actual_tag != tag {
+            return Err(refuse(
+                "country_identity",
+                &[country, ptr, world_ptr, index, tag, actual_tag],
+            ));
         }
         peers.push(Peer {
             source,
@@ -58,51 +115,81 @@ pub fn capture(m: &impl Memory, base: u32) -> Option<Roster> {
             tag,
         });
         previous = node;
-        node = field(m, node, 0x3C)?;
+        node = read(m, node, 0x3C, "human_next")?;
     }
     if previous != tail || peers.len() != size as usize {
-        return None;
+        return Err(refuse(
+            "human_list_end",
+            &[previous, tail, peers.len() as u32, size],
+        ));
     }
     let mut human = BTreeSet::new();
-    for country in 0..count {
-        if field(m, start, country * 4)? != 0 {
+    for country in 0..slots {
+        if read(m, start, country * 4, "controller_read")? != 0 {
             human.insert(country);
         }
     }
-    if human != peers.iter().map(|p| p.country).collect() {
-        return None;
+    let listed = peers.iter().map(|p| p.country).collect();
+    if human != listed {
+        return Err(refuse(
+            "human_controller_set",
+            &human.into_iter().collect::<Vec<_>>(),
+        ));
     }
     let local = *peers
         .iter()
-        .find(|p| p.country == local_country && p.source == local_source)?;
-    if field(m, start, local_country * 4)? != 1 {
-        return None;
+        .find(|p| p.country == local_country && p.source == local_source)
+        .ok_or_else(|| {
+            let mut values = vec![local_country, raw_source];
+            for p in &peers {
+                values.extend([p.country, p.source.into()]);
+            }
+            refuse("local_source_country", &values)
+        })?;
+    let local_flag = read(m, start, local_country * 4, "local_controller")?;
+    if local_flag != 1 {
+        return Err(refuse(
+            "local_controller",
+            &[local_country, local_flag, raw_source],
+        ));
     }
     let roster = Roster { peers, local };
-    roster.canonical()?;
-    if m.read32(base + 0xE588E8)? != world
-        || field(m, world, 0x18)? != head
-        || field(m, world, 0x1C)? != tail
-        || field(m, world, 0x20)? != size
-        || field(m, world, 0xAEC)? != start
-        || field(m, world, 0xAF0)? != end
+    roster
+        .canonical()
+        .ok_or_else(|| refuse("duplicate_or_invalid_peer", &[size]))?;
+    if read(m, base, 0xE588E8, "stable_world")? != world
+        || read(m, base, 0xE587E4, "stable_country_manager")? != countries
+        || read(m, countries, 0, "stable_country_count")? != count
+        || read(m, countries, 4, "stable_country_table")? != country_table
+        || read(m, world, 0x18, "stable_head")? != head
+        || read(m, world, 0x1C, "stable_tail")? != tail
+        || read(m, world, 0x20, "stable_size")? != size
+        || read(m, world, 0xAEC, "stable_controllers")? != start
+        || read(m, world, 0xAF0, "stable_controllers")? != end
+        || read(m, world, 0xADC, "stable_countries")? != world_start
+        || read(m, world, 0xAE0, "stable_countries")? != world_end
+        || read(m, world, 0xB60, "stable_local_country")? != local_country
+        || read(m, session.manager, 0x54, "stable_local_source")? != raw_source
     {
-        return None;
+        return Err(refuse(
+            "changed_during_capture",
+            &[world, local_country, raw_source],
+        ));
     }
-    Some(roster)
+    Ok(roster)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
-    struct Fixture(BTreeMap<u32, u32>);
+    pub(super) struct Fixture(pub(super) BTreeMap<u32, u32>);
     impl Memory for Fixture {
         fn read32(&self, p: u32) -> Option<u32> {
             self.0.get(&p).copied()
         }
     }
-    fn fixture(local: u32) -> Fixture {
+    pub(super) fn fixture(local: u32) -> Fixture {
         let base = 0x80000;
         let w = 0x2000000;
         let manager = 0x2600000;
@@ -130,6 +217,8 @@ mod tests {
             (0x270001C, manager),
             (base + 0xA42728 + 24, base + 0x662EA0),
             (base + 0xA427C8 + 24, base + 0x666B30),
+            (w + 0xADC, 0x2200000),
+            (w + 0xAE0, 0x220000C),
             (w + 0xAEC, 0x2800000),
             (w + 0xAF0, 0x280000C),
             (0x2800000, 0),
@@ -177,6 +266,44 @@ mod tests {
             let mut f = fixture(1);
             f.0.insert(field, value);
             assert!(capture(&f, 0x80000).is_none(), "{field:x}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod diagnostic_tests {
+    use super::tests::fixture;
+    use super::*;
+    #[test]
+    fn global_capacity_is_independent_but_world_vectors_and_identities_must_agree() {
+        let mut f = fixture(1);
+        f.0.insert(0x2100000, 4);
+        assert!(capture_checked(&f, 0x80000).is_ok());
+        f.0.insert(0x2000000 + 0xAE0, 0x2200010);
+        assert_eq!(
+            capture_checked(&f, 0x80000).unwrap_err().stage,
+            "parallel_world_vectors"
+        );
+        let mut f = fixture(1);
+        f.0.insert(0x2000000 + 0xADC, 0x2210000);
+        f.0.insert(0x2000000 + 0xAE0, 0x221000C);
+        f.0.insert(0x2210004, 0xABCD0000);
+        assert_eq!(
+            capture_checked(&f, 0x80000).unwrap_err().stage,
+            "country_identity"
+        );
+    }
+    #[test]
+    fn explicit_stages_distinguish_invalid_source_local_flag_and_missing_human() {
+        for (p, v, stage) in [
+            (0x2600054, 0xFFFF, "local_source_range"),
+            (0x2600054, 9, "local_source_country"),
+            (0x2800004, 2, "local_controller"),
+            (0x2800008, 0, "human_controller_missing"),
+        ] {
+            let mut f = fixture(1);
+            f.0.insert(p, v);
+            assert_eq!(capture_checked(&f, 0x80000).unwrap_err().stage, stage);
         }
     }
 }

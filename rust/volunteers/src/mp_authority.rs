@@ -125,6 +125,12 @@ impl Admission {
     pub fn fail(&mut self) {
         self.failed = true;
     }
+    /// A failed roster observation withdraws receipts without reusing an old
+    /// authority round. A later complete roster needs fresh native HELLOs.
+    pub fn withdraw(&mut self) {
+        self.received.clear();
+        self.roster.clear();
+    }
     pub fn ready(&self) -> bool {
         !self.failed
             && self.epoch != 0
@@ -192,6 +198,36 @@ mod tests {
             local: peers[local],
             peers,
         }
+    }
+    #[test]
+    fn withdrawn_roster_requires_fresh_receipts_and_invalidates_old_issuer_round() {
+        let roster = roster(0);
+        let fp = "a".repeat(64);
+        let mut a = Admission::default();
+        a.bind(1, &roster, &fp);
+        for p in &roster.peers {
+            assert!(a.receive(p.source, p.country, 1, &fp));
+        }
+        let old = a.issuer(roster.local.country).unwrap();
+        let caps = crate::session::Capabilities {
+            session_detection: true,
+            campaign_binding: true,
+            command_queue: true,
+            combat: true,
+            access: true,
+            vision: true,
+            persistence: true,
+        };
+        let permit = crate::session::admit_issuer(old, caps, 1, roster.local.country).unwrap();
+        a.withdraw();
+        assert!(!a.ready());
+        assert!(a.issuer(roster.local.country).is_none());
+        a.bind(1, &roster, &fp);
+        assert!(!a.ready());
+        for p in &roster.peers {
+            assert!(a.receive(p.source, p.country, 2, &fp));
+        }
+        assert!(!permit.authorized_by(a.issuer(roster.local.country).unwrap()));
     }
     #[test]
     fn all_current_load_peers_and_correct_sources_are_required() {

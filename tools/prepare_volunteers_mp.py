@@ -148,7 +148,7 @@ LIMITS / TROUBLESHOOTING
 - Whole-army reuse avoids unsynchronized new army-ID allocation. No partial Send.
 - No local maintenance/RNG/CRC bypass is added. Original OOS is not yet proven fixed.
 - Completed history is hidden/clearable and does not consume the active limit.
-- Logs/tgcx_volunteers.log must show {development.VERSION}, native_gui_installed,
+- Logs/tgcx_volunteers_<PID>.log must show {development.VERSION}, native_gui_installed,
   native_load_fence, native_journal_observer, scoped_hooks all true, plus
   mp_gameplay_requested=true. Startup now lists exact mismatching RVAs.
 -0.0.17 recognizes transparent host-role probes by instruction/continuation
@@ -156,6 +156,16 @@ LIMITS / TROUBLESHOOTING
   No exact loader hash or private DLL RVA is required for this contract. Existing
   hooks are left in place; unrelated plugins do not need to be disabled merely
   because they are loaded. Unknown gameplay-changing hooks still refuse.
+-0.0.18 checks the parallel WORLD country/controller vectors against each other;
+  the separate global manager size is used as an index bound, not their length.
+  Every roster field/identity/source check still applies. Accepted/refused roster
+  stages are logged explicitly, so waiting does not hide a local read refusal.
+- If the player roster cannot be established, Send stays refused and the panel
+  identifies its stage. This is a correction/diagnostic candidate, not proof that
+  the tester's silent roster refusal or original OOS is fixed.
+- Each process now keeps a complete Logs/tgcx_volunteers_<PID>.log. Send BOTH
+  per-process logs, beginning at startup. The old tgcx_volunteers.log is retained
+  for convenience but can mix output when instances share a game folder.
 - On conflict the log reports native_hook_chain_refused with reason/module path,
   and the UI says compatibility failed instead of falsely waiting for peers.
   Sharing a version label does not establish binary or configuration equality.

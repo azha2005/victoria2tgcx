@@ -7,6 +7,19 @@ import collect_volunteers_oos as collector
 
 
 class CollectorTests(unittest.TestCase):
+    def test_per_process_trace_is_parsed_without_its_shared_legacy_mirror(self):
+        collector.WORK.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=collector.WORK) as temp:
+            root=Path(temp);game=root/'game';(game/'Logs').mkdir(parents=True)
+            (game/'v2game.exe').write_bytes(b'fake exe')
+            sample='mp_sync_sample date=24 journals=0 digest='+('a'*64)+' bootstrap_complete=true refused=0 missed=0\n'
+            (game/'Logs/tgcx_volunteers_123.log').write_text(sample)
+            (game/'Logs/tgcx_volunteers.log').write_text(sample.replace('date=24','date=48'))
+            collector.collect(game,root/'evidence')
+            report=json.loads((root/'evidence/evidence.json').read_text())
+            self.assertEqual(list(report['mp_traces']),['game-logs/tgcx_volunteers_123.log'])
+            self.assertEqual(report['mp_traces']['game-logs/tgcx_volunteers_123.log']['samples'][0]['date'],24)
+            self.assertTrue((root/'evidence/game-logs/tgcx_volunteers.log').is_file())
     def test_mp_receipts_and_first_unambiguous_mismatch_exclude_failed_or_old_loads(self):
         a,b='a'*64,'b'*64
         def sample(day,digest,extra=''):

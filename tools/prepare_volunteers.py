@@ -9,7 +9,7 @@ from tgcx_pe import PE
 from tgcx_volunteers_gui import generate
 
 ROOT=Path(__file__).resolve().parent.parent
-VERSION='0.0.17'
+VERSION='0.0.18'
 FOLDER='tgcx_volunteers'
 SETTINGS='''# Conservative audit default: retain only the observer.
 # mode=preview explicitly opts into the untested diplomacy UI.
@@ -20,7 +20,7 @@ max_brigades=5
 # Log sampling cadence in executed tick commands, 1..30.
 sample_every_days=7
 '''
-README='''Volunteers 0.0.17 development staging payload.
+README='''Volunteers 0.0.18 development staging payload.
 
 This private staging output defaults to observe; it is not the MP handoff.
 Use tools/prepare_volunteers_mp.py --gameplay for the plain MP prototype ZIP
@@ -33,7 +33,7 @@ roster, matching build/policy fingerprints and one local command issuer per dono
 The plugin uses native commands and saved country-variable journals; no local
 sidecar grants simulation authority and no unit commands are replayed on load.
 
-0.0.17 separates startup UI/gameplay signature groups, diagnoses mismatching RVAs,
+0.0.18 separates startup UI/gameplay signature groups, diagnoses mismatching RVAs,
 recognizes transparent role probes by their bounded code/continuation contract, preserves our variable-command
 clone sender metadata, and derives MP combat/access/siege policy at native command
 boundaries. SP partial-army sending remains; MP reuses whole existing armies only.

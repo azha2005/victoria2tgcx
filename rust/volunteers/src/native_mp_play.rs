@@ -19,9 +19,11 @@ struct State {
     journals: BTreeMap<u32, crate::engine_store::Loaded>,
     last_hello: Option<u32>,
     last_digest: Option<String>,
+    last_refusal: Option<crate::native_roster::Refusal>,
 }
 pub fn initialize(enabled: bool, plugin: &str, max: usize) {
     let Some(fp) = mp_authority::fingerprint(plugin, max) else {
+        crate::runtime::diagnostic("mp_gameplay_init_refused reason=fingerprint");
         return;
     };
     if STATE
@@ -35,10 +37,14 @@ pub fn initialize(enabled: bool, plugin: &str, max: usize) {
             journals: BTreeMap::new(),
             last_hello: None,
             last_digest: None,
+            last_refusal: None,
         }))
         .is_ok()
     {
         ENABLED.store(enabled, Ordering::Release);
+        crate::runtime::diagnostic(&format!(
+            "mp_gameplay_initialized enabled={enabled} (full native roster and execution receipts required)"
+        ));
     }
 }
 pub fn invalidate() {
@@ -53,13 +59,19 @@ pub fn invalidate() {
         s.journals.clear();
         s.last_hello = None;
         s.last_digest = None;
+        s.last_refusal = None;
     }
 }
 fn session(n: Native) -> Option<(crate::native_session::Session, u64)> {
     if !ENABLED.load(Ordering::Acquire) {
         return None;
     }
-    let session = crate::native_session::probe_queue(&n, n.base)?;
+    // Classification is enough to diagnose a refused Post slot. Posting and
+    // issuer permits still require the separately checked native queue.
+    let session = crate::native_session::capture(&n, n.base)?;
+    if session.mode != crate::session::SessionMode::Multiplayer {
+        return None;
+    }
     let epoch = crate::native_lifecycle::epoch(session.context)?;
     Some((session, epoch))
 }
@@ -72,21 +84,75 @@ fn bind(s: &mut State, session: crate::native_session::Session, epoch: u64, rost
         s.journals.clear();
         s.last_hello = None;
         s.last_digest = None;
+        s.last_refusal = None;
     }
     let changed = s.roster.as_ref().and_then(Roster::canonical) != roster.canonical();
     s.admission.bind(epoch, &roster, &s.fp);
     if changed {
+        crate::runtime::diagnostic(&format!(
+            "mp_roster_accepted epoch={epoch} local={:?} peers={:?}",
+            roster.local, roster.peers
+        ));
         s.last_hello = None;
         s.last_digest = None;
         s.journals
             .retain(|country, _| roster.peers.iter().any(|p| p.country == *country));
     }
+    s.last_refusal = None;
     s.roster = Some(roster);
+}
+fn checked_roster(
+    n: Native,
+    session: crate::native_session::Session,
+    epoch: u64,
+) -> Option<Roster> {
+    match crate::native_roster::capture_checked(&n, n.base) {
+        Ok(roster) => Some(roster),
+        Err(error) => {
+            if let Some(lock) = STATE.get()
+                && let Ok(mut s) = lock.lock()
+            {
+                if s.epoch != epoch || s.world != session.world || s.context != session.context {
+                    s.epoch = epoch;
+                    s.world = session.world;
+                    s.context = session.context;
+                    s.admission = Admission::default();
+                    s.journals.clear();
+                    s.last_hello = None;
+                    s.last_digest = None;
+                    s.roster = None;
+                    s.last_refusal = None;
+                }
+                if s.last_refusal.as_ref() != Some(&error) {
+                    crate::runtime::diagnostic(&format!(
+                        "mp_roster_refused epoch={epoch} world={:08X} stage={} values={:?} (no peer authority granted)",
+                        session.world, error.stage, error.values
+                    ));
+                }
+                s.admission.withdraw();
+                s.roster = None;
+                s.last_digest = None;
+                s.last_refusal = Some(error);
+            }
+            None
+        }
+    }
+}
+pub fn waiting(n: Native) -> Option<String> {
+    let (session, epoch) = session(n)?;
+    let s = STATE.get()?.lock().ok()?;
+    if s.epoch != epoch || s.world != session.world {
+        return None;
+    }
+    s.last_refusal
+        .as_ref()
+        .map(|e| format!("MP player roster unavailable ({}); check the log.", e.stage))
 }
 /// Cheap UI view, never sufficient to post a command. Posting checks a fresh
 /// native roster as well as this sealed current-load execution admission.
 pub fn issuer(n: Native) -> Option<IssuerAuthority> {
     let (session, epoch) = session(n)?;
+    crate::native_session::probe_queue(&n, n.base)?;
     let country = n.field(session.world, 0xB60)?;
     let source = n.field(session.manager, 0x54)?;
     let s = STATE.get()?.lock().ok()?;
@@ -193,7 +259,7 @@ pub fn before_tick(n: Native) {
     let Some((session, epoch)) = session(n) else {
         return;
     };
-    let Some(roster) = crate::native_roster::capture(&n, n.base) else {
+    let Some(roster) = checked_roster(n, session, epoch) else {
         crate::native_hooks::publish_network(None, None);
         return;
     };
@@ -216,7 +282,7 @@ pub fn variable(n: Native, command: u32, key: &str) -> bool {
     // Capture a new native roster only at hello/HEAD/barriers, not per word of
     // a large journal transaction. Source checks use the last admitted roster.
     let roster = (hello || key == crate::engine_store::HEAD)
-        .then(|| crate::native_roster::capture(&n, n.base))
+        .then(|| checked_roster(n, session, epoch))
         .flatten();
     let Some(lock) = STATE.get() else {
         return true;
@@ -296,7 +362,7 @@ pub fn after_tick(n: Native) {
     let Some(date) = n.field(session.world, 0xB0C) else {
         return;
     };
-    let Some(roster) = crate::native_roster::capture(&n, n.base) else {
+    let Some(roster) = checked_roster(n, session, epoch) else {
         return;
     };
     let local = roster.local;
