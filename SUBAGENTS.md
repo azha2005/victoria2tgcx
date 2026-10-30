@@ -1,5 +1,7 @@
 # SUBAGENTS.md — The project, in cards
 
+2026-10-29 VOL-MP-PACKAGE: user wanted0.0.15 entry fixes in MP. Separate plain MP probe ZIP prepared; same DLL, mode=mp_probe,19 files/460894 bytes. Package fixture and direct DLL/mode comparison pass. MP gameplay/OOS still unresolved; no install/game test. `docs/report-volunteers-mp-package-1029.md`; `docs/instructions-volunteers-mp-sync.md`.
+
 2026-10-29 VOL-ENTRY: tester reports disappearing button.0.0.15 defers worker hides, repairs verified covered/child-hidden entries and expired roots, and separates checkpoint command fences from UI failure.61 Rust/six package/two share/one MP package/two collector checks and107 guards pass;11 visual files unchanged. Plain SP ZIP ready; not installed or tested in game. MP gameplay/OOS remain open. `docs/report-volunteers-entry-1029.md`; `docs/instructions-volunteers-entry.md`.
 
 2026-10-29 VOL-MP-SYNC: user requests MP/OOS attempt.0.0.14 native host/client variable-command probe, execution receipts, all-country journal mirror and paired-log comparison built.57 Rust/six package/two collector/one MP ZIP/two SP ZIP checks and105 guards pass. Plain probe ZIP ready, not installed or tested on peers; MP volunteer gameplay and original OOS unresolved. `docs/report-volunteers-mp-sync-1029.md`; `docs/instructions-volunteers-mp-sync.md`.

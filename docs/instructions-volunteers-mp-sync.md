@@ -1,22 +1,24 @@
 # VOL-MP-SYNC: paired transport test and next implementation
 
 2026-10-29. Read report-volunteers-mp-sync-1029.md and pitfalls P12/P69/P83/P84.
-The user asks to attempt MP/OOS support.0.0.14 is a diagnostic transport build,
+The user asks to attempt MP/OOS support.0.0.15 is a diagnostic transport build,
 not MP volunteers or an OOS fix. The user/tester retain game/desktop operation.
 
-1. Keep0.0.13 SP ZIP and accepted0.0.12 installation as rollbacks. Use separate
+1. Keep the prior SP ZIP and accepted0.0.12 installation as rollbacks. Use separate
    disposable game copies, reference EXE, TGC2.5.2 and CreatineCore6.36. Match full
    mod/loader/settings on both peers. Do not replace the only campaign save.
-2. With games closed normally, extract the plain0.0.14 MP-sync-probe ZIP beside
+2. With games closed normally, extract work/volunteers-mp-0015/final/Volunteers-0.0.15-MP-sync-probe.zip beside
    v2game.exe. Normal launcher selects00 loader data, TGC, ZZ MP sync probe;
    never both old and new Volunteers descriptors. No BAT/CMD/scripts or external
    launcher needed. README includes exact loader/performance settings.
 3. Preserve a common pre-test save and run a baseline without Volunteers first.
    Host/join a two-player MP session, each controlling a different country.
-   mode=mp_probe is already set. Verify0.0.14, signature admission, load fence
+   mode=mp_probe is already set. Verify0.0.15, signature admission, load fence
    and native journal observer in Logs/tgcx_volunteers.log. Offline check_exe
-   covers105 scoped records; no failed gate may be overridden.
-4. Unpause briefly. Expect one mp_probe_post attempt per local country/load;
+   covers107 scoped records; no failed gate may be overridden.
+4. Test the Send volunteers entry after opening/closing Diplomacy, switching
+   countries and background/restore. The0.0.15 native entry corrections are present
+   even though MP Send/Recall remain unavailable. Then unpause briefly. Expect one mp_probe_post attempt per local country/load;
    queued=true alone is insufficient. BOTH logs need mp_probe_execute receipts
    for BOTH countries with the same fingerprint/sequence and matches_local=true.
    Capture exact native source metadata; do not interpret it as country authority.

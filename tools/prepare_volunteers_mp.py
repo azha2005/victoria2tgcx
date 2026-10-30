@@ -9,12 +9,18 @@ import prepare_volunteers as development
 from prepare_volunteers_share import ACCEPTED_CARRIER
 
 ROOT = Path(__file__).resolve().parents[1]
-WORK = ROOT / 'work/volunteers-mp-0014'
+WORK = ROOT / f"work/volunteers-mp-{development.VERSION.replace('.', '')}"
 README = f'''VOLUNTEERS {development.VERSION} - MULTIPLAYER SYNC PROBE (NOT MP VOLUNTEER GAMEPLAY)
 
 This build tests native network delivery and records matching volunteer-journal
 digests. It does NOT enable multiplayer Send, Recall, combat or siege. It does
-not fix the reported OOS yet. Keep 0.0.13 for normal single-player testing.
+not fix the reported OOS yet. Use the separate SP beta for single-player testing.
+
+This package includes the 0.0.15 button recovery fixes: deferred background-thread
+hides, native layer/child visibility repair and expired-window reconstruction.
+Checkpoint failures retain the validated UI while mission commands stay fenced.
+The native button should remain visible and open its panels in MP, even though
+MP Send/Recall are unavailable. Test background/restore and reopening Diplomacy.
 
 Both players need the reference Victoria II 3.04 x86 executable, TGC 2.5.2 and
 CreatineCore 6.36 installed separately, with matching mods/settings/DLLs. EXE SHA:
