@@ -1,4 +1,4 @@
-# Volunteers 0.0.16
+# Volunteers 0.0.17
 
 Experimental SP and whole-army MP prototypes. Use `mode=mp` for explicit MP
 admission; `mp_probe` remains diagnostic only. No unknown session becomes SP.
@@ -11,8 +11,11 @@ Merged immutable policy retains per-donor campaign IDs and is never persisted.
 MP sends whole existing armies only; native split controls can prepare a small
 stack first. This avoids unsynchronized allocation of a new army ID.
 
-Native hooks require exact relocated signatures. The official CreatineCore6.36
-host-role probe is accepted only by exact file hash, thunk and trampoline checks.
+Native hooks require exact relocated signatures. Transparent host-role probes
+are recognized by their bounded instruction and original-continuation contract,
+independent of DLL hashes, names or private RVAs. Compatible existing hooks remain
+in place; other plugins are not refused by their mere presence. Unknown changes
+report hook owner/path and a refusal reason rather than bypassing their code.
 UI gates are independent so a gameplay mismatch can remain diagnosable. Our
 CSetVariableCommand clone wrapper preserves sender metadata with its inspected
 ECX / seven opaque stack words / EAX / RET1C ABI; flags/sequence stay native.

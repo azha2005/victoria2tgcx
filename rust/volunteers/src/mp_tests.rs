@@ -249,3 +249,31 @@ fn reloading_requires_new_admission_and_never_replays_assembly() {
     assert!(permit.commands_for(625));
     assert!(!permit.commands_for(626));
 }
+
+#[test]
+fn native_compatibility_failure_is_not_reported_as_missing_peer_handshake() {
+    let (mut app, mut world) = crate::send_tests::setup(2);
+    app.settings.mp_play = true;
+    world.mode = SessionMode::Multiplayer;
+    app.capabilities.combat = false;
+    app.capabilities.command_queue = false;
+    assert_eq!(
+        app.gate(&world).unwrap_err(),
+        session::Unavailable::NativeCompatibility
+    );
+    assert!(
+        app.presentation(&world)
+            .status
+            .contains("compatibility failed")
+    );
+    app.capabilities.combat = true;
+    assert_eq!(
+        app.gate(&world).unwrap_err(),
+        session::Unavailable::MultiplayerHandshake
+    );
+    world.mp_authority = admitted(1).issuer(625);
+    assert_eq!(
+        app.gate(&world).unwrap_err(),
+        session::Unavailable::NativeCommands
+    );
+}

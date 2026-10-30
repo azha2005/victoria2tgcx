@@ -144,15 +144,23 @@ USE / PAIRED TEST
    existing loader/mod desyncs. All peers must have identical game/mod builds.
 
 LIMITS / TROUBLESHOOTING
-- This is the first actual MP gameplay candidate, not the previous probe-only ZIP.
+- This is an experimental MP gameplay candidate; actual paired acceptance is pending.
 - Whole-army reuse avoids unsynchronized new army-ID allocation. No partial Send.
 - No local maintenance/RNG/CRC bypass is added. Original OOS is not yet proven fixed.
 - Completed history is hidden/clearable and does not consume the active limit.
-- Logs/tgcx_volunteers.log must show 0.0.16, native_gui_installed,
+- Logs/tgcx_volunteers.log must show {development.VERSION}, native_gui_installed,
   native_load_fence, native_journal_observer, scoped_hooks all true, plus
   mp_gameplay_requested=true. Startup now lists exact mismatching RVAs.
-- Official Core6.36's existing host-role hook is accepted only after checking
-  that DLL's hash, thunk and original trampoline. Unknown hooks remain refused.
+-0.0.17 recognizes transparent host-role probes by instruction/continuation
+  contracts, including relinked modules, direct JMP veneers and stacked probes.
+  No exact loader hash or private DLL RVA is required for this contract. Existing
+  hooks are left in place; unrelated plugins do not need to be disabled merely
+  because they are loaded. Unknown gameplay-changing hooks still refuse.
+- On conflict the log reports native_hook_chain_refused with reason/module path,
+  and the UI says compatibility failed instead of falsely waiting for peers.
+  Sharing a version label does not establish binary or configuration equality.
+- For two local instances use SEPARATE game directories and save profiles. The
+  earlier shared log interleaved two worlds/players and cannot prove paired order.
 - Missing native gates can leave the button usable for diagnostics while Send
   stays unavailable. Do not remove signature/session/peer checks.
 

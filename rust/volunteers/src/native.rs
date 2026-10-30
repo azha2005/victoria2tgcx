@@ -207,7 +207,7 @@ impl Native {
                     && crate::loader_compat::server_role_probe(n, &expected)
                 {
                     crate::runtime::diagnostic(
-                        "native_signature_compatible rva=662EA0 official-CreatineCore6.36 role probe/thunk/trampoline verified",
+                        "native_signature_compatible rva=662EA0 transparent role-probe chain and original continuation verified",
                     );
                     continue;
                 }

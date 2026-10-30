@@ -187,6 +187,11 @@ impl App {
         if w.mode == SessionMode::Multiplayer && !self.settings.mp_play {
             return Err(Unavailable::MultiplayerUnsupported);
         }
+        if w.mode == SessionMode::Multiplayer
+            && (!self.capabilities.combat || !self.capabilities.access || !self.capabilities.vision)
+        {
+            return Err(Unavailable::NativeCompatibility);
+        }
         if w.mode == SessionMode::Multiplayer && self.settings.mp_play && w.mp_authority.is_none() {
             return Err(Unavailable::MultiplayerHandshake);
         }

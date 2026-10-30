@@ -1425,3 +1425,21 @@ and allow only the admitted local donor to emit derived orders. Whole-stack reus
 avoids racing new IDs. Fresh complete-roster receipt admission is separate from
 probe diagnostics and saved markers. Two-replica fixtures are not two real peers
 or evidence that the original OOS has been fixed. See0.0.16 report/instructions.
+
+### P89 - A supported loader label is not a stable private layout or a peer handshake
+
+2026-10-30. The0.0.16 uploaded log rejects RVA662EA0 before any MP HELLO, yet the
+panel says waiting for peers. Display actual local native compatibility failure
+first. Exact loader hashes/private RVAs also overconstrain unchanged transparent
+role probes after relinking.0.0.17 recognizes only the complete bounded register/
+flags-preserving private-marker and original-continuation contract, at arbitrary
+module addresses. Verify executable/writable/image bounds and cycles; never call
+foreign hooks to inspect them, blindly accept E9, or bypass the existing hook.
+Other plugin names don't prove conflict or authorize a permanent disable policy.
+Unknown gameplay-changing contracts still need evidence and separate validation.
+
+New diagnostics include owner/path/hash/refusal stage. Repeated version labels,
+matching files or synthetic layouts are not real paired compatibility. Two local
+processes writing the same fixed log can interleave/truncate traces; use separate
+install directories and profiles. Preserve clean full logs from both peers before
+claiming an OOS cause or fix. See report-volunteers-coexistence-1030.md.

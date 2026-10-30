@@ -67,5 +67,5 @@ mod sha256;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn tgcx_VolunteersVersion() -> *const std::ffi::c_char {
-    c"TGCX Volunteers 0.0.16 development".as_ptr()
+    c"TGCX Volunteers 0.0.17 development".as_ptr()
 }

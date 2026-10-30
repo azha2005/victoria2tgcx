@@ -25,6 +25,7 @@ pub enum Unavailable {
     SessionUnknown,
     MultiplayerUnsupported,
     MultiplayerHandshake,
+    NativeCompatibility,
     CampaignUnbound,
     NativeCommands,
     Combat,
@@ -39,6 +40,9 @@ impl Unavailable {
             Self::MultiplayerUnsupported => "Multiplayer sending is not supported in this build.",
             Self::MultiplayerHandshake => {
                 "Waiting for all MP players to enable the same Volunteers build."
+            }
+            Self::NativeCompatibility => {
+                "Native hook compatibility failed; check the Volunteers log."
             }
             Self::CampaignUnbound => "Waiting for the saved volunteer journal to bind.",
             Self::NativeCommands => "Waiting for the native command queue.",

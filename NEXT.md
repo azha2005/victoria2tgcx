@@ -1,46 +1,49 @@
 # NEXT - what comes next
 
-2026-10-30. User takes over actual game testing. No further desktop input,
-relaunch or live-file changes without the user's next request.
+2026-10-30. User requires coexistence with other Core plugins.0.0.17 is packaged,
+not installed. User retains desktop/game control. No live-file or loader changes.
 
 ## Current verified state
 
-- Volunteers0.0.16 explicit mode=mp prototype, whole existing armies only.
-- Native human roster/source-country cross-check; fresh all-player current-load
-  execution admission. Probe-only markers cannot authorize gameplay.
-- Only the admitted local donor emits mission orders/checkpoints. Native HEAD
-  execution and before-hourly-command boundaries derive merged immutable policy
-  from committed country journals, retaining each donor's campaign ID.
-- Original EXE/114 relocated signatures pass.70 Rust tests pass;2 benchmarks
-  ignored. Format, strict Clippy, x86 release, six package/two MP-package/two
-  collector checks pass. RET1C clone ABI and two-replica projections covered.
-- Uploaded0.0.15 log has correct probe mode and DLL fingerprint, but GUI/load/
-  journal false. Found actual Core6.36 role-probe signature conflict. New narrow
-  file-hash/thunk/trampoline check accepted it in real startup; all GUI/lifecycle/
-  journal/scoped-hook/module gates true. Unknown hooks still refuse.
-- Separate test copy: work/volunteers-mp-0016/game-host. Unique game profile
-  TGC252_Volunteers_MP0016_Host. Visible test game left to user. No UI input sent.
-  Initial restricted startup raised native file-open exception; a subsequent
-  profile-capable launch reached frontend completion. No exact missing file
-  established. Unused earlier hidden menu instance was stopped; no save loaded.
-- Accepted E:/Victoria-II-Volunteers-0004 remains0.0.12/Core6.36. No main/source
-  install, executable, TGC or campaign file changed. No actual paired MP test.
+- Exact game EXE gate and114 scoped signatures remain; all byte contracts outside
+  native server Post are unchanged. MP permits/roster/source/epoch checks retained.
+- Host-role compatibility now recognizes bounded, transparent instruction chains,
+  independently of loader hash/version/private RVAs. Supports direct JMP veneers
+  and up to four preserved role probes ending at exact original stolen bytes and
+  a jump to the original continuation. Writes only recognized private DLL flag;
+  executable/writable mapping checks, loops and traversal bounds enforced.
+- Recognition is read-only. Other plugins stay loaded; no hook is overwritten,
+  bypassed, disabled or executed for verification. Unknown contracts still refuse.
+- Startup diagnostics identify owner DLL/path/RVA/hash and refusal stage. Local
+  native-hook failure is shown before handshake waiting; no generic false wait.
+-76 Rust tests pass,2 ignored benchmarks; fmt/strict Clippy/x86 release pass.
+  New fixtures cover ASLR/link layout, veneers, stacked probes, mutated code/tail,
+  loops/bounds/protections and wrong flag targets. Real x86 image/page fixture
+  recognizes compiled probe without executing it. Six stage/two MP ZIP checks pass.
+- Latest provided log:0.0.16 rejects patched RVA662EA0, gameplay/transport=false,
+  scoped_hooks=false. No HELLO/Send executed. UI's waiting-for-peers was misleading.
+  Two player/world streams are interleaved; this isn't paired OOS evidence.
+- Official latest release checked2026-10-30 via GitHub API:6.36, archive digest
+  f3d81c5bb03081a8b75ca9e0ca9537a6850eeb512e695188db9bc78d26cfc263.
+  Screenshot says6.36 but doesn't prove same file or identify the rejected owner.
+- No full compatibility acceptance for yearly cache/Baltic/performance/Volunteers
+  combination. Do not ask users to disable plugins as the permanent solution.
 
-ZIP: work/volunteers-mp-0016/final/Volunteers-0.0.16-MP-prototype.zip
-SHA256: f249acbde424144f52f013df16fbb1a2ff00e250851dc77513661d34c8318cd5
-498115 bytes,19 files, no installer/EXE/BAT/CMD/PowerShell/scripts.
-DLL SHA256: 801bf93763eaede58acd0b204584744018611d4b00db03eb1d6c5e40eadc6041
-The running test copy and final ZIP contain that same DLL. Mode=mp, not mp_probe.
+ZIP: C:\Users\JC\Downloads\victoria2template\work\volunteers-mp-0017\final\Volunteers-0.0.17-MP-coexistence.zip
+SHA256: 2010910f6ec5a6fde16bd59e4fa79c5a36f48445e5bc024362dbc029777b00a5
+499732 bytes,19 files,mode=mp,no scripts/installers/EXEs.
+DLL SHA256: 92bc4a34f307fb58252ab83530fdaad7e555ce1c968cbed5c8a3229d51074900
 
 ## Remaining cards
 
 | Card | Status | Exact next instructions |
 |---|---|---|
-| VOL-MP | Actual gameplay candidate ready; user testing | docs/instructions-volunteers-mp-gameplay.md steps1..8 |
-| VOL-OOS | Original failure not reproduced/fixed by evidence | MP-gameplay steps9..11; docs/instructions-volunteers-oos.md |
-| VOL-ENTRY / VOL-FEEDBACK / VOL-CONTROLS / VOL-SIEGE / VOL-OPT | Startup gates passed; full UI/lifecycle/performance acceptance open | MP-gameplay steps5..10 |
+| VOL-COEXIST |0.0.17 source/ZIP checked; actual plugin combination pending | docs/instructions-volunteers-coexistence.md steps1..8 |
+| VOL-MP / VOL-OOS | Original actual paired gameplay/OOS acceptance open | Coexistence steps6..10; docs/instructions-volunteers-mp-gameplay.md |
+| VOL-ENTRY / VOL-FEEDBACK / VOL-CONTROLS / VOL-SIEGE / VOL-OPT | Full lifecycle/performance acceptance open | Coexistence steps6..9; MP-gameplay steps5..10 |
 
-Read report-volunteers-mp-gameplay-1030.md and pitfalls P87/P88 before changes.
-Retain old ZIPs and accepted installation. Preserve unrelated release-document
-work and private binaries/art/RE exports. Commit/push remains authorized.
-No new subagents, peer messages or memory writes. Next pitfall P89.
+Installed copies remain E:/Victoria-II-Volunteers-0004 at0.0.12, workspace
+work/volunteers-mp-0016/game-host at0.0.16. Both Core6.36. User tests them.
+Preserve unrelated release-document edits, private binaries/art and raw RE.
+Commit/push authorized. No new subagents, messages, public binaries or memory
+writes. Next pitfall P90; read P89 and report-volunteers-coexistence-1030.md.

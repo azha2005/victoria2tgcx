@@ -1,5 +1,7 @@
 # ROADMAP.md — Status, decisions and session close for the TGCX submod
 
+2026-10-30 VOL-COEXIST: user requires coexistence.0.0.17 replaces exact Core hash/private RVAs with bounded transparent role-probe instruction and original-continuation checks; preserves existing hooks. Clear native-compatibility UI refusal and owner/path/hash diagnostics.76 Rust tests and six stage/two MP-package checks pass;114 EXE guards unchanged. Plain MP ZIP ready, not installed/launched or paired-tested. `docs/report-volunteers-coexistence-1030.md`; `docs/instructions-volunteers-coexistence.md`.
+
 2026-10-30 VOL-MP:0.0.16 explicit whole-army MP prototype built. Native execution admission, per-donor orders and shared committed policy implemented; Core6.36 host-role signature conflict corrected and verified in an isolated real startup.70 Rust, six package, two MP-package and two collector tests pass;114 guards. Plain ZIP ready. User takes over the game; no paired gameplay/OOS acceptance yet. `docs/report-volunteers-mp-gameplay-1030.md`; `docs/instructions-volunteers-mp-gameplay.md`.
 
 2026-10-29 VOL-MP-PACKAGE: user wanted0.0.15 entry fixes in MP. Separate plain MP probe ZIP prepared; same DLL, mode=mp_probe,19 files/460894 bytes. Package fixture and direct DLL/mode comparison pass. MP gameplay/OOS still unresolved; no install/game test. `docs/report-volunteers-mp-package-1029.md`; `docs/instructions-volunteers-mp-sync.md`.

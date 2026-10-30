@@ -108,7 +108,7 @@ fn module_path() -> Option<PathBuf> {
         unsafe { GetModuleFileNameW(null_mut(), path.as_mut_ptr(), path.len() as u32) } as usize;
     (n > 0 && n < path.len()).then(|| PathBuf::from(std::ffi::OsString::from_wide(&path[..n])))
 }
-fn exe_hash(path: &Path) -> Option<String> {
+pub(crate) fn exe_hash(path: &Path) -> Option<String> {
     let mut file = File::open(path).ok()?;
     let mut hash = Sha256::new();
     let mut buffer = [0u8; 8192];
@@ -345,7 +345,7 @@ fn initialize_once(api: &V2ModApi) -> bool {
     };
     let _ = writeln!(
         log,
-        "TGCX Volunteers 0.0.16 development; experimental MP whole-army gameplay; current-load peer admission required"
+        "TGCX Volunteers 0.0.17 development; experimental MP whole-army gameplay; current-load peer admission required"
     );
     if exe_hash(&exe).as_deref() != Some(EXE_SHA) {
         let _ = writeln!(
