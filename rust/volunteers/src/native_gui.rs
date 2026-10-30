@@ -6,7 +6,7 @@ use crate::native::{GetCurrentThreadId, Native};
 use crate::native_call::call;
 use crate::native_string::GameString;
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use std::sync::{Mutex, OnceLock};
 
 static UI: OnceLock<Mutex<Ui>> = OnceLock::new();
@@ -14,6 +14,7 @@ static UPDATE: AtomicUsize = AtomicUsize::new(0);
 static HIDE: AtomicUsize = AtomicUsize::new(0);
 static DESTROY: AtomicUsize = AtomicUsize::new(0);
 static READY: AtomicBool = AtomicBool::new(false);
+static PENDING_HIDE: AtomicU32 = AtomicU32::new(0);
 #[link(name = "bcrypt")]
 unsafe extern "system" {
     fn BCryptGenRandom(
@@ -64,6 +65,7 @@ struct Ui {
     shown: bool,
     owned: Vec<WindowLease>,
     disabled: bool,
+    blocked_epoch: Option<u64>,
     text_cache: BTreeMap<(u32, String), String>,
     entry_slot: Option<(i32, i32)>,
     entry_layout: Option<(u32, u32)>,
@@ -186,6 +188,20 @@ impl Ui {
         let epoch = crate::native_session::capture(&self.native, self.native.base)
             .and_then(|s| crate::native_lifecycle::epoch(s.context))
             .unwrap_or(0);
+        if self
+            .blocked_epoch
+            .is_some_and(|blocked| blocked != epoch && epoch != 0)
+        {
+            self.blocked_epoch = None;
+        }
+        if self.blocked_epoch == Some(epoch) && epoch != 0 {
+            crate::native_hooks::publish(None, None);
+            self.app.capabilities = Default::default();
+            world.epoch = epoch;
+            world.campaign = self.app.registry.as_ref().map(|r| r.campaign);
+            self.world = world;
+            return;
+        }
         if world.mode != crate::session::SessionMode::SinglePlayer || epoch == 0 {
             crate::native_hooks::publish(None, None);
             if let Some(registry) = self.app.registry.as_mut() {
@@ -371,6 +387,7 @@ impl Ui {
                 && n.field(pointer, 0x94) == Some(lease.definition)
                 && n.field(pointer, 0x4C) == Some(lease.context)
                 && n.field(pointer, 0x90) == Some(lease.renderer)
+                && n.byte(pointer + 0x52) == Some(0)
                 && n.u32(lease.context) == Some(n.base + 0xA08A44)
                 && n.field(lease.context, 0x30) == Some(lease.renderer)
         })
@@ -386,6 +403,18 @@ impl Ui {
         }
         self.app.capabilities = Default::default();
         self.close();
+    }
+    fn stop_missions(&mut self, reason: &str) {
+        // A checkpoint failure fences simulation work until an explicit load;
+        // it does not imply the independently validated native button is unsafe.
+        self.blocked_epoch = Some(self.world.epoch);
+        self.app.capabilities = Default::default();
+        if let Some(registry) = self.app.registry.as_mut() {
+            registry.suspend();
+        }
+        crate::native_hooks::publish(None, None);
+        self.app.refuse(reason);
+        crate::runtime::diagnostic(reason);
     }
     fn lookup(&self, registry: u32, key: &str) -> Option<u32> {
         let n = self.native;
@@ -521,6 +550,74 @@ impl Ui {
             let _ = call(|| unsafe {
                 std::mem::transmute::<usize, Zero>((n.base + 0x5E4030) as usize)(object, 0)
             });
+        }
+    }
+    fn repair_entry(&mut self, x: i32, y: i32) {
+        let n = self.native;
+        let covered =
+            crate::entry_visibility::covered_by_host(&n, n.base + 0xA38350, self.root, self.entry)
+                == Some(true);
+        let child_hidden = self
+            .find(self.entry, 13, 0x5E4C80, "tgcx_vl_open")
+            .is_some_and(|button| {
+                n.expected_slot(button, 13, 0x5EFEF0)
+                    && n.expected_slot(button, 14, 0x5EFEB0)
+                    && n.byte(button + 0x4F) == Some(0)
+                    // Native Show itself refuses +6C != 0. Wait for that gate
+                    // rather than retrying/flush-logging a refused Show each poll.
+                    && n.byte(button + 0x6C) == Some(0)
+            });
+        self.position(self.entry, x, y, covered);
+        if (covered || child_hidden)
+            && n.byte(self.entry + 0x67) == Some(1)
+            && self.live_window(self.entry)
+            && n.expected_slot(self.entry + 0x18, 13, 0x5E4490)
+        {
+            type Show = unsafe extern "fastcall" fn(u32, u32);
+            let _ = call(|| unsafe {
+                std::mem::transmute::<usize, Show>((n.base + 0x5E4490) as usize)(
+                    self.entry + 0x18,
+                    0,
+                )
+            });
+            crate::runtime::diagnostic(&format!(
+                "volunteer_entry_repaired covered={covered} child_hidden={child_hidden}"
+            ));
+        }
+        self.visible(self.entry, true);
+    }
+    fn forget_expired_windows(&mut self) {
+        for expired in [self.entry, self.chooser, self.forces] {
+            if expired == 0 || self.live_window(expired) {
+                continue;
+            }
+            let mut keep = Vec::new();
+            for binding in self.bindings.drain(..) {
+                if binding.host == expired {
+                    self.retired.push(binding);
+                } else {
+                    keep.push(binding);
+                }
+            }
+            self.bindings = keep;
+            self.owned.retain(|lease| lease.pointer != expired);
+            self.text_cache.retain(|(host, _), _| *host != expired);
+            if self.entry == expired {
+                self.entry = 0;
+                self.entry_layout = None;
+                self.entry_slot = None;
+            }
+            if self.chooser == expired {
+                self.chooser = 0;
+                self.shown = false;
+            }
+            if self.forces == expired {
+                self.forces = 0;
+                self.shown = false;
+            }
+            crate::runtime::diagnostic(&format!(
+                "Volunteer window lease expired window={expired:08X}; rebuilding on UI thread, old observers retained"
+            ));
         }
     }
     fn position(&self, window: u32, x: i32, y: i32, promote: bool) {
@@ -725,6 +822,15 @@ impl Ui {
             return;
         }
         self.thread.get_or_insert(tid);
+        if PENDING_HIDE
+            .compare_exchange(view, 0, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
+        {
+            self.close();
+            self.visible(self.entry, false);
+            self.entry_layout = None;
+            self.entry_slot = None;
+        }
         let Some(root) = n
             .field(view, 0x4C)
             .filter(|p| n.u32(*p) == Some(n.base + 0xA3C0D8))
@@ -753,8 +859,11 @@ impl Ui {
         if n.byte(root + 0x67) != Some(1) {
             self.close();
             self.visible(self.entry, false);
+            self.entry_layout = None;
+            self.entry_slot = None;
             return;
         }
+        self.forget_expired_windows();
         if self.entry == 0 {
             self.entry = self.make(root, "tgcx_vl_entry").unwrap_or(0);
         }
@@ -781,7 +890,7 @@ impl Ui {
                 self.visible(self.entry, false);
                 return;
             }
-            self.position(self.entry, entry_x, entry_y, false);
+            self.repair_entry(entry_x, entry_y);
             self.text(self.entry, "tgcx_vl_open_label", "Send volunteers");
             self.visible(self.entry, true);
         } else {
@@ -916,6 +1025,12 @@ impl Ui {
         };
         self.observe_world(world);
         self.refresh_routes();
+        if matches!(action, 3 | 14 | 16) && self.blocked_epoch == Some(self.world.epoch) {
+            self.app
+                .refuse("Mission commands paused after a checkpoint failure. Reload to resume.");
+            self.render();
+            return Vec::new();
+        }
         if matches!(action, 3 | 14 | 16) && self.pending_checkpoint.is_some() {
             self.app
                 .refuse("Waiting for the previous engine checkpoint.");
@@ -982,6 +1097,10 @@ impl Ui {
             None
         };
         let work = self.app.action(action, &self.world, new_id);
+        if self.blocked_epoch == Some(self.world.epoch) {
+            self.app
+                .refuse("Mission commands paused after a checkpoint failure. Reload to resume.");
+        }
         if self.app.open {
             self.refresh_routes();
             self.render();
@@ -1082,7 +1201,10 @@ fn sync_checkpoint(native: Native, permit: crate::session::SinglePlayerPermit) -
         let Ok(ui) = lock.try_lock() else {
             return false;
         };
-        if ui.world.epoch != permit.epoch() || ui.disabled {
+        if ui.world.epoch != permit.epoch()
+            || ui.disabled
+            || ui.blocked_epoch == Some(permit.epoch())
+        {
             return false;
         }
         let Some(registry) = ui.app.registry.as_ref() else {
@@ -1108,7 +1230,9 @@ fn sync_checkpoint(native: Native, permit: crate::session::SinglePlayerPermit) -
         native.prepare_checkpoint(permit, candidate.0, &candidate.2, candidate.1)
     else {
         if let Ok(mut ui) = lock.try_lock() {
-            ui.fail("Volunteer checkpoint preparation refused; no further mission commands");
+            ui.stop_missions(
+                "Volunteer checkpoint preparation refused; reload before further mission commands",
+            );
         }
         return false;
     };
@@ -1136,7 +1260,7 @@ fn sync_checkpoint(native: Native, permit: crate::session::SinglePlayerPermit) -
         if let Ok(mut ui) = lock.try_lock() {
             ui.pending_checkpoint = None;
             ui.saved_registry = None;
-            ui.fail("Volunteer checkpoint queue failed or partial; reload/review required, no automatic retry");
+            ui.stop_missions("Volunteer checkpoint queue failed or partial; reload/review required, no automatic retry");
         }
         return false;
     }
@@ -1153,6 +1277,9 @@ extern "C" fn updated(view: u32) {
 }
 extern "C" fn hidden(view: u32) {
     let _error = crate::native::LastError::preserve();
+    // A worker/reentrant hide is deferred, never a permanent UI failure. Only
+    // the captured UI thread touches native windows; real fail() gates remain.
+    PENDING_HIDE.store(view, Ordering::Release);
     if let Some(lock) = UI.get()
         && let Ok(mut ui) = lock.try_lock()
         && ui.view == view
@@ -1160,9 +1287,11 @@ extern "C" fn hidden(view: u32) {
         if ui.thread == Some(unsafe { GetCurrentThreadId() }) {
             ui.close();
             ui.visible(ui.entry, false);
+            let _ = PENDING_HIDE.compare_exchange(view, 0, Ordering::AcqRel, Ordering::Acquire);
+            ui.entry_layout = None;
+            ui.entry_slot = None;
         } else {
             ui.app.open = false;
-            ui.disabled = true;
             crate::runtime::diagnostic(
                 "Volunteer host-hide observed off the UI thread; GUI calls deferred",
             );
@@ -1392,6 +1521,7 @@ pub fn install(base: u32, settings: Settings) -> bool {
             shown: false,
             owned: Vec::new(),
             disabled: false,
+            blocked_epoch: None,
             text_cache: BTreeMap::new(),
             entry_slot: None,
             entry_layout: None,
@@ -1434,4 +1564,60 @@ pub fn install(base: u32, settings: Settings) -> bool {
     }
     READY.store(true, Ordering::Release);
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn worker_hide_is_recoverable_on_the_original_ui_thread() {
+        // Empty roots guarantee no real game/GUI call. Execute the actual hide
+        // callback on a worker, then resume on its captured UI thread.
+        let mut app = App::new(Settings::default());
+        app.open = true;
+        let ui = Ui {
+            native: Native { base: 0 },
+            thread: Some(unsafe { GetCurrentThreadId() }),
+            app,
+            view: 0x10000,
+            root: 0,
+            entry: 0,
+            chooser: 0,
+            forces: 0,
+            bindings: Vec::new(),
+            retired: Vec::new(),
+            world: WorldView::default(),
+            shown: false,
+            owned: Vec::new(),
+            disabled: false,
+            blocked_epoch: None,
+            text_cache: BTreeMap::new(),
+            entry_slot: None,
+            entry_layout: None,
+            entry_layout_missing: false,
+            bound_epoch: 0,
+            bound_player: 0,
+            store_head: None,
+            pending_checkpoint: None,
+            saved_registry: None,
+            loss_reads: BTreeMap::new(),
+            route_key: None,
+            route_armies: Vec::new(),
+            route_chooser: crate::route_chooser::Chooser::default(),
+        };
+        assert!(UI.set(Mutex::new(ui)).is_ok());
+        std::thread::spawn(|| hidden(0x10000)).join().unwrap();
+        assert!(!UI.get().unwrap().lock().unwrap().disabled);
+        assert_eq!(PENDING_HIDE.load(Ordering::Acquire), 0x10000);
+        hidden(0x10000);
+        assert_eq!(PENDING_HIDE.load(Ordering::Acquire), 0);
+        let mut ui = UI.get().unwrap().lock().unwrap();
+        ui.app.open = true;
+        assert!(!ui.disabled && ui.app.open);
+        ui.world.epoch = 1;
+        ui.stop_missions("Checkpoint failed; reload required");
+        assert!(!ui.disabled && ui.app.open);
+        assert_eq!(ui.blocked_epoch, Some(1));
+        assert_eq!(ui.app.capabilities, Default::default());
+    }
 }

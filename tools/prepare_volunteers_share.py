@@ -1,6 +1,6 @@
 """Plain, player-shareable Volunteers ZIP. No setup executable or launch scripts.
 
-Reuses the checked 0.0.13 candidate; never installs, launches, downloads or publishes.
+Reuses the checked 0.0.15 candidate; never installs, launches, downloads or publishes.
 Game-derived UI pixels remain outside git, like the ATCU/PRU candidate packages.
 """
 import argparse
@@ -11,12 +11,12 @@ from pathlib import Path
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.0.13'
-ACCEPTED_DLL = '156a02d2ff2551bf90d4acaae0dd2d7c87d73149ee1567e01bc611e068b9721b'
-ACCEPTED_PACKAGE = ROOT / 'work/volunteers-0013/candidate-r2/Volunteers-0.0.13-SP-feedback-private'
+VERSION = '0.0.15'
+ACCEPTED_DLL = '974a306baf282a846bb8ff8d1648adf0223ae5030ff19c1ef1236647cb0dd4ef'
+ACCEPTED_PACKAGE = ROOT / 'work/volunteers-entry-0015/candidate-r2/Volunteers-0.0.15-SP-entry-private'
 ACCEPTED_CARRIER = ROOT / 'work/volunteers-loader-636/stage-636/mod/tgcx_loader_data/common/defines_ccore.txt'
 
-README = '''VOLUNTEERS 0.0.13 - SINGLE-PLAYER BETA / TESTER-FEEDBACK CANDIDATE
+README = '''VOLUNTEERS 0.0.15 - SINGLE-PLAYER BETA / ENTRY-RECOVERY CANDIDATE
 ========================================
 
 Send up to five brigades to help a country at war while your own country stays
@@ -85,7 +85,15 @@ USE
    Terminal records are automatically pruned after known recipient peace. They
    never consume the active brigade limit, including immediately after load.
 
-0.0.13 CHANGES FOR RETEST
+0.0.15 BUTTON RECOVERY
+- Deferred or off-thread diplomacy hides no longer permanently disable the UI.
+- Restore an entry covered by the diplomacy window, preserving later dialogs.
+- Restore hidden native button children and rebuild expired entry roots safely.
+- Same native art, Send volunteers label and diplomacy action-grid placement.
+  Test minimize/restore, reopening diplomacy, country changes and long sessions.
+  These fixes pass source checks; the screenshot cause needs an in-game retest.
+
+0.0.13 CHANGES RETAINED
 - Saved-journal binding retries after transient read failure; restoring a journal
   resets the daily date/page state. Specific session messages replace the generic
   unavailable text. Exact cause of the tester's save/reload report is unconfirmed.
@@ -143,7 +151,10 @@ targeted native evidence and symbols. See the source repository for attribution:
 https://github.com/azha2005/victoria2tgcx
 '''
 
-CHANGELOG = '''Volunteers 0.0.13 SP beta feedback candidate - 2026-10-29
+CHANGELOG = '''Volunteers 0.0.15 SP beta entry-recovery candidate - 2026-10-29
+- Defer off-thread/reentrant host hides without permanently disabling the UI.
+- Recover verified covered entry ordering, hidden controls and expired roots.
+- Native art, label and action-grid layout retained; game retest pending.
 - Rebind retry and reset runtime day/page state on loading a saved journal.
 - Hidden/clearable completed history, post-peace pruning and monotonic IDs.
 - Atomic journal-size refusal instead of partially accepting an overflowing Send.
@@ -156,7 +167,7 @@ CHANGELOG = '''Volunteers 0.0.13 SP beta feedback candidate - 2026-10-29
 - Reduced idle hook, observer and repeated GUI overhead; sampled timing logs.
 - Packaged for the user-accepted CreatineCore 6.36 setup, installed separately.
 - Plain mod ZIP, no installer or command/launcher scripts. Internal DLL version
-  is 0.0.13, byte-identical to the regression-checked feedback candidate.
+  is 0.0.15, byte-identical to the regression-checked entry-recovery candidate.
 - Full recipient vision, completed capture credit/lifecycle and MP remain open.
 '''
 

@@ -1372,3 +1372,28 @@ flag differing same-date samples as ambiguous. Missing samples/receipts are
 unknown. A journal digest is not the engine CRC, and identical empty mirrors
 do not establish volunteer gameplay. Compare matching saves/runs/native logs
 before attributing the original OOS. Collector fixtures cover these exclusions.
+
+
+### P85 - Entry roots can be visible while the button is unavailable
+
+2026-10-29. A worker hide previously set Ui.disabled forever until view/root
+replacement. Defer worker/reentrant hides to the captured UI thread. Independent
+roots can also stay behind a raised host, retain hidden child controls, or have
+expired while their cached pointer is nonzero. Use checked native scene links,
+child Show/Hide slots/flags and owned-root leases. Promote only the proven covered
+entry, preserve later visible dialogs, and activate the subtree only on actual
+loss. Unknown/cyclic/torn data never authorizes promotion. Recreate expired roots
+without touching/deleting stale memory; keep deferred observers and their bound.
+Actual callback/scene regressions pass, but the tester screenshot's precise cause
+and runtime recovery remain unconfirmed. report-volunteers-entry-1029.md.
+
+### P86 - A command failure does not establish a broken native UI
+
+2026-10-29. Checkpoint preparation/post used the same fail() as unsafe UI types,
+making the entry disappear after an unrelated persistence refusal. Keep the
+validated button/panels and an explanatory message, but suspend/unpublish policy
+and refuse all further mission work/checkpoints for that explicit load epoch.
+Only a new recognized load may recover; never retry a partial queue or replay
+Create/Transfer/Move automatically. Genuine native access/type/capacity failures
+retain their hard UI fences. The callback regression checks command suspension
+does not disable/close the UI. Same report; actual game retest remains required.

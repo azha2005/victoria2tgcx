@@ -10,7 +10,7 @@ from prepare_volunteers_share import ACCEPTED_CARRIER
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT / 'work/volunteers-mp-0014'
-README = '''VOLUNTEERS 0.0.14 - MULTIPLAYER SYNC PROBE (NOT MP VOLUNTEER GAMEPLAY)
+README = f'''VOLUNTEERS {development.VERSION} - MULTIPLAYER SYNC PROBE (NOT MP VOLUNTEER GAMEPLAY)
 
 This build tests native network delivery and records matching volunteer-journal
 digests. It does NOT enable multiplayer Send, Recall, combat or siege. It does

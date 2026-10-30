@@ -1,3 +1,9 @@
+2026-10-29 entry-recovery follow-up:0.0.15 defers off-thread/reentrant hides,
+recovers verified native layer/child visibility and expires stale owned leases.
+Checkpoint failures retain readable UI while command work stays fenced until
+reload. All11 visual payloads match0.0.13; no mockup/layout change. Details:
+report-volunteers-entry-1029.md; retest instructions-volunteers-entry.md.
+
 2026-10-29 MP implementation attempt:0.0.14 adds an opt-in native network
 variable-command probe and read-only all-country journal mirror. It does not
 activate multiplayer volunteer rules or issue troop commands. Complete peer/

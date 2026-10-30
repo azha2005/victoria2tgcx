@@ -338,7 +338,7 @@ fn initialize_once(api: &V2ModApi) -> bool {
     };
     let _ = writeln!(
         log,
-        "TGCX Volunteers 0.0.14 development; MP sync probe available; volunteer gameplay remains SP-gated"
+        "TGCX Volunteers 0.0.15 development; recoverable native diplomacy entry; volunteer gameplay remains SP-gated"
     );
     if exe_hash(&exe).as_deref() != Some(EXE_SHA) {
         let _ = writeln!(

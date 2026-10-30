@@ -1,5 +1,10 @@
 # Volunteers prototype
 
+0.0.15 restores native entry visibility/lifetime and defers worker hides. Mission
+checkpoint failures retain the UI while refusing further commands until reload.
+The same native art/layout is retained. See ../../docs/report-volunteers-entry-1029.md
+and ../../docs/instructions-volunteers-entry.md for the pending game retest.
+
 0.0.14: mode=mp_probe exercises native MP variable-command delivery, records
 execution receipts and mirrors all-country journals for OOS diagnosis. MP troop
 gameplay remains refused. It is not an OOS fix; paired execution is untested.
@@ -7,7 +12,7 @@ See ../../docs/report-volunteers-mp-sync-1029.md and the corresponding instructi
 SP0.0.13 ZIP and the accepted installed0.0.12 copy remain unchanged.
 
 Independent Rust Win32/x86 V2DLL plugin for the reference Victoria II3.04 EXE.
-Current source:0.0.14 MP sync probe (not tested in an actual MP game). Donor owns/commands/supplies selected land brigades while
+Current source:0.0.15 entry-recovery candidate (not tested in game). Donor owns/commands/supplies selected land brigades while
 borrowing recipient war context only for registered volunteer operations. Native
 GUI, unit commands, save-backed mission journal, scoped combat/siege/access and
 local display vision are implemented. User checks confirm sending, battle and

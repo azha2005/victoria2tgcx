@@ -4,6 +4,8 @@
 pub mod app;
 pub mod combat;
 pub mod engine_store;
+#[cfg(any(test, all(windows, target_arch = "x86")))]
+mod entry_visibility;
 pub mod lifecycle;
 pub mod mission;
 pub mod model;
@@ -57,5 +59,5 @@ mod sha256;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn tgcx_VolunteersVersion() -> *const std::ffi::c_char {
-    c"TGCX Volunteers 0.0.14 development".as_ptr()
+    c"TGCX Volunteers 0.0.15 development".as_ptr()
 }

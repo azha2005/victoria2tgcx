@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P85**).
+number (**the next one is P87**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -504,6 +504,8 @@ number (**the next one is P85**).
 - **P82** A route chooser must bound/fairly schedule native queries and treat cached results as UI-only; Send must revalidate current native permissions.
 - **P83** Native MP posting and matching marker fingerprints do not prove sender-country authority, complete peer membership or deterministic volunteer-policy activation.
 - **P84** OOS diagnostics must separate loads and ambiguous same-date samples; journal mirrors are not full native CRCs and missing receipts are not agreement.
+- **P85** A worker hide must defer GUI work rather than permanently disable it; root visibility does not establish child activation, scene order or an unexpired lease.
+- **P86** Checkpoint failures must fence mission commands until explicit reload without hiding otherwise validated native UI; never retry partial work automatically.
 
 
 ## 9. Decisions
