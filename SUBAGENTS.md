@@ -1,5 +1,7 @@
 # SUBAGENTS.md — The project, in cards
 
+2026-10-30 VOL-MP:0.0.16 explicit whole-army MP prototype built. Native execution admission, per-donor orders and shared committed policy implemented; Core6.36 host-role signature conflict corrected and verified in an isolated real startup.70 Rust, six package, two MP-package and two collector tests pass;114 guards. Plain ZIP ready. User takes over the game; no paired gameplay/OOS acceptance yet. `docs/report-volunteers-mp-gameplay-1030.md`; `docs/instructions-volunteers-mp-gameplay.md`.
+
 2026-10-29 VOL-MP-PACKAGE: user wanted0.0.15 entry fixes in MP. Separate plain MP probe ZIP prepared; same DLL, mode=mp_probe,19 files/460894 bytes. Package fixture and direct DLL/mode comparison pass. MP gameplay/OOS still unresolved; no install/game test. `docs/report-volunteers-mp-package-1029.md`; `docs/instructions-volunteers-mp-sync.md`.
 
 2026-10-29 VOL-ENTRY: tester reports disappearing button.0.0.15 defers worker hides, repairs verified covered/child-hidden entries and expired roots, and separates checkpoint command fences from UI failure.61 Rust/six package/two share/one MP package/two collector checks and107 guards pass;11 visual files unchanged. Plain SP ZIP ready; not installed or tested in game. MP gameplay/OOS remain open. `docs/report-volunteers-entry-1029.md`; `docs/instructions-volunteers-entry.md`.

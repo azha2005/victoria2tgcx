@@ -32,6 +32,20 @@ pub enum PlanError {
 }
 
 impl DeploymentPlan {
+    pub(crate) fn new_authorized(
+        key: MissionKey,
+        request: &SendRequest,
+        settings: &Settings,
+        donor_tag: u32,
+        destination: Identity,
+        origin: u32,
+        permit: crate::session::SimulationPermit,
+    ) -> Result<Self, PlanError> {
+        model::validate_authorized(request, settings, permit).map_err(PlanError::Request)?;
+        let mut checked = request.clone();
+        checked.multiplayer = false;
+        Self::new(key, &checked, settings, donor_tag, destination, origin)
+    }
     pub fn key(&self) -> MissionKey {
         self.key
     }

@@ -24,6 +24,7 @@ pub struct Capabilities {
 pub enum Unavailable {
     SessionUnknown,
     MultiplayerUnsupported,
+    MultiplayerHandshake,
     CampaignUnbound,
     NativeCommands,
     Combat,
@@ -36,6 +37,9 @@ impl Unavailable {
         match self {
             Self::SessionUnknown => "Waiting for a recognized game session.",
             Self::MultiplayerUnsupported => "Multiplayer sending is not supported in this build.",
+            Self::MultiplayerHandshake => {
+                "Waiting for all MP players to enable the same Volunteers build."
+            }
             Self::CampaignUnbound => "Waiting for the saved volunteer journal to bind.",
             Self::NativeCommands => "Waiting for the native command queue.",
             Self::Combat => "Volunteer combat hook is unavailable; check the log.",
@@ -47,13 +51,34 @@ impl Unavailable {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct SinglePlayerPermit {
+pub struct SimulationPermit {
     epoch: u64,
+    mode: SessionMode,
+    issuer: Option<u32>,
+    round: u64,
 }
 
-impl SinglePlayerPermit {
+impl SimulationPermit {
     pub fn epoch(self) -> u64 {
         self.epoch
+    }
+    pub fn matches_mode(self, mode: SessionMode) -> bool {
+        self.mode == mode
+    }
+    pub fn multiplayer(self) -> bool {
+        self.mode == SessionMode::Multiplayer
+    }
+    pub fn policy(self) -> bool {
+        !self.multiplayer() || self.issuer.is_none()
+    }
+    pub fn commands_for(self, country: u32) -> bool {
+        !self.multiplayer() || self.issuer == Some(country)
+    }
+    pub(crate) fn authorized_by(self, proof: crate::mp_authority::IssuerAuthority) -> bool {
+        self.multiplayer()
+            && self.issuer == Some(proof.country())
+            && self.epoch == proof.epoch()
+            && self.round == proof.round()
     }
 }
 
@@ -61,7 +86,7 @@ pub fn admit(
     mode: SessionMode,
     capabilities: Capabilities,
     epoch: u64,
-) -> Result<SinglePlayerPermit, Unavailable> {
+) -> Result<SimulationPermit, Unavailable> {
     match mode {
         SessionMode::Multiplayer => return Err(Unavailable::MultiplayerUnsupported),
         SessionMode::Unknown => return Err(Unavailable::SessionUnknown),
@@ -69,6 +94,18 @@ pub fn admit(
             return Err(Unavailable::SessionUnknown);
         }
         _ => (),
+    }
+    check_capabilities(capabilities, epoch)?;
+    Ok(SimulationPermit {
+        epoch,
+        mode: SessionMode::SinglePlayer,
+        issuer: None,
+        round: 0,
+    })
+}
+fn check_capabilities(capabilities: Capabilities, epoch: u64) -> Result<(), Unavailable> {
+    if !capabilities.session_detection {
+        return Err(Unavailable::SessionUnknown);
     }
     for (ready, reason) in [
         (
@@ -85,7 +122,32 @@ pub fn admit(
             return Err(reason);
         }
     }
-    Ok(SinglePlayerPermit { epoch })
+    Ok(())
+}
+pub(crate) fn admit_issuer(
+    proof: crate::mp_authority::IssuerAuthority,
+    capabilities: Capabilities,
+    epoch: u64,
+    country: u32,
+) -> Result<SimulationPermit, Unavailable> {
+    if proof.epoch() != epoch || proof.country() != country {
+        return Err(Unavailable::CampaignUnbound);
+    }
+    check_capabilities(capabilities, epoch)?;
+    Ok(SimulationPermit {
+        epoch,
+        mode: SessionMode::Multiplayer,
+        issuer: Some(country),
+        round: proof.round(),
+    })
+}
+pub(crate) fn admit_policy(proof: crate::mp_authority::PolicyAuthority) -> SimulationPermit {
+    SimulationPermit {
+        epoch: proof.epoch(),
+        mode: SessionMode::Multiplayer,
+        issuer: None,
+        round: 0,
+    }
 }
 
 /// Data carried through the eventual engine transport. A local sidecar or GUI

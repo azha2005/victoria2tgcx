@@ -9,7 +9,7 @@ from tgcx_pe import PE
 from tgcx_volunteers_gui import generate
 
 ROOT=Path(__file__).resolve().parent.parent
-VERSION='0.0.15'
+VERSION='0.0.16'
 FOLDER='tgcx_volunteers'
 SETTINGS='''# Conservative audit default: retain only the observer.
 # mode=preview explicitly opts into the untested diplomacy UI.
@@ -20,116 +20,31 @@ max_brigades=5
 # Log sampling cadence in executed tick commands, 1..30.
 sample_every_days=7
 '''
-README='''Volunteers - experimental SP prototype / MP sync probe 0.0.15 - GAME CHECK PENDING
+README='''Volunteers 0.0.16 development staging payload.
 
-0.0.15: native diplomacy entry recovery after deferred host hide, scene reordering,
-hidden child controls and expired entry leases. Same art/placement, pending game retest.
+This private staging output defaults to observe; it is not the MP handoff.
+Use tools/prepare_volunteers_mp.py --gameplay for the plain MP prototype ZIP
+with the exact multiplayer installation and paired-test instructions.
 
-0.0.14: mode=mp_probe opts into a real native-network variable-command probe
-and read-only all-country journal comparison. It does not enable MP Send/Recall
-or combat. Use the dedicated plain MP sync-probe ZIP and its paired instructions.
+Modes: observe, preview, prototype (SP), mp_probe (diagnostic only), mp
+(experimental whole-army multiplayer gameplay). Every native/session/load gate
+still applies. MP also requires fresh execution receipts from the complete human
+roster, matching build/policy fingerprints and one local command issuer per donor.
+The plugin uses native commands and saved country-variable journals; no local
+sidecar grants simulation authority and no unit commands are replayed on load.
 
-0.0.13: tester-feedback candidate. Retried journal binding and reset load/day
-state; hide completed history with Show/Clear controls, prune expired terminal
-records, preserve monotonic IDs and refuse an overflowing journal atomically.
-Chooser filters idle reachable armies in bounded route batches, trying recipient
-land destinations rather than only the first province. Send rechecks the route.
-Visibility skips invalid individual province data and includes native controller
-sight; full runtime acceptance is pending. Session errors distinguish MP refusal.
-MP Send remains unsupported. Use the plain share ZIP for handoff, no launch scripts.
+0.0.16 separates startup UI/gameplay signature groups, diagnoses mismatching RVAs,
+verifies the official Core6.36 host-role trampoline, preserves our variable-command
+clone sender metadata, and derives MP combat/access/siege policy at native command
+boundaries. SP partial-army sending remains; MP reuses whole existing armies only.
 
-STATUS: sending, combat and siege progress are confirmed by the user on0.0.10.
-0.0.11 improves performance slightly in the user's test but remains too slow.
-0.0.12 bypasses inactive hooks before CPU-state saves and Rust, reduces repeated
-GUI calls, samples observer inventories weekly and adds sampled callback timings.
-Fresh SP/load/ownership/receipt checks remain for relevant units.
-Controlled Win32/x86 benchmarks improve; real game FPS/timing, completed
-capture credit, save/reload and multiplayer acceptance are not established.
-MP sending remains refused.
-
-INSTALL:
-Use the isolated E:/Victoria-II-Volunteers-0004 copy with TGC2.5.2 and
-CreatineCore6.36. The game must be closed normally before updating the package.
-Keep the previous package backup. This ZIP itself does not install anything.
-For another prepared copy, put mod/tgcx_volunteers.mod and mod/tgcx_volunteers/
-under its mod folder. V2DLL LOAD_DLL_FROM_MOD_FOLDER=1 loads v2dll_mod.dll.
-Do not put duplicate plugins in another loader folder or replace PRU/ATCU.
-Native game-derived textures are private; redistribution rights are not granted.
-
-MODES in mod/tgcx_volunteers/tgcx_volunteers.cfg:
-mode=observe (default): existing command-tick observer only.
-mode=preview: native diplomacy UI, explicit load fence and journal observer;
-Send/Recall remain unavailable and no unit/variable commands are queued.
-mode=prototype: opts into the experimental SP gameplay path. All exact EXE,
-byte/vtable, session, load epoch, command queue and registry gates still apply.
-An unknown, host, client or replay session cannot admit prototype sending.
-No configuration switch overrides a failed native gate.
-
-USE:
-Open Diplomacy. The native thin 160x24 button captioned Send volunteers fills
-the vacant action-grid cell beside Command Units in the supplied reference.
-Choose a recipient at war, an idle donor army and up to five brigades.
-The donor must be at peace and nonhostile to the recipient. Send first checks
-a native land route. The prototype picks the first recipient-owned land
-province; it refuses unreachable choices rather than teleporting troops.
-Whole-army selection keeps the existing stack and leader. Partial selection
-queues Create plus Transfers together as native commands. A complete
-receipt is required before the dedicated stack borrows recipient war/access.
-The player keeps selecting/moving it through the ordinary army controls.
-
-IMPLEMENTED PROTOTYPE PATH:
-Donor army/regiment ownership, command, flag, supply, reinforcements and rank
-accounting remain native. Only registered land-stack combat eligibility and
-access borrow recipient context. Both initial and existing-battle gates are
-covered, including native unrelated checks and actual membership receipts.
-The native battle side records the recipient once for war attribution.
-Local map vision follows recipient knowledge, including foreign fronts, plus
-receipt-validated volunteer surroundings. The
-per-country simulation visibility array is untouched. Native visibility is
-recomputed first. The entitlement survives return/loss until known peace.
-Recall and recipient peace request physical return after combat/movement.
-A native land-route check selects a reachable home province when possible.
-A stranded or refused command goes to review; there is no sea/teleport fallback.
-Confirmed absence of both stack and regiments across three different date
-samples marks loss. Read faults, cycles and changed membership are not death.
-
-PERSISTENCE:
-Mission intent is queued through CSetVariableCommand before troop commands.
-A bounded two-bank, checksummed country-variable journal commits its head last.
-It is saved with the engine state. Only mission-state changes are checkpointed;
-unchanged daily observations do not queue variable commands. Load uses
-an explicit native finalization fence, restores suspended and validates real
-stack receipts; it never automatically replays Create or Transfer. An
-interrupted intent without a matching stack remains for review.
-Commit logs include country, generation and SHA256 for OOS comparison.
-No local orders file or unsynchronized maintenance-skip hook is used.
-
-PERFORMANCE / DIAGNOSTICS:
-With no published scope, unit/vision hooks tail-call the native original before
-FXSAVE or Rust. Load immediately clears this negative-only switch; an active
-switch still needs every fresh admission gate. No positive permission is cached.
-Full observer inventories and scope/timing logs default to every seven ticks;
-gameplay still checks every native day. Set sample_every_days=1 for daily reports.
-plugin_timing logs cumulative calls, samples, sampled microseconds and maximum.
-Hot callbacks sample 1/1024; GUI 1/64; observer/day/vision sample every call.
-These times exclude original native routines and assembly save/restore. Compare
-same-save game-day wall time separately; absent timing cannot prove absence of lag.
-The shared country-vector hook bypasses unrelated callers before Rust/FXSAVE.
-Scalar reads use a tested SEH boundary without heap allocations/kernel calls.
-Visibility bulk-reads the province pointer table and only writes local display data.
-Daily scope_counters distinguish targeted/bypassed calls, permission grants,
-visibility grants and wrong-thread refusal. These are diagnostics, not proof that
-all lag or combat failures are solved. Existing exiled armies may need normal
-return to accessible territory; use a pre-send save for a clean deployment check.
-
-MULTIPLAYER / OOS:
-MP sending is unsupported and refused. Matching DLLs or journal digests alone
-are not multiplayer proof. Maxioten's source contains a local-only registry
-that changes native maintenance execution, a concrete divergence mechanism.
-Its screenshot's actual cause has not been reproduced or established.
-Use tools/collect_volunteers_oos.py to collect/compare private peer evidence.
-Do not deploy this experimental prototype on the only copy of a campaign.
-Logs/tgcx_volunteers.log and V2DLL/Logs record native admission/failures.
+The exact EXE remains mandatory:
+62d48c204364dd706584777c2e2b3c7ab3c5f1dd0170872554943575d53d6648
+Requires TGC2.5.2 and CreatineCore6.36, installed separately. Never install over a
+running game or the only campaign copy. No game/TGC/loader binary is supplied.
+Native art remains private and outside git. Actual paired MP/OOS acceptance is
+still pending. Matching policy digests are not the native engine CRC.
+Logs/tgcx_volunteers.log records gates, peer receipts, commits and policy digests.
 '''
 
 

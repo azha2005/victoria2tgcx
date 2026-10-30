@@ -1,16 +1,22 @@
 //! Standalone volunteer development build. Observer/preview by default, with
-//! an explicit experimental SP prototype. Exact native/session/load/registry
-//! admission is required; multiplayer is unsupported. Runtime acceptance open.
+//! explicit SP and MP prototypes. Exact native/session/load/registry and
+//! multiplayer peer admission are required. Runtime acceptance remains open.
 pub mod app;
 pub mod combat;
 pub mod engine_store;
 #[cfg(any(test, all(windows, target_arch = "x86")))]
 mod entry_visibility;
 pub mod lifecycle;
+#[cfg(any(test, all(windows, target_arch = "x86")))]
+mod loader_compat;
 pub mod mission;
 pub mod model;
+pub mod mp_authority;
 pub mod mp_sync;
+#[cfg(test)]
+mod mp_tests;
 pub mod native_combat;
+pub mod native_roster;
 pub mod native_session;
 pub mod native_vision;
 #[cfg(all(test, windows, target_arch = "x86"))]
@@ -42,6 +48,8 @@ mod native_lifecycle;
 #[cfg(all(windows, target_arch = "x86"))]
 mod native_mp;
 #[cfg(all(windows, target_arch = "x86"))]
+mod native_mp_play;
+#[cfg(all(windows, target_arch = "x86"))]
 mod native_route;
 #[cfg(all(windows, target_arch = "x86"))]
 mod native_signatures;
@@ -59,5 +67,5 @@ mod sha256;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn tgcx_VolunteersVersion() -> *const std::ffi::c_char {
-    c"TGCX Volunteers 0.0.15 development".as_ptr()
+    c"TGCX Volunteers 0.0.16 development".as_ptr()
 }

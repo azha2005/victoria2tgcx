@@ -5,7 +5,7 @@ use crate::mission::{
 };
 use crate::model::{Event, Identity, Intent, SendRequest, Settings, State};
 use crate::protocol::{Action, DecodeError, Envelope, Reader, Writer};
-use crate::session::SinglePlayerPermit;
+use crate::session::SimulationPermit;
 use std::collections::BTreeMap;
 
 pub const MAX_MISSIONS: usize = 256;
@@ -27,6 +27,7 @@ pub struct Registry {
     pub epoch: u64,
     entries: BTreeMap<u64, Entry>,
     sequences: BTreeMap<u32, u64>,
+    policy_view: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -65,10 +66,87 @@ impl Registry {
             epoch,
             entries: BTreeMap::new(),
             sequences: BTreeMap::new(),
+            policy_view: false,
         }
     }
     pub fn entries(&self) -> impl Iterator<Item = &Entry> {
         self.entries.values()
+    }
+    pub fn receipt_campaign_matches(&self, receipt: &StackReceipt) -> bool {
+        self.live_army(receipt.army)
+            .map_or(receipt.campaign == self.campaign, |e| {
+                receipt.campaign == e.deployment.key.campaign
+            })
+    }
+    pub(crate) fn committed_policy(
+        proof: crate::mp_authority::PolicyAuthority,
+        mut groups: Vec<(u32, Registry)>,
+        mut receipt: impl FnMut(Campaign, Identity) -> Option<StackReceipt>,
+        mut war: impl FnMut(u32) -> RecipientWar,
+    ) -> Option<Self> {
+        groups.sort_by_key(|(c, _)| *c);
+        let epoch = proof.epoch();
+        let permit = crate::session::admit_policy(proof);
+        let campaign = groups.first()?.1.campaign;
+        let mut result = Self::new(campaign, epoch);
+        result.policy_view = true;
+        let mut armies = std::collections::BTreeSet::new();
+        let mut regiments = std::collections::BTreeSet::new();
+        for (donor, mut registry) in groups {
+            if registry.epoch != epoch
+                || registry.entries().any(|e| e.deployment.key.donor != donor)
+            {
+                return None;
+            }
+            for e in registry.entries().cloned().collect::<Vec<_>>() {
+                let recipient_war = war(e.deployment.key.recipient);
+                if matches!(e.mission.saved().0, State::Returned | State::Lost) {
+                    registry.revalidate_terminal_vision(
+                        permit,
+                        e.deployment.key.serial,
+                        recipient_war,
+                    );
+                } else if let Some(actual) =
+                    receipt(e.deployment.key.campaign, e.mission.plan().destination())
+                {
+                    registry.revalidate(e.deployment.key.serial, &actual, recipient_war);
+                }
+            }
+            for e in registry.entries.into_values() {
+                if e.mission.state() == State::NeedsReview {
+                    continue;
+                }
+                if !matches!(e.mission.state(), State::Returned | State::Lost)
+                    && (!armies.insert(e.mission.plan().destination())
+                        || e.mission
+                            .remaining()
+                            .iter()
+                            .any(|id| !regiments.insert(*id)))
+                {
+                    return None;
+                }
+                let ordinal = result.entries.len() as u64 + 1;
+                result.entries.insert(ordinal, e);
+            }
+        }
+        Some(result)
+    }
+    pub(crate) fn policy_digest(&self) -> String {
+        let mut hash = crate::sha256::Sha256::new();
+        hash.update(b"MP active policy v1\0");
+        for e in self.entries() {
+            if let Ok(bytes) = e.deployment.encode() {
+                hash.update(&bytes);
+            }
+            let (phase, vision) = e.mission.saved();
+            hash.update(&phase_code(phase).to_le_bytes());
+            hash.update(&vision.to_le_bytes());
+            for id in e.mission.remaining() {
+                hash.update(&id.kind.to_le_bytes());
+                hash.update(&id.id.to_le_bytes());
+            }
+        }
+        hash.finish()
     }
     pub fn has_native_scope(&self) -> bool {
         self.epoch != 0
@@ -80,7 +158,7 @@ impl Registry {
                         | State::ReturnReady
                         | State::AwaitingReturn
                 ) || e.mission.sees_province(
-                    self.campaign,
+                    e.deployment.key.campaign,
                     e.deployment.key.donor,
                     e.deployment.key.recipient,
                     false,
@@ -140,7 +218,7 @@ impl Registry {
     }
     pub fn accept(
         &mut self,
-        permit: SinglePlayerPermit,
+        permit: SimulationPermit,
         issuer: u32,
         event: Envelope,
         request: Option<&SendRequest>,
@@ -160,7 +238,7 @@ impl Registry {
     }
     fn accept_inner(
         &mut self,
-        permit: SinglePlayerPermit,
+        permit: SimulationPermit,
         issuer: u32,
         event: Envelope,
         request: Option<&SendRequest>,
@@ -168,6 +246,9 @@ impl Registry {
     ) -> Result<Effect, Error> {
         if permit.epoch() != self.epoch || self.epoch == 0 {
             return Err(Error::StaleEpoch);
+        }
+        if self.policy_view || !permit.commands_for(issuer) {
+            return Err(Error::Unauthorized);
         }
         if event.key.campaign != self.campaign {
             return Err(Error::WrongCampaign);
@@ -215,13 +296,14 @@ impl Registry {
                 }) {
                     return Err(Error::Duplicate);
                 }
-                let plan = DeploymentPlan::new(
+                let plan = DeploymentPlan::new_authorized(
                     event.key,
                     request,
                     settings,
                     *donor_tag,
                     *destination,
                     *origin,
+                    permit,
                 )
                 .map_err(|_| Error::Invalid)?;
                 let mut mission = Mission::new(plan.clone());
@@ -390,7 +472,7 @@ impl Registry {
     }
     pub fn revalidate_terminal_vision(
         &mut self,
-        permit: SinglePlayerPermit,
+        permit: SimulationPermit,
         serial: u64,
         war: RecipientWar,
     ) -> bool {
@@ -412,12 +494,19 @@ impl Registry {
         native
             || (self.epoch != 0
                 && self.entries.values().any(|e| {
-                    e.mission
-                        .sees_province(self.campaign, viewer, province_owner, false)
+                    e.mission.sees_province(
+                        e.deployment.key.campaign,
+                        viewer,
+                        province_owner,
+                        false,
+                    )
                 }))
     }
 
     pub(crate) fn encode(&self) -> Result<Vec<u8>, DecodeError> {
+        if self.policy_view {
+            return Err(DecodeError::Invalid);
+        }
         let mut w = Writer(Vec::new());
         w.0.extend_from_slice(&self.campaign.0);
         w.u32(self.sequences.len() as u32);
@@ -534,6 +623,7 @@ impl Registry {
                 ui_preview: false,
                 prototype: false,
                 mp_probe: false,
+                mp_play: false,
             };
             let plan = DeploymentPlan::new(
                 event.key,

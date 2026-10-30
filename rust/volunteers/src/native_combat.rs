@@ -5,7 +5,7 @@ use crate::combat::{Decision, OtherGates};
 use crate::mission::{RecipientWar, StackReceipt};
 use crate::model::Identity;
 use crate::registry::Registry;
-use crate::session::{SessionMode, SinglePlayerPermit};
+use crate::session::SimulationPermit;
 use crate::snapshot::{Memory, capture_stack_receipt};
 
 fn field(m: &impl Memory, p: u32, offset: u32) -> Option<u32> {
@@ -36,7 +36,7 @@ fn receipt(m: &impl Memory, base: u32, r: &Registry, army: u32) -> Option<StackR
         id: field(m, army, 0x14)?,
     };
     if r.live_army(id).is_some() {
-        capture_stack_receipt(m, base, r.campaign, army, 64)
+        capture_stack_receipt(m, base, r.live_army(id)?.deployment.key.campaign, army, 64)
     } else {
         Some(StackReceipt {
             campaign: r.campaign,
@@ -94,7 +94,7 @@ pub fn evaluate(
     m: &impl Memory,
     base: u32,
     registry: &Registry,
-    permit: SinglePlayerPermit,
+    permit: SimulationPermit,
     left: u32,
     right: u32,
     province: u32,
@@ -105,7 +105,7 @@ pub fn evaluate(
     let Some(session) = crate::native_session::capture(m, base) else {
         return Decision::Native;
     };
-    if session.mode != SessionMode::SinglePlayer || permit.epoch() != registry.epoch {
+    if !permit.matches_mode(session.mode) || !permit.policy() || permit.epoch() != registry.epoch {
         return Decision::Native;
     }
     let (Some(a), Some(b)) = (

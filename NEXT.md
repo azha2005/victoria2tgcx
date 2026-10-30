@@ -1,47 +1,46 @@
 # NEXT - what comes next
 
-2026-10-29. **User clarifies the0.0.15 button fixes are wanted in the MP build.**
-Separate MP probe ZIP prepared with the same corrected DLL and mode=mp_probe.
-Full MP volunteer gameplay remains unfinished; no OOS fix or two-peer test claimed.
-The screenshot trigger remains unconfirmed; user/tester retain game operation.
+2026-10-30. User takes over actual game testing. No further desktop input,
+relaunch or live-file changes without the user's next request.
 
 ## Current verified state
 
-- Correct MP archive: work/volunteers-mp-0015/final/Volunteers-0.0.15-MP-sync-probe.zip.
-  460894 bytes,19 files, no installer/scripts. SHA256:
-  2191551f2bf99fbb78af13348f377816205157a28d261167b5d5c54ad5232cc9.
-  DLL is byte-identical to SP0.0.15 below; explicit mode=mp_probe and native art
-  verified. One package regression/CRC/reproducibility check passes. Both players
-  select this ZIP for diagnostic MP testing; Send/Recall/scopes remain refused.
-- Plain ZIP: work/volunteers-entry-0015/final-r2/Volunteers-0.0.15-SP-beta.zip.
-  463228 bytes,20 files; no installer/EXE/BAT/CMD/PowerShell/scripts. SHA256:
-  c3df063e8bf71500cc1e1bb265c69ce615c880259a0100af7229fc53ed311380.
-  DLL SHA256:974a306baf282a846bb8ff8d1648adf0223ae5030ff19c1ef1236647cb0dd4ef.
-- Worker/reentrant hides defer to the UI thread rather than permanently disabling
-  the UI. Read-only scene-order checks recover an entry covered by Diplomacy,
-  preserve later visible dialogs and handle recognized closed-dialog renderers.
-  Hidden child controls get native subtree activation; expired/pending-release
-  owned windows are rebuilt with old observer boxes retained under existing bounds.
-- Checkpoint failures stop mission commands/scope until an explicit new load
-  epoch while leaving the validated button/panels available. No automatic partial
-  retry or replay; actual native faults/type/capacity failures remain hard gates.
--61 Rust tests pass, two benchmarks ignored. Format/strict Clippy/x86 release,
-  six package, two share, one MP-package, two collector checks and107 scoped
-  signatures pass.11 native art/GUI/localization files are byte-identical to0.0.13.
-- No game, desktop input, install, loader/TGC/save edit or live disappearance
-  reproduction. Installed E: copy stays0.0.12/CreatineCore6.36 (DLL08de457c...a00a1a3).
-  All prior SP/MP archives retained. New candidate needs actual click/reopen/
-  background/long-session and performance retest.
+- Volunteers0.0.16 explicit mode=mp prototype, whole existing armies only.
+- Native human roster/source-country cross-check; fresh all-player current-load
+  execution admission. Probe-only markers cannot authorize gameplay.
+- Only the admitted local donor emits mission orders/checkpoints. Native HEAD
+  execution and before-hourly-command boundaries derive merged immutable policy
+  from committed country journals, retaining each donor's campaign ID.
+- Original EXE/114 relocated signatures pass.70 Rust tests pass;2 benchmarks
+  ignored. Format, strict Clippy, x86 release, six package/two MP-package/two
+  collector checks pass. RET1C clone ABI and two-replica projections covered.
+- Uploaded0.0.15 log has correct probe mode and DLL fingerprint, but GUI/load/
+  journal false. Found actual Core6.36 role-probe signature conflict. New narrow
+  file-hash/thunk/trampoline check accepted it in real startup; all GUI/lifecycle/
+  journal/scoped-hook/module gates true. Unknown hooks still refuse.
+- Separate test copy: work/volunteers-mp-0016/game-host. Unique game profile
+  TGC252_Volunteers_MP0016_Host. Visible test game left to user. No UI input sent.
+  Initial restricted startup raised native file-open exception; a subsequent
+  profile-capable launch reached frontend completion. No exact missing file
+  established. Unused earlier hidden menu instance was stopped; no save loaded.
+- Accepted E:/Victoria-II-Volunteers-0004 remains0.0.12/Core6.36. No main/source
+  install, executable, TGC or campaign file changed. No actual paired MP test.
+
+ZIP: work/volunteers-mp-0016/final/Volunteers-0.0.16-MP-prototype.zip
+SHA256: f249acbde424144f52f013df16fbb1a2ff00e250851dc77513661d34c8318cd5
+498115 bytes,19 files, no installer/EXE/BAT/CMD/PowerShell/scripts.
+DLL SHA256: 801bf93763eaede58acd0b204584744018611d4b00db03eb1d6c5e40eadc6041
+The running test copy and final ZIP contain that same DLL. Mode=mp, not mp_probe.
 
 ## Remaining cards
 
 | Card | Status | Exact next instructions |
 |---|---|---|
-| VOL-ENTRY |0.0.15 SP ZIP ready; actual recovery untested | docs/instructions-volunteers-entry.md steps1..7 |
-| VOL-FEEDBACK / VOL-CONTROLS / VOL-SIEGE / VOL-OPT / VOL-PROTOTYPE | Prior lifecycle, vision and performance acceptance open | Entry step9; docs/instructions-volunteers-feedback.md |
-| VOL-MP-SYNC |0.0.15 MP probe includes entry fixes; paired test not run | docs/instructions-volunteers-mp-sync.md steps1..7 |
-| VOL-MP / VOL-OOS | Full volunteer multiplayer, sender/peer authority, deterministic activation/order authority and original OOS remain unresolved | MP-sync steps8..10; docs/instructions-volunteers-oos.md |
+| VOL-MP | Actual gameplay candidate ready; user testing | docs/instructions-volunteers-mp-gameplay.md steps1..8 |
+| VOL-OOS | Original failure not reproduced/fixed by evidence | MP-gameplay steps9..11; docs/instructions-volunteers-oos.md |
+| VOL-ENTRY / VOL-FEEDBACK / VOL-CONTROLS / VOL-SIEGE / VOL-OPT | Startup gates passed; full UI/lifecycle/performance acceptance open | MP-gameplay steps5..10 |
 
-Evidence: docs/report-volunteers-mp-package-1029.md and docs/report-volunteers-entry-1029.md. Commit/push remains authorized.
-Preserve unrelated release-document edits and private art/builds/raw exports.
-No new subagents, peer messages or memory writes. Next pitfall P87.
+Read report-volunteers-mp-gameplay-1030.md and pitfalls P87/P88 before changes.
+Retain old ZIPs and accepted installation. Preserve unrelated release-document
+work and private binaries/art/RE exports. Commit/push remains authorized.
+No new subagents, peer messages or memory writes. Next pitfall P89.

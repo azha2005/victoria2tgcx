@@ -1,13 +1,13 @@
 //! Scoped Win32/x86 adapters reused from the proved ATCU command/GUI contracts.
 //! No ownership, province, membership, strength, money or pop writes. Native
-//! commands remain gated by an admitted single-player permit from the controller.
+//! commands require an admitted SP or local MP issuer permit.
 use crate::app::{ArmyView, CountryView, RegimentView, WorldView};
 use crate::mission::{DeploymentPlan, RecipientWar};
 use crate::model::Identity;
 use crate::native_call::call;
 use crate::native_signatures::SIGNATURES;
 use crate::native_string::GameString;
-use crate::session::{SessionMode, SinglePlayerPermit};
+use crate::session::{SessionMode, SimulationPermit};
 use crate::snapshot::{Memory, capture_stack_receipt};
 use std::collections::BTreeSet;
 use std::ffi::c_void;
@@ -63,13 +63,14 @@ impl Memory for Native {
 impl Native {
     pub fn prepare_checkpoint(
         &self,
-        permit: SinglePlayerPermit,
+        permit: SimulationPermit,
         donor: u32,
         registry: &crate::registry::Registry,
         previous: u32,
     ) -> Option<(Batch, u32, String)> {
         let session = crate::native_session::capture(self, self.base)?;
-        if session.mode != SessionMode::SinglePlayer
+        if !permit.matches_mode(session.mode)
+            || !permit.commands_for(donor)
             || registry.epoch != permit.epoch()
             || crate::native_lifecycle::epoch(session.context) != Some(registry.epoch)
             || registry.entries().any(|e| e.deployment.key.donor != donor)
@@ -124,11 +125,12 @@ impl Native {
     }
     pub fn prepare_variables(
         &self,
-        permit: SinglePlayerPermit,
+        permit: SimulationPermit,
         donor: u32,
         writes: &[crate::engine_store::Write],
     ) -> Option<Batch> {
         if permit.epoch() == 0
+            || !permit.commands_for(donor)
             || writes.is_empty()
             || writes.len() > crate::engine_store::MAX_BYTES / 2 + 2
         {
@@ -141,8 +143,9 @@ impl Native {
         }
         let mut batch = Batch {
             native: *self,
-            queue: self.queue()?,
+            queue: self.queue_for(permit)?,
             probe_epoch: None,
+            permit: Some(permit),
             commands: Vec::new(),
         };
         for write in writes {
@@ -176,19 +179,46 @@ impl Native {
         Some(batch)
     }
     pub fn new(base: u32) -> Option<Self> {
+        Self::checked(base, |_| true)
+    }
+    pub fn ui_only(base: u32) -> Option<Self> {
+        const UI: &[u32] = &[
+            0x6AE9AF, 0x6AE91B, 0x5A38F0, 0x5E4C80, 0x5E4D00, 0x8ED0, 0x65ECC0, 0x5E3D60, 0x5E4490,
+            0x5E4030, 0x5E4450, 0x5E2FC0, 0x5E3BA0, 0x221C10, 0x5CD610, 0x3539D0, 0x21BE80,
+            0x241BA0, 0x5E6B10, 0x5E6C10, 0x5F0310, 0x5D1040, 0x5EFEF0, 0x5EFEB0, 0x5E4A20,
+            0x5E68A0, 0x5E6960, 0xA07450, 0xA0E48C, 0xA3C0D8, 0xA3B2CC, 0xA3CFBC, 0xA41E84,
+            0xA41F10,
+        ];
+        Self::checked(base, |rva| UI.contains(&rva))
+    }
+    pub(crate) fn checked(base: u32, include: impl Fn(u32) -> bool) -> Option<Self> {
         let n = Self { base };
-        for signature in SIGNATURES {
+        let mut accepted = true;
+        for signature in SIGNATURES.iter().filter(|s| include(s.rva)) {
             let mut expected = signature.bytes.to_vec();
             for &offset in signature.relocations {
                 let preferred = u32::from_le_bytes(expected[offset..offset + 4].try_into().ok()?);
                 let loaded = preferred.wrapping_sub(0x400000).wrapping_add(base);
                 expected[offset..offset + 4].copy_from_slice(&loaded.to_le_bytes());
             }
-            if n.bytes(base.checked_add(signature.rva)?, expected.len())? != expected {
-                return None;
+            let observed = n.bytes(base.checked_add(signature.rva)?, expected.len());
+            if observed.as_ref() != Some(&expected) {
+                if signature.rva == 0x662EA0
+                    && crate::loader_compat::server_role_probe(n, &expected)
+                {
+                    crate::runtime::diagnostic(
+                        "native_signature_compatible rva=662EA0 official-CreatineCore6.36 role probe/thunk/trampoline verified",
+                    );
+                    continue;
+                }
+                accepted = false;
+                crate::runtime::diagnostic(&format!(
+                    "native_signature_refused base={base:08X} rva={:X} expected={expected:02X?} observed={observed:02X?}",
+                    signature.rva
+                ));
             }
         }
-        Some(n)
+        accepted.then_some(n)
     }
     pub fn bytes(&self, address: u32, count: usize) -> Option<Vec<u8>> {
         if address < 0x10000 || count > 1024 * 1024 || address.checked_add(count as u32).is_none() {
@@ -381,6 +411,7 @@ impl Native {
                 .filter(|s| s.world == world)
                 .map_or(SessionMode::Unknown, |s| s.mode),
             player,
+            mp_authority: crate::native_mp_play::issuer(*self),
             date: self.field(world, 0xB0C)?,
             player_at_war: self.byte(donor + 0x67C)? != 0,
             ..WorldView::default()
@@ -538,7 +569,10 @@ impl Native {
 
     /// Native client identity allocation, matching the new-stack button. This
     /// touches only its UI allocation counter under the native lock (ATCU path).
-    pub fn allocate_identity(&self, permit: SinglePlayerPermit) -> Option<Identity> {
+    pub fn allocate_identity(&self, permit: SimulationPermit) -> Option<Identity> {
+        if permit.multiplayer() {
+            return None;
+        }
         if permit.epoch() == 0 || crate::native_call::faulted() {
             return None;
         }
@@ -564,12 +598,11 @@ impl Native {
         }
         Some(Identity { kind, id: id? })
     }
-    pub fn prepare_detach(
-        &self,
-        permit: SinglePlayerPermit,
-        plan: &DeploymentPlan,
-    ) -> Option<Batch> {
-        if permit.epoch() == 0 {
+    pub fn prepare_detach(&self, permit: SimulationPermit, plan: &DeploymentPlan) -> Option<Batch> {
+        if permit.epoch() == 0
+            || !permit.commands_for(plan.key().donor)
+            || (permit.multiplayer() && plan.destination() != plan.source())
+        {
             return None;
         }
         let source = self.army(plan.source())?;
@@ -592,11 +625,12 @@ impl Native {
             }
             registers.push(reg);
         }
-        let queue = self.queue()?;
+        let queue = self.queue_for(permit)?;
         let mut batch = Batch {
             native: *self,
             queue,
             probe_epoch: None,
+            permit: Some(permit),
             commands: Vec::new(),
         };
         if plan.destination() == plan.source() {
@@ -638,12 +672,16 @@ impl Native {
     }
     pub fn prepare_move(
         &self,
-        permit: SinglePlayerPermit,
+        permit: SimulationPermit,
         army: Identity,
         donor: u32,
         destination: u32,
     ) -> Option<Batch> {
-        if permit.epoch() == 0 || destination == 0 || destination > 65535 {
+        if permit.epoch() == 0
+            || !permit.commands_for(donor)
+            || destination == 0
+            || destination > 65535
+        {
             return None;
         }
         let stack = self.army(army)?;
@@ -654,7 +692,7 @@ impl Native {
         {
             return None;
         }
-        let queue = self.queue()?;
+        let queue = self.queue_for(permit)?;
         if self.land_route(stack, destination, None) != Some(true) {
             return None;
         }
@@ -678,6 +716,7 @@ impl Native {
             native: *self,
             queue,
             probe_epoch: None,
+            permit: Some(permit),
             commands: vec![command],
         })
     }
@@ -698,7 +737,23 @@ impl Native {
         Some(session.queue)
     }
     pub fn local_queue_ready(&self) -> bool {
-        self.queue().is_some()
+        self.queue().is_some() || crate::native_mp_play::issuer(*self).is_some()
+    }
+    fn queue_for(&self, permit: SimulationPermit) -> Option<u32> {
+        let session = crate::native_session::capture(self, self.base)?;
+        if !permit.matches_mode(session.mode)
+            || crate::native_lifecycle::epoch(session.context) != Some(permit.epoch())
+        {
+            return None;
+        }
+        if permit.multiplayer() {
+            if !crate::native_mp_play::validate_permit(*self, permit) {
+                return None;
+            }
+            Some(crate::native_session::probe_queue(self, self.base)?.queue)
+        } else {
+            self.queue()
+        }
     }
     fn mp_probe_queue(&self, epoch: u64) -> Option<u32> {
         let session = crate::native_session::probe_queue(self, self.base)?;
@@ -715,7 +770,8 @@ impl Native {
         sequence: u32,
     ) -> Option<Batch> {
         let raw = sequence.checked_mul(1000)?;
-        crate::mp_sync::probe_value(key, raw)?;
+        crate::mp_sync::probe_value(key, raw)
+            .or_else(|| crate::mp_authority::hello_value(key, raw))?;
         let session = crate::native_session::probe_queue(self, self.base)?;
         if self.field(session.world, 0xB60)? != donor {
             return None;
@@ -741,6 +797,7 @@ impl Native {
             native: *self,
             queue,
             probe_epoch: Some(epoch),
+            permit: None,
             commands: vec![command],
         })
     }
@@ -757,6 +814,7 @@ pub struct Batch {
     native: Native,
     queue: u32,
     probe_epoch: Option<u64>,
+    permit: Option<SimulationPermit>,
     commands: Vec<u32>,
 }
 impl Batch {
@@ -764,9 +822,14 @@ impl Batch {
     /// are posted together, never delayed across days while the target is empty.
     pub fn post(mut self) -> bool {
         // A permit captured earlier cannot cross a session replacement.
-        let current_queue = self.probe_epoch.map_or_else(
-            || self.native.queue(),
-            |epoch| self.native.mp_probe_queue(epoch),
+        let current_queue = self.permit.map_or_else(
+            || {
+                self.probe_epoch.map_or_else(
+                    || self.native.queue(),
+                    |epoch| self.native.mp_probe_queue(epoch),
+                )
+            },
+            |permit| self.native.queue_for(permit),
         );
         if current_queue != Some(self.queue) {
             return false;
@@ -792,7 +855,10 @@ impl Batch {
                 || self
                     .native
                     .field(command, 0x60)
-                    .and_then(|raw| crate::mp_sync::probe_value(&key, raw))
+                    .and_then(|raw| {
+                        crate::mp_sync::probe_value(&key, raw)
+                            .or_else(|| crate::mp_authority::hello_value(&key, raw))
+                    })
                     .is_none()
             {
                 return false;
@@ -824,9 +890,40 @@ impl Batch {
             }
         }
         type Post = unsafe extern "fastcall" fn(u32, u32, u32);
+        let network_source = if self.probe_epoch.is_some()
+            || self.permit.is_some_and(|p| p.multiplayer())
+        {
+            let Some(session) = crate::native_session::probe_queue(&self.native, self.native.base)
+            else {
+                return false;
+            };
+            let Some(source) = self
+                .native
+                .field(session.manager, 0x54)
+                .and_then(|v| u16::try_from(v).ok())
+                .filter(|s| *s <= 0x7FFF)
+            else {
+                return false;
+            };
+            Some(source)
+        } else {
+            None
+        };
         while !self.commands.is_empty() {
             // Remove before invoking Post: an exception after ownership passed
             // must never make Drop delete a possibly queued command.
+            let command = self.commands[0];
+            if let Some(source) = network_source {
+                // Only private newly allocated command metadata is written.
+                // Host Post stamps this natively; Client Post expects it serialized.
+                if call(|| unsafe {
+                    std::ptr::write_unaligned((command + 0x34) as *mut u16, source)
+                })
+                .is_none()
+                {
+                    return false;
+                }
+            }
             let command = self.commands.remove(0);
             if call(|| unsafe {
                 std::mem::transmute::<usize, Post>(post as usize)(self.queue, 0, command)

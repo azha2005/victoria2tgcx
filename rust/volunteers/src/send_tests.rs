@@ -14,6 +14,7 @@ pub(super) fn setup(count: u32) -> (App, WorldView) {
         epoch: 1,
         campaign: Some(campaign),
         mode: SessionMode::SinglePlayer,
+        mp_authority: None,
         player: 625,
         date: 100,
         player_at_war: false,

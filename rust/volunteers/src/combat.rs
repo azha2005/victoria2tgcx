@@ -28,7 +28,7 @@ pub fn pair(
     mut war: impl FnMut(u32) -> RecipientWar,
     mut hostile: impl FnMut(u32, u32) -> Option<bool>,
 ) -> Decision {
-    if left.campaign != registry.campaign || right.campaign != registry.campaign {
+    if !registry.receipt_campaign_matches(left) || !registry.receipt_campaign_matches(right) {
         return Decision::Native;
     }
     let left_context = registry.context(left, Use::Combat, war_for(registry, left, &mut war));

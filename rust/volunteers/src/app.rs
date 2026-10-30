@@ -39,6 +39,7 @@ pub struct WorldView {
     pub epoch: u64,
     pub campaign: Option<Campaign>,
     pub mode: SessionMode,
+    pub mp_authority: Option<crate::mp_authority::IssuerAuthority>,
     pub player: u32,
     pub date: u32,
     pub player_at_war: bool,
@@ -51,6 +52,7 @@ impl Default for WorldView {
             epoch: 0,
             campaign: None,
             mode: SessionMode::Unknown,
+            mp_authority: None,
             player: 0,
             date: 0,
             player_at_war: false,
@@ -181,8 +183,20 @@ impl App {
             self.show_history || !matches!(e.mission.saved().0, State::Returned | State::Lost)
         })
     }
-    fn gate(&self, w: &WorldView) -> Result<session::SinglePlayerPermit, Unavailable> {
-        let permit = session::admit(w.mode, self.capabilities, w.epoch)?;
+    pub(crate) fn gate(&self, w: &WorldView) -> Result<session::SimulationPermit, Unavailable> {
+        if w.mode == SessionMode::Multiplayer && !self.settings.mp_play {
+            return Err(Unavailable::MultiplayerUnsupported);
+        }
+        if w.mode == SessionMode::Multiplayer && self.settings.mp_play && w.mp_authority.is_none() {
+            return Err(Unavailable::MultiplayerHandshake);
+        }
+        let permit = if w.mode == SessionMode::Multiplayer
+            && let Some(proof) = w.mp_authority
+        {
+            session::admit_issuer(proof, self.capabilities, w.epoch, w.player)?
+        } else {
+            session::admit(w.mode, self.capabilities, w.epoch)?
+        };
         if w.campaign.is_none()
             || self
                 .registry
@@ -194,9 +208,12 @@ impl App {
         Ok(permit)
     }
     pub fn can_submit(&self, w: &WorldView) -> bool {
-        self.gate(w).is_ok()
+        self.gate(w)
+            .is_ok_and(|permit| !permit.multiplayer() || self.whole_army_selection(w))
             && self.request(w).is_some_and(|request| {
-                crate::model::validate_send(&request, &self.settings).is_ok()
+                self.gate(w).is_ok_and(|permit| {
+                    crate::model::validate_authorized(&request, &self.settings, permit).is_ok()
+                })
             })
             && self.army(w).is_some_and(|a| a.affiliation == w.player)
             && self
@@ -352,7 +369,13 @@ impl App {
                     self.status = "Select an army and brigades first.".into();
                     return work;
                 };
-                if let Err(reason) = crate::model::validate_send(&request, &self.settings) {
+                if permit.multiplayer() && !self.whole_army_selection(w) {
+                    self.status="MP currently sends whole armies. Split the army with native controls first.".into();
+                    return work;
+                }
+                if let Err(reason) =
+                    crate::model::validate_authorized(&request, &self.settings, permit)
+                {
                     use crate::model::Refusal::*;
                     self.status = match reason {
                         DonorAtWar => "Your country must be at peace.",
@@ -567,10 +590,7 @@ impl App {
             } else {
                 String::new()
             },
-            send_enabled: ready
-                && self
-                    .request(w)
-                    .is_some_and(|r| crate::model::validate_send(&r, &self.settings).is_ok()),
+            send_enabled: self.can_submit(w),
             missions,
             recall_enabled: ready
                 && self

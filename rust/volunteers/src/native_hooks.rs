@@ -4,10 +4,10 @@ use crate::combat::Decision;
 use crate::native::Native;
 use crate::native_call::call;
 use crate::registry::Registry;
-use crate::session::SinglePlayerPermit;
+use crate::session::SimulationPermit;
 use std::ffi::{c_char, c_void};
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
-use std::sync::{OnceLock, RwLock};
+use std::sync::{Arc, OnceLock, RwLock};
 
 static BASE: AtomicU32 = AtomicU32::new(0);
 static PAIR: AtomicUsize = AtomicUsize::new(0);
@@ -34,39 +34,76 @@ static READY: AtomicBool = AtomicBool::new(false);
 // Assembly reads this aligned word only to skip the plugin when no scope is
 // published. A nonzero value never grants permission; Rust retains every gate.
 static ACTIVE: AtomicU32 = AtomicU32::new(0);
+static NETWORK: AtomicBool = AtomicBool::new(false);
 struct Published {
     registry: Registry,
-    permit: SinglePlayerPermit,
+    permit: SimulationPermit,
     thread: u32,
 }
-static SCOPE: OnceLock<RwLock<Option<Published>>> = OnceLock::new();
-pub fn publish(registry: Option<&Registry>, permit: Option<SinglePlayerPermit>) {
+static SCOPE: OnceLock<RwLock<Option<Arc<Published>>>> = OnceLock::new();
+pub fn publish(registry: Option<&Registry>, permit: Option<SimulationPermit>) {
+    // GUI scheduling and local errors cannot replace network-committed policy.
+    if NETWORK.load(Ordering::Acquire) {
+        return;
+    }
     ACTIVE.store(0, Ordering::Release);
     if let Ok(mut scope) = SCOPE.get_or_init(|| RwLock::new(None)).try_write() {
         *scope = registry
             .filter(|r| r.has_native_scope())
             .zip(permit)
-            .map(|(r, p)| Published {
-                registry: r.clone(),
-                permit: p,
-                thread: unsafe { crate::native::GetCurrentThreadId() },
+            .map(|(r, p)| {
+                Arc::new(Published {
+                    registry: r.clone(),
+                    permit: p,
+                    thread: unsafe { crate::native::GetCurrentThreadId() },
+                })
             });
         ACTIVE.store(u32::from(scope.is_some()), Ordering::Release);
     }
 }
-fn with_scope<R>(f: impl FnOnce(Native, &Registry, SinglePlayerPermit) -> Option<R>) -> Option<R> {
+pub(crate) fn publish_network(registry: Option<&Registry>, permit: Option<SimulationPermit>) {
+    NETWORK.store(true, Ordering::Release);
+    if let Ok(mut scope) = SCOPE.get_or_init(|| RwLock::new(None)).write() {
+        *scope = registry
+            .filter(|r| r.has_native_scope())
+            .zip(permit.filter(|p| p.multiplayer() && p.policy()))
+            .map(|(r, p)| {
+                Arc::new(Published {
+                    registry: r.clone(),
+                    permit: p,
+                    thread: unsafe { crate::native::GetCurrentThreadId() },
+                })
+            });
+        ACTIVE.store(u32::from(scope.is_some()), Ordering::Release);
+    }
+}
+pub(crate) fn clear() {
+    NETWORK.store(false, Ordering::Release);
+    ACTIVE.store(0, Ordering::Release);
+    if let Ok(mut scope) = SCOPE.get_or_init(|| RwLock::new(None)).write() {
+        *scope = None;
+    }
+}
+fn with_scope<R>(f: impl FnOnce(Native, &Registry, SimulationPermit) -> Option<R>) -> Option<R> {
     with_filtered_scope(|_, _| true, f)
 }
 fn with_filtered_scope<R>(
     relevant: impl FnOnce(Native, &Registry) -> bool,
-    f: impl FnOnce(Native, &Registry, SinglePlayerPermit) -> Option<R>,
+    f: impl FnOnce(Native, &Registry, SimulationPermit) -> Option<R>,
 ) -> Option<R> {
     if !READY.load(Ordering::Acquire) || crate::native_call::faulted() {
         return None;
     }
-    let scope = SCOPE.get()?.try_read().ok()?;
-    let scope = scope.as_ref()?;
-    if scope.thread != unsafe { crate::native::GetCurrentThreadId() } {
+    // MP cannot fall back to native rules because another thread briefly owns
+    // the publication lock. Clone the immutable snapshot and release the lock
+    // before calling the engine, including potentially reentrant native reads.
+    let scope = if NETWORK.load(Ordering::Acquire) {
+        SCOPE.get()?.read().ok()?.clone()?
+    } else {
+        SCOPE.get()?.try_read().ok()?.clone()?
+    };
+    if !scope.permit.multiplayer() && scope.thread != unsafe { crate::native::GetCurrentThreadId() }
+    {
         THREAD_REFUSALS.fetch_add(1, Ordering::Relaxed);
         return None;
     }
@@ -80,7 +117,8 @@ fn with_filtered_scope<R>(
         return None;
     }
     let session = crate::native_session::capture(&n, n.base)?;
-    if session.mode != crate::session::SessionMode::SinglePlayer
+    if !scope.permit.matches_mode(session.mode)
+        || !scope.permit.policy()
         || crate::native_lifecycle::epoch(session.context) != Some(scope.registry.epoch)
         || scope.permit.epoch() != scope.registry.epoch
     {
@@ -216,7 +254,7 @@ extern "C" fn country_ref(vector: u32, source: u32, caller: u32, output: *mut u3
             if n.byte(donor + 0x67C)? != 0 || n.byte(recipient + 0x67C)? == 0 {
                 return None;
             }
-            let receipt = n.receipt(r.campaign, id)?;
+            let receipt = n.receipt(entry.deployment.key.campaign, id)?;
             let index = r.context(
                 &receipt,
                 crate::mission::Use::Combat,
@@ -488,7 +526,10 @@ extern "C" fn vision(world: u32) {
         let fronts = r
             .entries()
             .filter_map(|entry| {
-                let receipt = n.receipt(r.campaign, entry.mission.plan().destination())?;
+                let receipt = n.receipt(
+                    entry.deployment.key.campaign,
+                    entry.mission.plan().destination(),
+                )?;
                 let recipient = n.country(entry.deployment.key.recipient)?;
                 if n.byte(recipient + 0x67C)? == 0 {
                     return None;

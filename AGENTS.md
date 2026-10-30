@@ -386,7 +386,7 @@ Win32 platform. Its environment is set up in DLL-0.
 
 Index, one line per pitfall. **The full text (cause, symptom, fix) is in
 `docs/pitfalls.md`.** A new pitfall is added there and here with the next
-number (**the next one is P87**).
+number (**the next one is P89**).
 
 - **P1** `git clone` with `core.autocrlf=true` converts TGC to CRLF (and can break misdetected binaries)
 - **P2** `TGC.mod` at tag v2.5.2 says `current_release = "v2.5.1"`: useless for telling the version
@@ -599,3 +599,6 @@ a problem. Neither the executable nor parts of it, nor the Ghidra project,
 are redistributed. TGC, the RE repo and V2DLL have no published licence.
 The project is for **personal use** (D6): V2DLL code may be used, marked
 (R8); nothing from TGC or the executable enters git.
+
+- **P87** A loader can already hook a required native function; keep UI gates independent, diagnose exact RVAs and accept only an exact-version verified trampoline contract.
+- **P88** Native CSetVariableCommand Clone rebuilds source metadata; our MP clone wrapper must preserve namespaced sender IDs and the inspected seven-word RET1C ABI. Shared MP policy must not depend on UI thread/lock scheduling.

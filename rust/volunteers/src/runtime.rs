@@ -203,8 +203,14 @@ unsafe extern "C" fn tick_observer() {
     );
 }
 extern "C" fn before_tick() {
+    let _error = crate::native::LastError::preserve();
     let previous = DEPTH.fetch_add(1, Ordering::Relaxed);
     MAX_DEPTH.fetch_max(previous.saturating_add(1), Ordering::Relaxed);
+    if previous == 0
+        && let Some(context) = CONTEXT.get()
+    {
+        crate::native_mp_play::before_tick(crate::native::Native { base: context.base });
+    }
 }
 extern "C" fn after_tick() {
     let error = unsafe { GetLastError() };
@@ -213,6 +219,7 @@ extern "C" fn after_tick() {
         let report = observe();
         if let Some(context) = CONTEXT.get() {
             crate::native_mp::tick(crate::native::Native { base: context.base });
+            crate::native_mp_play::after_tick(crate::native::Native { base: context.base });
         }
         crate::native_gui::day_tick();
         if report {
@@ -338,7 +345,7 @@ fn initialize_once(api: &V2ModApi) -> bool {
     };
     let _ = writeln!(
         log,
-        "TGCX Volunteers 0.0.15 development; recoverable native diplomacy entry; volunteer gameplay remains SP-gated"
+        "TGCX Volunteers 0.0.16 development; experimental MP whole-army gameplay; current-load peer admission required"
     );
     if exe_hash(&exe).as_deref() != Some(EXE_SHA) {
         let _ = writeln!(
@@ -429,32 +436,66 @@ fn initialize_once(api: &V2ModApi) -> bool {
     if installed && restored {
         let prototype = gui_settings.prototype;
         let mp_probe = gui_settings.mp_probe;
+        let mp_play = gui_settings.mp_play;
+        let max_brigades = gui_settings.max_brigades;
+        diagnostic(&format!(
+            "selected_package={} settings={gui_settings:?}",
+            package.display()
+        ));
+        // Check before our own vtable replacements. An unrelated gameplay
+        // mismatch must not prevent an independently validated UI from loading.
+        let gameplay_native = crate::native::Native::new(base).is_some();
+        let lifecycle_native =
+            crate::native::Native::checked(base, |r| [0x262010, 0xA0A34C].contains(&r)).is_some();
+        let journal_native = crate::native::Native::checked(base, |r| {
+            [
+                0x183900, 0x1839C0, 0x183C00, 0x183C1E, 0x183C7F, 0xA0121C, 0x241BA0, 0x9FBB60,
+            ]
+            .contains(&r)
+        })
+        .is_some();
+        let transport_native = crate::native::Native::checked(base, |r| {
+            [0x662EA0, 0x666B30, 0x666D63, 0xA42728, 0xA427C8, 0xA42840].contains(&r)
+        })
+        .is_some();
+        let plugin_hash = exe_hash(&package.join("v2dll_mod.dll"));
         if let Some(digest) = exe_hash(&package.join("v2dll_mod.dll"))
             .and_then(|digest| crate::mp_sync::fingerprint(&digest, gui_settings.max_brigades))
         {
             diagnostic(&format!(
                 "mp_sync_initialized fingerprint={digest} probe_requested={mp_probe} (journal mirror only; no MP gameplay authority)"
             ));
-            crate::native_mp::initialize(mp_probe, digest);
+            if transport_native && journal_native && lifecycle_native {
+                crate::native_mp::initialize(mp_probe, digest);
+            }
         } else {
             diagnostic("MP sync diagnostic fingerprint unavailable; no MP probe initialized");
         }
         let gui_installed =
             gui_settings.ui_preview && crate::native_gui::install(base, gui_settings);
-        let load_fence = gui_installed && crate::native_lifecycle::install(base);
-        let journal_observer = load_fence && crate::native_journal::install(base);
+        let load_fence =
+            gui_installed && lifecycle_native && crate::native_lifecycle::install(base);
+        let journal_observer = load_fence && journal_native && crate::native_journal::install(base);
         let scoped_hooks = prototype
+            && gameplay_native
+            && transport_native
             && journal_observer
             && api.steal_to_trampoline != 0
             && crate::native_hooks::install(base, unsafe {
                 std::mem::transmute::<usize, crate::native_hooks::Steal>(api.steal_to_trampoline)
             });
+        if let Some(hash) = plugin_hash {
+            crate::native_mp_play::initialize(mp_play && scoped_hooks, &hash, max_brigades);
+        }
+        diagnostic(&format!(
+            "native_module_gates gameplay={gameplay_native} lifecycle={lifecycle_native} journal={journal_native} transport={transport_native} mp_gameplay_requested={mp_play}"
+        ));
         if let Some(c) = CONTEXT.get()
             && let Ok(mut s) = c.state.lock()
         {
             let _ = writeln!(
                 s.log,
-                "native_gui_installed={gui_installed} native_load_fence={load_fence} native_journal_observer={journal_observer} prototype_requested={prototype} scoped_hooks={scoped_hooks}; SP/session/load/queue/registry gates still required"
+                "native_gui_installed={gui_installed} native_load_fence={load_fence} native_journal_observer={journal_observer} prototype_requested={prototype} scoped_hooks={scoped_hooks}; session/load/queue/registry/peer gates still required"
             );
             let _ = s.log.flush();
         }

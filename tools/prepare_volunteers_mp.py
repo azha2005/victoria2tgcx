@@ -92,7 +92,84 @@ Source: https://github.com/azha2005/victoria2tgcx
 '''
 
 
-def build(output, dll=None, carrier=ACCEPTED_CARRIER):
+GAMEPLAY_README = f"""VOLUNTEERS {development.VERSION} - EXPERIMENTAL MULTIPLAYER PROTOTYPE
+
+This package enables MP gameplay after fresh native execution receipts from ALL
+human players using the same build/policy. Actual two-peer acceptance is pending;
+it is not an OOS-fixed release. Use separate copies and a disposable common save.
+
+REQUIRES
+Victoria II 3.04 x86, TGC 2.5.2, CreatineCore 6.36 installed separately.
+Reference EXE SHA-256:
+62d48c204364dd706584777c2e2b3c7ab3c5f1dd0170872554943575d53d6648
+Core: https://github.com/artyom-kuznetsov/V2DLL_Victoria-2-Extension/releases/tag/v6.36
+
+INSTALL ON EVERY PLAYER'S COPY (game closed normally)
+1. Back up the older Volunteers folder. Extract beside v2game.exe, merging mod/.
+   No game executable, loader or TGC file is replaced. No scripts are included.
+2. In z_CreatineCore/creatinecore_settings.ini use LOCAL_MOD_CONFIG=0,
+   LOAD_DLL_FROM_MOD_FOLDER=1, ENABLE_STATE_PROBE=0, ENABLE_RNG_PROBE=0,
+   DEBUG_LOG=0. In dll_Submods/ccore_performance_patch.ini keep
+   FIX_ARMY_WINDOW_LAG=0 and DEBUG_LOG=0. Match all mods/settings on all peers.
+3. Normal launcher: select 00 - Volunteers loader data, TGC 2.5.2,
+   ZZ - Volunteers (MP prototype). Untick older Volunteers descriptors.
+   This package already sets mode=mp. mode=mp_probe cannot unlock gameplay.
+
+USE / PAIRED TEST
+1. Host/join a clean common save as distinct countries. Start with two players.
+   Spectators, shared-country control, hotjoin and disconnect recovery are not
+   validated. Unknown/changed rosters suspend new command authority.
+2. Unpause briefly. All logs need mp_gameplay_hello receipts from BOTH countries,
+   accepted=true and ready=true. If waiting, preserve both logs instead of
+   disabling checks. queued=true alone does not prove execution/admission.
+3. The donor must be at peace; the recipient must be at war and nonhostile.
+   Open Diplomacy, choose the recipient and click Send volunteers beside
+   Command Units. The native art/button recovery fixes are retained.
+4. Select EVERY brigade of an idle army of at most five brigades. This MP build
+   sends WHOLE EXISTING ARMIES ONLY. Split a larger army with the native game
+   controls first. A verified native LAND ROUTE to recipient territory is needed;
+   no teleport, sea deployment or country-count limit is added.
+5. Send, then unpause. The donor keeps ownership, normal player command, flag,
+   supply and reinforcements. Only that donor's client emits its mission orders.
+   Both peers derive combat/access/siege policy from committed native journals,
+   independently of whether either player's diplomacy window is open.
+6. Compare BOTH logs at the same game date: matching journal_commit head/SHA256
+   and mp_policy_active digest. Test movement, battles, siege progress, Recall
+   and automatic return at peace. A policy digest is not the engine's full CRC.
+7. Repeat with host/client countries swapped, two simultaneous donors, then
+   save/exit/reload. Fresh admission is required after every load; saved marker
+   values alone do not unlock gameplay. Interrupted work is not replayed.
+8. Preserve the exact pre-test save, BOTH tgcx_volunteers.log files, loader logs
+   and first OOS date. An ordinary baseline without Volunteers helps distinguish
+   existing loader/mod desyncs. All peers must have identical game/mod builds.
+
+LIMITS / TROUBLESHOOTING
+- This is the first actual MP gameplay candidate, not the previous probe-only ZIP.
+- Whole-army reuse avoids unsynchronized new army-ID allocation. No partial Send.
+- No local maintenance/RNG/CRC bypass is added. Original OOS is not yet proven fixed.
+- Completed history is hidden/clearable and does not consume the active limit.
+- Logs/tgcx_volunteers.log must show 0.0.16, native_gui_installed,
+  native_load_fence, native_journal_observer, scoped_hooks all true, plus
+  mp_gameplay_requested=true. Startup now lists exact mismatching RVAs.
+- Official Core6.36's existing host-role hook is accepted only after checking
+  that DLL's hash, thunk and original trampoline. Unknown hooks remain refused.
+- Missing native gates can leave the button usable for diagnostics while Send
+  stays unavailable. Do not remove signature/session/peer checks.
+
+ROLLBACK
+Close normally, restore the old Volunteers folder/descriptor/configuration and
+use the untouched pre-test save. The previous SP package remains a rollback.
+
+CREDITS
+JC / azha2005: project. V2DLL/CreatineCore by artyom-kuznetsov and contributors:
+loader/API and credited contracts. maxioten / Victoria2-Reverse-Engineering:
+targeted evidence/symbols. Native UI art belongs to the original game owners;
+no art/game binary enters git and no new rights are asserted.
+Source: https://github.com/azha2005/victoria2tgcx
+"""
+
+
+def build(output, dll=None, carrier=ACCEPTED_CARRIER, gameplay=False):
     output = Path(output).resolve()
     archive = Path(str(output)+'.zip')
     if output.exists() or archive.exists():
@@ -110,7 +187,10 @@ def build(output, dll=None, carrier=ACCEPTED_CARRIER):
         'mode=mp_probe\nmax_brigades=5\nsample_every_days=7\n').encode('ascii')
     files['mod/tgcx_loader_data.mod']=b'name = "00 - Volunteers loader data"\npath = "mod/tgcx_loader_data"\n'
     files['mod/tgcx_loader_data/common/defines_ccore.txt']=Path(carrier).read_bytes()
-    files['README.txt']=README.encode('ascii')
+    if gameplay:
+        files['mod/tgcx_volunteers.mod']=b'name = "ZZ - Volunteers (MP prototype)"\npath = "mod/tgcx_volunteers"\n'
+        files['mod/tgcx_volunteers/tgcx_volunteers.cfg']=b'# Experimental multiplayer gameplay; every peer needs this exact build.\nmode=mp\nmax_brigades=5\nsample_every_days=7\n'
+    files['README.txt']=(GAMEPLAY_README if gameplay else README).encode('ascii')
     files['SHA256.json']=(json.dumps({k:hashlib.sha256(v).hexdigest() for k,v in sorted(files.items())},indent=2)+'\n').encode('ascii')
     output.mkdir(parents=True)
     with zipfile.ZipFile(archive,'x',zipfile.ZIP_DEFLATED) as z:
@@ -121,12 +201,13 @@ def build(output, dll=None, carrier=ACCEPTED_CARRIER):
     with zipfile.ZipFile(archive) as z:
         if z.testzip():raise ValueError('ZIP CRC failed')
     return {'zip':str(archive),'sha256':hashlib.sha256(archive.read_bytes()).hexdigest(),
-            'bytes':archive.stat().st_size,'files':len(files),'mode':'mp_probe',
-            'mp_volunteer_gameplay':False,'actual_two_peer_test':'not run'}
+            'bytes':archive.stat().st_size,'files':len(files),'mode':'mp' if gameplay else 'mp_probe',
+            'mp_volunteer_gameplay':gameplay,'actual_two_peer_test':'not run'}
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output',type=Path)
+    parser.add_argument('--gameplay',action='store_true',help='Explicit experimental MP gameplay package')
     args=parser.parse_args()
-    print(json.dumps(build(args.output),indent=2))
+    print(json.dumps(build(args.output,gameplay=args.gameplay),indent=2))

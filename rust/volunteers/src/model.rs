@@ -21,6 +21,7 @@ pub struct Settings {
     pub ui_preview: bool,
     pub prototype: bool,
     pub mp_probe: bool,
+    pub mp_play: bool,
 }
 
 impl Default for Settings {
@@ -31,6 +32,7 @@ impl Default for Settings {
             ui_preview: false,
             prototype: false,
             mp_probe: false,
+            mp_play: false,
         }
     }
 }
@@ -60,9 +62,14 @@ impl Settings {
                     result.ui_preview = true;
                     result.mp_probe = true;
                 }
+                "mode" if value == "mp" => {
+                    result.ui_preview = true;
+                    result.prototype = true;
+                    result.mp_play = true;
+                }
                 "mode" => {
                     return Err(
-                        "mode must be observe, preview, prototype or mp_probe; native admission gates always apply"
+                        "mode must be observe, preview, prototype, mp_probe or mp; native admission gates always apply"
                             .into(),
                     );
                 }
@@ -126,6 +133,20 @@ pub fn validate_send(r: &SendRequest, settings: &Settings) -> Result<(), Refusal
     if r.multiplayer {
         return Err(Refusal::MultiplayerUnverified);
     }
+    validate_policy(r, settings)
+}
+pub(crate) fn validate_authorized(
+    r: &SendRequest,
+    settings: &Settings,
+    permit: crate::session::SimulationPermit,
+) -> Result<(), Refusal> {
+    if r.multiplayer && (!permit.multiplayer() || permit.policy() || !permit.commands_for(r.donor))
+    {
+        return Err(Refusal::MultiplayerUnverified);
+    }
+    validate_policy(r, settings)
+}
+fn validate_policy(r: &SendRequest, settings: &Settings) -> Result<(), Refusal> {
     if r.donor == 0 || r.recipient == 0 {
         return Err(Refusal::InvalidCountry);
     }

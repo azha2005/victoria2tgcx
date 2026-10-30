@@ -4,7 +4,7 @@ use crate::mission::{RecipientWar, Use};
 use crate::native::Native;
 use crate::native_call::call;
 use crate::registry::Registry;
-use crate::session::{SessionMode, SinglePlayerPermit};
+use crate::session::SimulationPermit;
 
 impl Native {
     /// An additive land-only override for CArmy slot33 / FUN_005D5E30.
@@ -13,7 +13,7 @@ impl Native {
     pub fn recipient_land_access(
         &self,
         registry: &Registry,
-        permit: SinglePlayerPermit,
+        permit: SimulationPermit,
         army: u32,
         province: u32,
         native_allowed: bool,
@@ -37,13 +37,14 @@ impl Native {
     pub(crate) fn recipient_army_image(
         &self,
         registry: &Registry,
-        permit: SinglePlayerPermit,
+        permit: SimulationPermit,
         army: u32,
         province: u32,
         purpose: Use,
     ) -> Option<[u32; 0x1B8 / 4]> {
         if permit.epoch() != registry.epoch
-            || crate::native_session::capture(self, self.base)?.mode != SessionMode::SinglePlayer
+            || !permit.policy()
+            || !permit.matches_mode(crate::native_session::capture(self, self.base)?.mode)
             || self.u32(army)? != self.base + 0x9F88CC
             || self.byte(self.field(province, 0x5C)? + 0x2A)? == 0
         {
@@ -59,7 +60,7 @@ impl Native {
         if self.byte(donor + 0x67C)? != 0 || self.byte(recipient + 0x67C)? == 0 {
             return None;
         }
-        let receipt = self.receipt(registry.campaign, id)?;
+        let receipt = self.receipt(entry.deployment.key.campaign, id)?;
         if self.army(id)? != army
             || registry.context(&receipt, purpose, RecipientWar::AtWar)
                 != Some(entry.deployment.key.recipient)

@@ -3,7 +3,7 @@
 //! map-province+360 follows the selected local viewer. Never write +174 here.
 //! The renderer application/dirty-texture callback remains a separate adapter.
 use crate::registry::Registry;
-use crate::session::{SessionMode, SinglePlayerPermit};
+use crate::session::SimulationPermit;
 use crate::snapshot::Memory;
 use std::collections::BTreeSet;
 
@@ -29,7 +29,7 @@ pub fn plan(
     m: &impl Memory,
     base: u32,
     registry: &Registry,
-    permit: SinglePlayerPermit,
+    permit: SimulationPermit,
 ) -> Option<Plan> {
     plan_with_fronts(m, base, registry, permit, &[])
 }
@@ -40,11 +40,11 @@ pub fn plan_with_fronts(
     m: &impl Memory,
     base: u32,
     registry: &Registry,
-    permit: SinglePlayerPermit,
+    permit: SimulationPermit,
     fronts: &[u32],
 ) -> Option<Plan> {
     let session = crate::native_session::capture(m, base)?;
-    if session.mode != SessionMode::SinglePlayer || registry.epoch != permit.epoch() {
+    if !permit.matches_mode(session.mode) || !permit.policy() || registry.epoch != permit.epoch() {
         return None;
     }
     let world = session.world;

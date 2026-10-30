@@ -1,77 +1,26 @@
-# Volunteers prototype
+# Volunteers 0.0.16
 
-0.0.15 restores native entry visibility/lifetime and defers worker hides. Mission
-checkpoint failures retain the UI while refusing further commands until reload.
-The same native art/layout is retained. See ../../docs/report-volunteers-entry-1029.md
-and ../../docs/instructions-volunteers-entry.md for the pending game retest.
+Experimental SP and whole-army MP prototypes. Use `mode=mp` for explicit MP
+admission; `mp_probe` remains diagnostic only. No unknown session becomes SP.
 
-0.0.14: mode=mp_probe exercises native MP variable-command delivery, records
-execution receipts and mirrors all-country journals for OOS diagnosis. MP troop
-gameplay remains refused. It is not an OOS fix; paired execution is untested.
-See ../../docs/report-volunteers-mp-sync-1029.md and the corresponding instructions.
-SP0.0.13 ZIP and the accepted installed0.0.12 copy remain unchanged.
+MP policy is derived from native-executed per-country saved journals at HEAD
+execution and before the native hourly command. All peers need fresh current-load
+HELLO receipts, the same DLL/policy fingerprint and a complete cross-checked native
+human roster. Each admitted local donor alone queues its journal and unit orders.
+Merged immutable policy retains per-donor campaign IDs and is never persisted.
+MP sends whole existing armies only; native split controls can prepare a small
+stack first. This avoids unsynchronized allocation of a new army ID.
 
-Independent Rust Win32/x86 V2DLL plugin for the reference Victoria II3.04 EXE.
-Current source:0.0.15 entry-recovery candidate (not tested in game). Donor owns/commands/supplies selected land brigades while
-borrowing recipient war context only for registered volunteer operations. Native
-GUI, unit commands, save-backed mission journal, scoped combat/siege/access and
-local display vision are implemented. User checks confirm sending, battle and
-siege progress on the isolated TGC2.5.2/V2DLL5.98 setup. Full prototype acceptance
-is incomplete; MP sending is deliberately refused.
+Native hooks require exact relocated signatures. The official CreatineCore6.36
+host-role probe is accepted only by exact file hash, thunk and trampoline checks.
+UI gates are independent so a gameplay mismatch can remain diagnosable. Our
+CSetVariableCommand clone wrapper preserves sender metadata with its inspected
+ECX / seven opaque stack words / EAX / RET1C ABI; flags/sequence stay native.
 
-2026-10-29 loader update: the isolated copy now has CreatineCore 6.36, with
-Volunteers 0.0.12 unchanged. Proxy/API fixtures and settings migration pass;
-startup is now confirmed in logs and the user accepts general operation/speed.
-Full prototype acceptance remains open. See
-../../docs/report-volunteers-loader-636-1029.md and its acceptance instructions.
+`tools/build_volunteers.ps1` runs x86 tests, strict Clippy and release build.
+`tools/prepare_volunteers_mp.py <new-output> --gameplay` produces a plain ZIP,
+with no installer, EXE, command files or scripts. Read its README for paired tests.
 
-Read ../../NEXT.md and ../../docs/volunteers-design.md before changing behavior.
-The guide ../../docs/report-volunteers-performance-probes-1029.md records the
-remaining lag, idle-wrapper measurements and expensive V2DLL diagnostics found
-enabled in the isolated test copy. Sampled callback timing accompanies weekly
-observer reports; gameplay updates stay daily. No simulated benchmark
-ratio is a game FPS claim.
-
-Build on Windows with Rust i686-pc-windows-msvc/MSVC x86. From repository root:
-
-    ./tools/build_volunteers.ps1
-    python tools/test_volunteers.py
-
-The build script enters this directory so .cargo/config.toml selects the correct
-32-bit target. For an explicit controlled release helper benchmark, enter this
-directory and run:
-
-    cargo test --release --offline perf_tests::helper_benchmark -- --ignored --nocapture --test-threads=1
-
-It owns synthetic memory; it never opens or changes a game process. Normal tests
-leave this timing benchmark ignored to avoid noisy routine measurements.
-
-The full inactive-wrapper measurement also runs explicitly:
-
-    cargo test --release --offline idle_pair_wrapper_benchmark -- --ignored --nocapture --test-threads=1
-
-Private packaging from repository root:
-
-    python tools/prepare_volunteers.py work/volunteers-local
-
-Packaging expects the local prepared reference game/art path configured in
-../../tools/tgcx_volunteers_gui.py. It validates and generates new tgcx_ GUI/assets
-from installed game art. Outputs contain private game-derived textures and stay
-ignored; no game assets, executables, raw Ghidra exports or release binaries are
-part of this source checkpoint. Build/byte guards refuse unsupported executables.
-Install only into a backed-up prepared copy after normal game exit; the package
-README gives its explicit observe/preview/prototype modes and native-loader setup.
-
-Plain player-shareable package (no installer/launch scripts):
-
-    python tools/test_volunteers_share.py
-    python tools/prepare_volunteers_share.py <new output folder>
-
-This uses the immutable accepted candidate and generated carrier; see
-../../docs/report-volunteers-share-1029.md. No loader distribution or private
-logs/saves are included. DLL/game-derived UI pixels remain outside git.
-
-Tester feedback changes and exact retest steps: ../../docs/report-volunteers-feedback-1029.md
-and ../../docs/instructions-volunteers-feedback.md. Current plain ZIP uses the
-checked0.0.13 candidate, while the accepted local game remains0.0.12. No MP Send
-unlock; mode=preview is a read-only multiplayer baseline only.
+Startup and source fixtures are separate from actual multiplayer acceptance.
+No claim that the original OOS is fixed until paired movement/battle/siege/return,
+save/reload and engine OOS traces agree. No local maintenance or CRC bypass.

@@ -85,19 +85,17 @@ impl Ui {
         if !self.app.open || self.disabled {
             return;
         }
-        if let Err(reason) =
-            crate::session::admit(self.world.mode, self.app.capabilities, self.world.epoch)
-        {
+        if let Err(reason) = self.app.gate(&self.world) {
             self.app.refuse(reason.message());
             return;
         }
         if !crate::native_session::capture(&self.native, self.native.base).is_some_and(|s| {
-            s.mode == crate::session::SessionMode::SinglePlayer
+            s.mode == self.world.mode
                 && crate::native_lifecycle::epoch(s.context) == Some(self.world.epoch)
         }) {
             self.world.armies.clear();
             self.app
-                .refuse("Waiting for a current single-player session and load epoch.");
+                .refuse("Waiting for a recognized session and current load epoch.");
             return;
         }
         let recipient = self.app.selected_recipient();
@@ -121,6 +119,8 @@ impl Ui {
                         && !a.combat
                         && !a.moving
                         && !a.regiments.is_empty()
+                        && (self.world.mode != crate::session::SessionMode::Multiplayer
+                            || a.regiments.len() <= self.app.settings.max_brigades)
                         && a.regiments.iter().all(|r| r.owner == self.world.player)
                         && self
                             .app
@@ -144,7 +144,7 @@ impl Ui {
         }
         // This cache is a UI shortlist only. Send rereads current session,
         // ownership, membership, recipient province and native route below.
-        if crate::session::admit(self.world.mode, self.app.capabilities, self.world.epoch).is_ok()
+        if self.app.gate(&self.world).is_ok()
             && !self.world.player_at_war
             && self.world.countries.iter().any(|c| {
                 c.index == recipient
@@ -202,7 +202,9 @@ impl Ui {
             self.world = world;
             return;
         }
-        if world.mode != crate::session::SessionMode::SinglePlayer || epoch == 0 {
+        let network =
+            world.mode == crate::session::SessionMode::Multiplayer && self.app.settings.mp_play;
+        if (world.mode != crate::session::SessionMode::SinglePlayer && !network) || epoch == 0 {
             crate::native_hooks::publish(None, None);
             if let Some(registry) = self.app.registry.as_mut() {
                 registry.suspend();
@@ -279,7 +281,7 @@ impl Ui {
             .as_ref()
             .is_some_and(|r| r.epoch == epoch && self.bound_player == world.player);
         self.app.capabilities.persistence = prototype && self.store_head.is_some();
-        if let Ok(permit) = crate::session::admit(world.mode, self.app.capabilities, epoch)
+        if let Ok(permit) = self.app.gate(&world)
             && let Some(registry) = self.app.registry.as_mut()
         {
             let entries = registry.entries().cloned().collect::<Vec<_>>();
@@ -1020,9 +1022,12 @@ impl Ui {
         {
             return Vec::new();
         }
-        let Some(world) = self.native.world() else {
+        let Some(mut world) = self.native.world() else {
             return Vec::new();
         };
+        if world.mode == crate::session::SessionMode::Multiplayer {
+            world.mp_authority = crate::native_mp_play::fresh_issuer(self.native);
+        }
         self.observe_world(world);
         self.refresh_routes();
         if matches!(action, 3 | 14 | 16) && self.blocked_epoch == Some(self.world.epoch) {
@@ -1089,7 +1094,8 @@ impl Ui {
             if self.app.whole_army_selection(&self.world) {
                 None
             } else {
-                crate::session::admit(self.world.mode, self.app.capabilities, self.world.epoch)
+                self.app
+                    .gate(&self.world)
                     .ok()
                     .and_then(|p| self.native.allocate_identity(p))
             }
@@ -1121,7 +1127,7 @@ extern "C" fn clicked(action: u32) {
             return;
         };
         let work = ui.action(action);
-        let permit = crate::session::admit(ui.world.mode, ui.app.capabilities, ui.world.epoch).ok();
+        let permit = ui.app.gate(&ui.world).ok();
         (ui.native, work, permit)
     };
     let Some(permit) = permit else {
@@ -1129,7 +1135,7 @@ extern "C" fn clicked(action: u32) {
     };
     execute(native, work, permit);
 }
-fn execute(native: Native, work: Vec<Work>, permit: crate::session::SinglePlayerPermit) {
+fn execute(native: Native, work: Vec<Work>, permit: crate::session::SimulationPermit) {
     let Some(lock) = UI.get() else {
         return;
     };
@@ -1195,7 +1201,7 @@ fn execute(native: Native, work: Vec<Work>, permit: crate::session::SinglePlayer
     }
     sync_checkpoint(native, permit);
 }
-fn sync_checkpoint(native: Native, permit: crate::session::SinglePlayerPermit) -> bool {
+fn sync_checkpoint(native: Native, permit: crate::session::SimulationPermit) -> bool {
     let Some(lock) = UI.get() else { return false };
     let candidate = {
         let Ok(ui) = lock.try_lock() else {
@@ -1357,7 +1363,7 @@ pub fn day_tick() {
         let Some(campaign) = world.campaign else {
             return;
         };
-        let Ok(permit) = crate::session::admit(world.mode, ui.app.capabilities, world.epoch) else {
+        let Ok(permit) = ui.app.gate(&world) else {
             crate::native_hooks::publish(None, None);
             return;
         };
@@ -1502,7 +1508,10 @@ before_hook!(hide_hook, hidden, HIDE);
 before_hook!(destroy_hook, destroyed, DESTROY);
 
 pub fn install(base: u32, settings: Settings) -> bool {
-    let Some(native) = Native::new(base) else {
+    let Some(native) = Native::ui_only(base) else {
+        crate::runtime::diagnostic(
+            "native_gui_refused stage=UI-signatures (exact refused RVAs above)",
+        );
         return false;
     };
     if UI
@@ -1538,6 +1547,7 @@ pub fn install(base: u32, settings: Settings) -> bool {
         }))
         .is_err()
     {
+        crate::runtime::diagnostic("native_gui_refused stage=already-initialized");
         return false;
     }
     UPDATE.store((base + 0x221C10) as usize, Ordering::Release);
@@ -1552,6 +1562,10 @@ pub fn install(base: u32, settings: Settings) -> bool {
     for (slot, expected, replacement) in slots {
         let address = base + 0xA07450 + slot * 4;
         if !native.replace_slot(address, expected, replacement) {
+            crate::runtime::diagnostic(&format!(
+                "native_gui_refused stage=hook-slot index={slot} expected={expected:08X} observed={:?}",
+                native.u32(address)
+            ));
             // Protection restoration can fail after a successful CAS. Roll back
             // this slot too; never leave a partially installed hook untracked.
             native.replace_slot(address, replacement, expected);

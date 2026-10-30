@@ -9,6 +9,19 @@ import prepare_volunteers_mp as package
 
 
 class MPProbePackageTests(unittest.TestCase):
+    def test_gameplay_package_is_explicit_and_does_not_ship_scripts(self):
+        package.WORK.mkdir(parents=True,exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=package.WORK) as temp:
+            result=package.build(Path(temp)/'gameplay',gameplay=True)
+            self.assertTrue(result['mp_volunteer_gameplay'])
+            self.assertEqual(result['mode'],'mp')
+            with zipfile.ZipFile(result['zip']) as z:
+                self.assertIsNone(z.testzip())
+                self.assertIn(b'mode=mp\n',z.read('mod/tgcx_volunteers/tgcx_volunteers.cfg'))
+                self.assertIn(b'WHOLE EXISTING ARMIES ONLY',z.read('README.txt'))
+                self.assertNotIn(b'NOT MP VOLUNTEER GAMEPLAY',z.read('README.txt'))
+                self.assertFalse(any(Path(p).suffix.lower() in {'.exe','.bat','.cmd','.ps1','.py','.js','.vbs','.lnk'} for p in z.namelist()))
+
     def test_script_free_native_payload_and_reproducible_archive(self):
         package.WORK.mkdir(parents=True,exist_ok=True)
         with tempfile.TemporaryDirectory(dir=package.WORK) as temp:

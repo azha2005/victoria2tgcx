@@ -1397,3 +1397,31 @@ Only a new recognized load may recover; never retry a partial queue or replay
 Create/Transfer/Move automatically. Genuine native access/type/capacity failures
 retain their hard UI fences. The callback regression checks command suspension
 does not disable/close the UI. Same report; actual game retest remains required.
+
+### P87 - A loader's existing inline hook can reject the whole native GUI
+
+2026-10-30. Official Core6.36 optionally hooks native RVA662EA0 for host-role
+observation.0.0.15's all-or-nothing native signature gate expected untouched bytes,
+so a gameplay transport mismatch could also suppress the UI. Log exact expected/
+observed relocated bytes, split independent UI/module gates, and verify only an
+explicit supported loader file hash/thunk/original trampoline/tail. Never accept
+arbitrary E9 hooks or blindly skip a mismatching guard. Real0.0.16 startup accepted
+the exact supported probe and all module hooks; this isn't paired gameplay proof.
+
+### P88 - Native cloning can drop sender metadata, and local scheduling is not MP policy
+
+2026-10-30. CSetVariableCommand Clone VA583C00 reconstructs source+34 asFFFF;
+network service restores sequence+38 only. Sender-to-country checks would refuse
+valid traffic if metadata were stamped before Post then silently lost by Clone.
+Our namespaced-only wrapper copies sender into the new private clone, forwarding
+seven opaque stack words once and preserving EAX/flags/FXSAVE state/RET1C cleanup.
+Do not guess a plainRET from the decompiler. Fixture checks argument canaries,
+cleanup and namespace exclusions. Command flags and sequence remain native.
+
+MP policy is projected from native-executed committed journals at command
+boundaries. UI refresh, local worker IDs and try_read contention cannot choose
+simulation rules. Keep immutable snapshots, release locks before native calls,
+and allow only the admitted local donor to emit derived orders. Whole-stack reuse
+avoids racing new IDs. Fresh complete-roster receipt admission is separate from
+probe diagnostics and saved markers. Two-replica fixtures are not two real peers
+or evidence that the original OOS has been fixed. See0.0.16 report/instructions.
