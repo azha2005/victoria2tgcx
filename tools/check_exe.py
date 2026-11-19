@@ -273,6 +273,12 @@ SIGNATURES = [
     (0x5DE23A, "C22000", "TPL-12 text entity hit test RET 0x20"),
     (0xA3BBA8, "A0E09D00", "TPL-12 text entity vtable slot 20 hit test"),
     (0x394048, "8B55F05352E81E181D0069C0E80300008945D08B45F053E8CC181D00", "TPL-12 unit panel pop colour: supports(pop, 0) vs regiments(pop, 0)"),
+    # PROVID: the province tooltip FUN_004AAFD0 (this = province+8) ends, when the
+    # `provid` console flag g_world+0xD25 is set, with "\n# " + int-to-string(this+0x50).
+    # Owner tag/country at this+0x120/+0x124, controller at this+0x128/+0x12C.
+    (0xB1536, "8B4F508D94245801000052E8AA734D00", "PROVID tooltip id line: ECX id, push out, call int-to-string"),
+    (0x5888F0, "558BEC6AFF68B8E5B30064A100000000", "PROVID FUN_009888F0 int-to-string: ECX value, out string, RET 4"),
+    (0x9350, "558BEC538B5D08568BF185DB", "PROVID FUN_00409350 native string assign(ptr, length), RET 8"),
 ]
 
 
