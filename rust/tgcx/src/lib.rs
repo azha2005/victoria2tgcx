@@ -12,6 +12,7 @@ mod conform_native;
 mod d3d;
 mod gather;
 mod packages;
+mod provid;
 mod reforms;
 mod renderer;
 mod replace;
@@ -136,6 +137,7 @@ fn drawing_signatures() -> bool {
             || templates_gui::TPL_GUI_RVAS.contains(&rva)
             || templates_gui::NAMEBOX_RVAS.contains(&rva)
             || conform_native::CF_RVAS.contains(&rva)
+            || provid::PROVID_RVAS.contains(&rva)
             || check_signature(s)
     })
 }
@@ -270,6 +272,7 @@ fn initialize(origin: &[u8]) -> bool {
         log!("No TGCX package in the -mod= list: no hooks installed");
         return false;
     }
+    provid::install();
     if !renderer::install_native_stages() {
         log!("Module gate stages: BAD (ordered draw/final Present); no module installed");
         return false;
